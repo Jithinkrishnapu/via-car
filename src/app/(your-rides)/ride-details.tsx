@@ -21,6 +21,7 @@ import Chat from "../../../public/chat.svg";
 import Direction from "../../../public/direction4.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import MapComponent from "@/components/ui/map-view";
 
 function RideDetails() {
   const loaded = useLoadFonts();

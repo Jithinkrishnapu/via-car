@@ -6,7 +6,7 @@ import ar from "./ar";
 const resources = {
   en: {
     translation: en,
-    index: en.index,
+    index: en.login,
     components: en.components,
   },
   ar: {

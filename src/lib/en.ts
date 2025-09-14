@@ -69,7 +69,7 @@ const en = {
       green: "Green",
     },
   },
-  index: {
+  login: {
     verify_phone_number: "Verify your phone number",
     no_special_offers:
       "I don't want to receive special offers and personalised recommendations via text messages or calls",

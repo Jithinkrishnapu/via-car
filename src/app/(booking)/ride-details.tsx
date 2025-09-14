@@ -22,11 +22,41 @@ import Chat from "../../../public/chat.svg";
 import Direction from "../../../public/direction4.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import MapComponent from "@/components/ui/map-view";
 
 function RideDetails() {
+
+  const realRoadRoute = [
+    {
+      coordinates: [
+        { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
+        { latitude: 24.8247, longitude: 46.7975 }, // Riyadh outskirts
+        { latitude: 25.0619, longitude: 47.1429 }, // Highway 40 - Buqayq direction
+        { latitude: 25.2847, longitude: 47.4823 }, // Buqayq area
+        { latitude: 25.3619, longitude: 48.1429 }, // Halfway point
+        { latitude: 25.4247, longitude: 48.5823 }, // Near Hofuf
+        { latitude: 26.0619, longitude: 49.4429 }, // Approaching Dammam
+        { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
+      ],
+      strokeColor: '#FF0000',
+      strokeWidth: 6,
+    }
+  ];
+
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+
+  const handleBookNow = async()=>{
+    const stored = await useAsyncStorage("userDetails").getItem()
+    const userDetails = stored ? JSON.parse(stored) : null
+    if (userDetails?.type === "login") {
+      router.push('/(booking)/payment')
+    } else {
+      router.replace('/login')
+    }
+  }
 
   if (!loaded) return null;
   return (
@@ -120,6 +150,9 @@ function RideDetails() {
         </ImageBackground>
         <View className="max-w-[1410px] w-full mx-auto">
           <View className="flex-col gap-2">
+            <View className="h-[280px] bg-white p-4" >
+            <MapComponent directions={realRoadRoute} />
+            </View>
             <View className="px-8 py-6 rounded-none border-none bg-white">
               <View className="flex-row items-center justify-between">
                 <View className="flex flex-col">
@@ -412,13 +445,14 @@ function RideDetails() {
                 <TouchableOpacity
                   className="bg-[#FF4848] rounded-full h-[55px] w-full px-8 cursor-pointer flex items-center justify-center"
                   activeOpacity={0.8}
-                  onPress={() => router.push("/(booking)/payment")}
+                  onPress={() => handleBookNow()}
                 >
                   <Text
                     fontSize={19}
                     className="text-[19px] text-white font-[Kanit-Regular]"
                   >
-                    {t("rideDetails.manageRide")}
+                    {/* {t("rideDetails.manageRide")} */}
+                    Book Now
                   </Text>
                 </TouchableOpacity>
               </View>

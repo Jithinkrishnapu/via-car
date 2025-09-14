@@ -7,8 +7,10 @@ import "@/lib/i18n";
 
 import * as NavigationBar from "expo-navigation-bar";
 import MapComponent from "@/components/ui/map-view";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 NavigationBar.setButtonStyleAsync("dark");
+const queryClient = new QueryClient();
 
 function RootLayout() {
   const insets = useSafeAreaInsets();
@@ -21,9 +23,11 @@ function RootLayout() {
       keyboardOpeningTime={0}
       keyboardShouldPersistTaps="handled"
     >
-      {/* <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false, animation: "none" }} /> */}
-      <MapComponent/>
+      {/* <QueryClientProvider client={queryClient}> */}
+      <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false, animation: "none" }} />
+      {/* <MapComponent/> */}
     </KeyboardAwareScrollView>
+      // </QueryClientProvider>
   );
 }
 

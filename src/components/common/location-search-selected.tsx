@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import MapView from 'react-native-maps';
 import MapDirections from "../ui/map-view";
 import MapComponent from "../ui/map-view";
+import LocationPickerComponent from "./location-picker-component";
 
 interface Props {
   onContinue?: () => void;
@@ -19,6 +20,69 @@ export default function LocationSearchSelected({ onContinue }: Props) {
   const handleInputChange = (text: string) => {
     setSearchValue(text);
   };
+
+  const directionsData = [
+    {
+      coordinates: [
+        { latitude: 37.7749, longitude: -122.4194 }, // San Francisco
+        { latitude: 37.7849, longitude: -122.4094 },
+        { latitude: 37.7949, longitude: -122.3994 },
+      ],
+      strokeColor: '#FF0000',
+      strokeWidth: 18,
+    }
+  ];
+
+  const markersData = [
+    {
+      id: '1',
+      coordinate: { latitude: 37.78825, longitude: -122.4324 },
+      title: 'King Fahd Road',
+      description: 'First marker',
+      pinColor: 'green',
+    },
+    {
+      id: '2',
+      coordinate:   { latitude: 24.8247, longitude: 46.7975 },
+      title: 'Riyadh outskirts',
+      description: 'Second marker',
+      pinColor: 'yellow',
+    },
+    {
+      id: '3',
+      coordinate:  { latitude: 25.0619, longitude: 47.1429 },
+      title: 'Highway 40',
+      description: 'First marker',
+      pinColor: 'green',
+    },
+    {
+      id: '4',
+      coordinate:  { latitude: 25.2847, longitude: 47.4823 },
+      title: 'Buqayq area',
+      description: 'Second marker',
+      pinColor: 'yellow',
+    },
+  ];
+
+  const realRoadRoute = [
+    {
+      coordinates: [
+        { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
+        { latitude: 24.8247, longitude: 46.7975 }, // Riyadh outskirts
+        { latitude: 25.0619, longitude: 47.1429 }, // Highway 40 - Buqayq direction
+        { latitude: 25.2847, longitude: 47.4823 }, // Buqayq area
+        { latitude: 25.3619, longitude: 48.1429 }, // Halfway point
+        { latitude: 25.4247, longitude: 48.5823 }, // Near Hofuf
+        { latitude: 26.0619, longitude: 49.4429 }, // Approaching Dammam
+        { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
+      ],
+      strokeColor: '#FF0000',
+      strokeWidth: 6,
+    }
+  ];
+
+  const [whayExact,setWhyExact] = useState<boolean>(false)
+
 
   return (
     <View className="relative flex-1 font-[Kanit-Regular]">
@@ -37,6 +101,7 @@ export default function LocationSearchSelected({ onContinue }: Props) {
       </View>
       <View className="flex-auto flex-col gap-4 mt-4 h-full">
         <TouchableOpacity
+          onPress={()=>setWhyExact(true)}
           className="border border-[#EBEBEB] rounded-full h-max w-max mx-auto mb-4 flex-row items-center gap-[15px] px-[10px] py-[6px]"
           activeOpacity={0.8}
         >
@@ -52,12 +117,21 @@ export default function LocationSearchSelected({ onContinue }: Props) {
           </Text>
         </TouchableOpacity>
         {/* <View className="rounded-2xl overflow-hidden flex-2"> */}
-          {/* <Image
+        {/* <Image
             className="w-full h-full object-cover"
             source={require(`../../../public/map-select.png`)}
             alt=""
           /> */}
-          <MapComponent/>
+        {/* <MapComponent directions={realRoadRoute} markers={markersData} /> */}
+        { whayExact ? 
+        <MapComponent  markers={markersData} /> :
+        <LocationPickerComponent onLocationSelected={(location) => {
+          console.log('Selected location:', location);
+          // Handle the selected location
+        }}
+          // showCurrentLocation={true}
+          markerColor="red"
+          confirmButtonText="Select This Location" />}
         {/* </View> */}
       </View>
       <View className="absolute right-0 bottom-10 left-0 px-6 z-10">

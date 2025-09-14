@@ -6,19 +6,70 @@ import {
   TouchableOpacity,
   Dimensions,
   TextInput,
+  Alert,
 } from "react-native";
 import OtpAnimation from "../animated/otp-animation";
 import { XIcon } from "lucide-react-native";
 import { router } from "expo-router";
 import Text from "../common/text";
 import { useTranslation } from "react-i18next";
+import { handleSendOtp, handleVerifyOtp } from "@/service/auth";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 const { height } = Dimensions.get("window");
 
-const VerifyOtp = () => {
+const VerifyOtp = ({phoneNumber}:{phoneNumber:string}) => {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
+  const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const translateY = useRef(new Animated.Value(height)).current;
+  const [otpId, setOtpId] = useState("");
+
+  
+const handleLogin =async()=>{
+    const formdata = new FormData()
+    formdata.append("country_code","+966")
+    formdata.append("mobile_number",phoneNumber)
+    console.log("sheeet==========",formdata)
+   try {
+    const response = await handleSendOtp(formdata)
+    if(response?.data?.otpId){
+      setOtpId(response?.data?.otpId)
+      useAsyncStorage("otp_id").setItem(response?.data?.otpId)
+      console.log("response============",response)
+       openSheet()
+    }else{
+      Alert.alert(response?.message)
+    }
+   } catch (error) {
+    console.log("error===========",error)
+   }
+  }
+const handleValidate =async()=>{
+    const formdata = new FormData()
+    formdata.append("otp_id",otpId)
+    formdata.append("otp", otp.join(''))
+    formdata.append("device_type","1")
+    formdata.append("fcm_token","test")
+    console.log("sheeet==========",formdata)
+   try {
+    const response = await handleVerifyOtp(formdata)
+    if(response?.data?.type){
+      console.log("response============",response)
+      closeSheet();
+      if(response?.data?.type == "register"){
+        router.replace(`/register`);
+      }else{
+        await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
+        router.push(`/(booking)/payment`);
+      }
+    }else{
+      Alert.alert(response?.message)
+    }
+   } catch (error) {
+    console.log("error===========",error)
+   }
+  }
 
   const openSheet = () => {
     setVisible(true);
@@ -40,7 +91,7 @@ const VerifyOtp = () => {
   return (
     <View>
       <TouchableOpacity
-        onPress={openSheet}
+        onPress={handleLogin}
         className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
         activeOpacity={0.8}
       >
@@ -93,6 +144,17 @@ const VerifyOtp = () => {
                   <TextInput
                     allowFontScaling={false}
                     key={index}
+                    value={otp[index]}
+                    onChangeText={(text) => {
+                      const newOtp = [...otp];
+                      newOtp[index] = text;
+                      setOtp(newOtp);
+                      
+                      // Auto-focus next input
+                      if (text && index < 5) {
+                        // You can add refs here to auto-focus next input
+                      }
+                    }}
                     maxLength={1}
                     keyboardType="number-pad"
                     className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
@@ -101,10 +163,7 @@ const VerifyOtp = () => {
               </View>
 
               <TouchableOpacity
-                onPress={() => {
-                  closeSheet();
-                  router.push(`/book`);
-                }}
+                onPress={handleValidate}
                 className="bg-[#FF4848] rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center"
                 activeOpacity={0.8}
               >

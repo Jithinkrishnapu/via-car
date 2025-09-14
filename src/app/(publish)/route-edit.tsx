@@ -7,6 +7,7 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import MapComponent from "@/components/ui/map-view";
 
 function Route() {
   const loaded = useLoadFonts();
@@ -34,6 +35,41 @@ function Route() {
     },
   ];
 
+  const markersData = [
+    {
+      id: '1',
+      coordinate: { latitude: 37.78825, longitude: -122.4324 },
+      title: 'Location 1',
+      description: 'First marker',
+      pinColor: 'green',
+    },
+    {
+      id: '2',
+      coordinate: { latitude: 37.79025, longitude: -122.4344 },
+      title: 'Location 2',
+      description: 'Second marker',
+      pinColor: 'yellow',
+    },
+  ];
+
+  const realRoadRoute = [
+    {
+      coordinates: [
+        { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
+        { latitude: 24.8247, longitude: 46.7975 }, // Riyadh outskirts
+        { latitude: 25.0619, longitude: 47.1429 }, // Highway 40 - Buqayq direction
+        { latitude: 25.2847, longitude: 47.4823 }, // Buqayq area
+        { latitude: 25.3619, longitude: 48.1429 }, // Halfway point
+        { latitude: 25.4247, longitude: 48.5823 }, // Near Hofuf
+        { latitude: 26.0619, longitude: 49.4429 }, // Approaching Dammam
+        { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
+      ],
+      strokeColor: '#FF0000',
+      strokeWidth: 6,
+    }
+  ];
+
+
   return (
     <View className="flex-1 bg-white">
       <View className="flex-1 relative">
@@ -47,11 +83,12 @@ function Route() {
         >
           {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
         </TouchableOpacity>
-        <Image
+        {/* <Image
           source={require("../../../public/map-select.png")}
           className="w-full h-full"
           resizeMode="cover"
-        />
+        /> */}
+         <MapComponent directions={realRoadRoute} markers={markersData} />
       </View>
 
       <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
