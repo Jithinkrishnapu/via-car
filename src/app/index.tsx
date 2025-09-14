@@ -15,9 +15,6 @@ function Login() {
     }, [])
   );
 
-  
-  const { t } = useTranslation("login");
-
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
       <ActivityIndicator size="large" color="#FF4848" />
