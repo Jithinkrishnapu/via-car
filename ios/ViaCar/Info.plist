@@ -35,7 +35,7 @@
     <key>CFBundleVersion</key>
     <string>1</string>
     <key>GMSApiKey</key>
-    <string>AIzaSyCWa-8hKZdGiYnIg-JS8vk*&amp;*&amp;*&amp;*&amp;*</string>
+    <string>AIzaSyCWa-8hKZdGiYnIg-JS8vkkzD5lmhn5yP4</string>
     <key>LSMinimumSystemVersion</key>
     <string>12.0</string>
     <key>LSRequiresIPhoneOS</key>
@@ -47,12 +47,18 @@
       <key>NSAllowsLocalNetworking</key>
       <true/>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your camera</string>
     <key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
     <string>ViaCar needs location access to show your position on the map and provide navigation services.</string>
     <key>NSLocationAlwaysUsageDescription</key>
     <string>Allow $(PRODUCT_NAME) to access your location</string>
     <key>NSLocationWhenInUseUsageDescription</key>
     <string>ViaCar needs location access to show your position on the map and provide navigation services.</string>
+    <key>NSMicrophoneUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your microphone</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Allow $(PRODUCT_NAME) to access your photos</string>
     <key>NSUserActivityTypes</key>
     <array>
       <string>$(PRODUCT_BUNDLE_IDENTIFIER).expo.index_route</string>

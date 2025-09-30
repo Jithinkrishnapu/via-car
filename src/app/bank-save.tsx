@@ -18,13 +18,13 @@ import CustomPicker from "@/components/common/dropdown-component";
 import DatePicker from "@/components/common/date-picker";
 import DobCalendarPicker from "@/components/common/dob-calander";
 import DobPicker from "@/components/common/dob-calander";
-import { handleRegister } from "@/service/auth";
+import { handleBankSave, handleRegister } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useStore } from "@/store/useStore";
 
 const { height } = Dimensions.get("window");
 
-function Register() {
+function BankSave() {
   const { t } = useTranslation("index");
   const [category, setCategory] = useState<string>('');
   const {isPublish} = useStore()
@@ -34,59 +34,31 @@ function Register() {
     { label: 'Other', value: '3' },
   ];
 
-  const [dob, setDob] = useState('');
-  const [formattedDob, setFormattedDob] = useState('');
-  const [error, setError] = useState('');
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
+  const [accountHolderName, setAccountHolderName] = useState('');
+  const [bankName, setBankName] = useState('');
+  const [accountNumber, setAccountNumber] = useState('');
+  const [iban, setIban] = useState('');
+  const [swiftCode, setSwiftCode] = useState('');
+  const [branch, setBranch] = useState('');
 
 
-  const handleDateChange = (date: Date, formattedDate: string) => {
-    setDob(date.toISOString().split('T')[0]);
-    setFormattedDob(formattedDate);
-
-    // Optional: Validate again
-    const age = new Date().getFullYear() - date.getFullYear();
-    if (age < 18) {
-      setError('You must be at least 18 years old.');
-    } else {
-      setError('');
-    }
-  };
-
-  const submit = () => {
-    if (!dob) {
-      setError('Date of birth is required.');
-      return;
-    }
-    Alert.alert('Success', `DOB: ${formattedDob}`);
-  };
-
-  const handleRegistration =async()=>{
-    const otpId = await useAsyncStorage("otp_id").getItem()
+  const handleSaveBank =async()=>{
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
     const formdata = new FormData()
-    formdata.append("otp_id",otpId!)
-    formdata.append("device_type","1")
-    formdata.append("first_name",firstName)
-    formdata.append("last_name",lastName)
-    formdata.append("date_of_birth",dob)
-    formdata.append("gender",category)
-    formdata.append("fcm_token","test")
+    formdata.append("account_holder_name",accountHolderName!)
+    formdata.append("bank_name",bankName)
+    formdata.append("bank_branch",branch)
+    formdata.append("account_number",accountNumber)
+    formdata.append("iban",iban)
+    formdata.append("swift_code",swiftCode)
     console.log("sheeet==========",formdata)
    try {
-    const response = await handleRegister(formdata)
+    const response = await handleBankSave(formdata,token)
     if(response){
       console.log("response============",response)
-      if (response?.data?.type === "login") {
-        await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
-        if(isPublish){
-          router.replace(`/bank-save`);
-        }else{
-          router.replace(`/(booking)/payment`);
-        }
-      } else {
-        Alert.alert(response?.message)
-      }
+      router.push("/(publish)/upload-document")
     }
    } catch (error) {
     console.log("error===========",error)
@@ -96,7 +68,7 @@ function Register() {
   return (
     <ScrollView className="grid grid-cols-[1fr_max-content] min-h-screen *:font-[Kanit-Regular] w-full">
       <Image
-        style={{ height: height / 2 }}
+        style={{ height: height / 4 }}
         className="object-cover w-full"
         source={require(`../../public/login.png`)}
         alt=""
@@ -107,26 +79,52 @@ function Register() {
             fontSize={25}
             className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
           >
-            {t("verify_phone_number")}
+            Add your bank details
           </Text>
 
-          <InputComponent label="First Name" placeHolder="first name" onChangeText={(text) => {setFirstName(text) }} value={firstName} />
-          <InputComponent label="Last Name" placeHolder="first name" onChangeText={(text) => {setLastName(text) }} value={lastName} />
-          <DobPicker
-            onDateChange={handleDateChange}
-            errorMessage={error}
-            minimumAge={18}
-          />
-          <CustomPicker
-            label="Select Gender"
-            items={categories}
-            selectedValue={category}
-            onValueChange={(value) => setCategory(String(value))}
-            placeholder="Choose your gender"
-            style="w-full"
-          />
+          <InputComponent
+        label="Account Holder Name"
+        placeHolder="Enter here"
+        onChangeText={setAccountHolderName}
+        value={accountHolderName}
+      />
+      
+      <InputComponent
+        label="Bank Name"
+        placeHolder="Enter here"
+        onChangeText={setBankName}
+        value={bankName}
+      />
+      
+      <InputComponent
+        label="Account Number"
+        placeHolder="Enter here"
+        onChangeText={setAccountNumber}
+        value={accountNumber}
+      />
+      
+      <InputComponent
+        label="IBAN"
+        placeHolder="Enter here"
+        onChangeText={setIban}
+        value={iban}
+      />
+      
+      <InputComponent
+        label="SWIFT Code"
+        placeHolder="Enter here"
+        onChangeText={setSwiftCode}
+        value={swiftCode}
+      />
+      
+      <InputComponent
+        label="Branch"
+        placeHolder="Enter here"
+        onChangeText={setBranch}
+        value={branch}
+      />
             <TouchableOpacity
-        onPress={handleRegistration}
+        onPress={handleSaveBank}
         className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
         activeOpacity={0.8}
       >
@@ -143,4 +141,4 @@ function Register() {
   );
 }
 
-export default Register;
+export default BankSave;

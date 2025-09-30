@@ -7,6 +7,7 @@ import Text from "@/components/common/text";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useStore } from "@/store/useStore";
 
 const routesData = [
   { id: "1", title: "Sedan", img: require("../../../public/sedan.png") },
@@ -20,6 +21,8 @@ export default function SelectCategoryPage() {
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
   const [selected, setSelected] = useState("1");
+  const {setVehicle,vehicle} = useStore()
+
   if (!loaded) return null;
 
   return (
@@ -53,7 +56,9 @@ export default function SelectCategoryPage() {
             <TouchableOpacity
               key={id}
               activeOpacity={0.8}
-              onPress={() => setSelected(id)}
+              onPress={() => {
+                setVehicle(vehicle.brand_id,id)
+                setSelected(id)}}
               className={`border ${
                 isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
               } rounded-2xl mb-4`}

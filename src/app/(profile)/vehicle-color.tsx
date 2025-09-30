@@ -1,5 +1,5 @@
-import React from "react";
-import { View, TouchableOpacity, ScrollView } from "react-native";
+import React, { useState } from "react";
+import { View, TouchableOpacity, ScrollView, Alert } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -7,6 +7,9 @@ import Text from "@/components/common/text";
 import ColorSearch from "@/components/common/color-search";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { addVehicle } from "@/service/vehicle";
+import { useStore } from "@/store/useStore";
+import { clampRGBA } from "react-native-reanimated/lib/typescript/Colors";
 
 export default function VehiclePage() {
   const loaded = useLoadFonts();
@@ -14,6 +17,24 @@ export default function VehiclePage() {
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
   if (!loaded) return null;
+  const {vehicle_model_id} = useStore()
+  const [selectedColor,setSelectedColor] = useState("")
+
+  const handleAddVehicle =async()=>{
+    const formdata = new FormData()
+    formdata.append("model_id",vehicle_model_id)
+    formdata.append("color",selectedColor)
+    formdata.append("year","2021")
+    const response = await addVehicle(formdata)
+    console.log("response=====adsd",response)
+
+    if(response?.ok){
+      console.log("response=====adsd",response)
+      router.push("/(tabs)/user-profile")
+    }else{
+      Alert.alert("Something went wrong")
+    }
+  }
 
   return (
     <View className="font-[Kanit-Regular] flex-1 bg-white relative">
@@ -43,12 +64,16 @@ export default function VehiclePage() {
         <ColorSearch
           name="pickup"
           placeholder={t("profile.enterVehicleName")}
-          onSelect={() => {}}
+          onSelect={(value) => setSelectedColor(value)}
         />
       </View>
       <View className="absolute inset-x-0 bottom-10 px-6">
         <TouchableOpacity
-          onPress={() => router.push("/(tabs)/user-profile")}
+          onPress={() => {
+            console.log("add click")
+            handleAddVehicle()
+          }
+          }
           activeOpacity={0.8}
           className="bg-red-500 h-14 rounded-full flex-row items-center justify-center"
         >

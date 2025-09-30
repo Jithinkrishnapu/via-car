@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { locationsEn } from "@/constants/locations-en";
 import { locationsAr } from "@/constants/locations-ar";
@@ -7,6 +7,8 @@ import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import Text from "./text";
 import LocationPin from "../../../public/location-pin.svg";
 import { cn } from "@/lib/utils";
+import debounce from "lodash.debounce";
+import { usePlacesAutocomplete } from "@/service/common";
 
 interface Props {
   label?: string;
@@ -15,7 +17,8 @@ interface Props {
 
 export default function LocationSearch({ label, onSelect }: Props) {
   const { i18n, t } = useTranslation("components");
-  const locations = i18n.language === "ar" ? locationsAr : locationsEn;
+  // const locations = i18n.language === "ar" ? locationsAr : locationsEn;
+  const [locations, setLocations] = useState<any[]>([]);
   const defaultValue = i18n.language === "ar" ? "الخبر" : "Al Khobar";
   const [searchValue, setSearchValue] = useState(defaultValue);
 
@@ -25,6 +28,37 @@ export default function LocationSearch({ label, onSelect }: Props) {
       return acc;
     }, {});
   }, [locations]);
+
+
+  const fetchLocations = useCallback(async () => {
+    const formData = new FormData();
+    formData.append("input", searchValue);
+    console.log("input========", formData)
+    const response = await usePlacesAutocomplete(formData);
+
+    // Safely handle response
+    if (response?.data && Array.isArray(response.data)) {
+      setLocations(response.data);
+    } else {
+      console.warn("API returned invalid data:", response);
+      setLocations([]);
+    }
+  }, [searchValue]);
+
+  // ✅ Wrap fetchLocations in debounce
+  const debouncedFetchLocations = useCallback(
+    debounce(fetchLocations, 400), // Wait 400ms after last keystroke
+    [fetchLocations]
+  );
+
+  // ✅ Trigger debounced call when searchValue changes
+  useEffect(() => {
+    debouncedFetchLocations();
+    return () => {
+      // Cleanup: cancel pending request on unmount or change
+      debouncedFetchLocations.cancel();
+    };
+  }, [debouncedFetchLocations]);
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
@@ -73,12 +107,12 @@ export default function LocationSearch({ label, onSelect }: Props) {
 
       <ScrollView className="z-10 bg-white w-full mt-1 rounded-lg">
         <View className="px-4 py-2">
-          {filtered.length > 0 ? (
-            filtered.map((loc, index) => (
+          {locations.length > 0 ? (
+            locations.map((loc, index) => (
               <TouchableOpacity
-                key={loc.value}
+                key={loc.placeId}
                 className={
-                  cn("flex-col", index + 1 < filtered.length) &&
+                  cn("flex-col", index + 1 < locations.length) &&
                   "border-b border-[#EBEBEB]"
                 }
                 onPress={() => selectItem(loc.value)}
@@ -92,10 +126,10 @@ export default function LocationSearch({ label, onSelect }: Props) {
                   />
                   <View className="flex-col">
                     <Text fontSize={14} className="text-sm">
-                      {loc.label}
+                      {loc.mainText}
                     </Text>
                     <Text fontSize={12} className="text-xs font-[Kanit-Light]">
-                      {loc.desc}
+                      {loc.text}
                     </Text>
                   </View>
                 </View>

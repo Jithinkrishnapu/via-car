@@ -12,6 +12,9 @@ import { colors } from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useStore } from "@/store/useStore";
+import namer from 'color-namer';
+
 
 interface Props {
   label?: string;
@@ -34,7 +37,8 @@ export default function ColorSearch({
   const [isLoading, setIsLoading] = useState(false);
   const [inputWidth, setInputWidth] = useState<number | undefined>();
   const inputRef = useRef<View>(null);
-
+  const {vehicle_colors} = useStore()
+  
   const labels = useMemo(() => {
     return colors.reduce<Record<string, string>>((acc, c) => {
       acc[c.value] = t(`profile.colors.${c.label.toLowerCase()}`);
@@ -48,17 +52,35 @@ export default function ColorSearch({
     setOpen(true);
   };
 
-  const filtered = useMemo(
-    () =>
-      colors.filter(
-        (c) =>
-          t(`profile.colors.${c.label.toLowerCase()}`)
-            .toLowerCase()
-            .includes(searchValue.toLowerCase()) ||
-          c.value.toLowerCase().includes(searchValue.toLowerCase())
-      ),
-    [searchValue, t]
-  );
+  const getColorName = (hexCode:string) => {
+    if (!hexCode || typeof hexCode !== 'string') return 'Unknown';
+    
+    try {
+      const result = namer(hexCode);
+      return result.ntc[0].name; // or use result.html[0].name
+    } catch (error) {
+      console.warn('Invalid color code:', hexCode);
+      return 'Invalid Color';
+    }
+  };
+
+  const filtered = useMemo(() => {
+    const transformedColors = vehicle_colors.map((c) => {
+      const colorName = getColorName(c.value);
+  
+      return {
+        label: colorName,
+        value: c.value,
+        name: colorName.toLowerCase(), // from color code like "#FF5733" → "Red Orange"
+      };
+    });
+  
+    return transformedColors.filter((c) =>
+      c.label.toLowerCase().includes(searchValue.toLowerCase()) ||
+      c.value.includes(searchValue.toLowerCase()) ||
+      c.name.includes(searchValue.toLowerCase())
+    );
+  }, [colors, searchValue, t]);
 
   const selectItem = (value: string) => {
     setSelectedValue(value);
@@ -112,7 +134,8 @@ export default function ColorSearch({
               onPress={() => selectItem(c.value)}
               className={cn(
                 "flex-row items-center justify-between px-4 py-4",
-                idx + 1 < filtered.length && "border-b border-[#EBEBEB]"
+                idx + 1 < filtered.length && "border-b border-[#EBEBEB]",
+                selectedValue === c.value && "bg-[#F1F5FF]"
               )}
             >
               <View className="flex-row items-center gap-2">
@@ -122,7 +145,7 @@ export default function ColorSearch({
                 />
                 <View className="flex-1">
                   <Text fontSize={14} className="text-sm">
-                    {t(`profile.colors.${c.label.toLowerCase()}`)}
+                    {c.label}
                   </Text>
                 </View>
               </View>

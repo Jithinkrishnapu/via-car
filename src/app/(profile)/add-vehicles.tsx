@@ -38,7 +38,6 @@ export default function VehiclePage() {
           {t("profile.vehicle")}
         </Text>
       </View>
-
       <View className="px-6 mt-6">
         <VehicleSearch
           name="pickup"

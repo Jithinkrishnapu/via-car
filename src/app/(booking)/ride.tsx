@@ -6,7 +6,7 @@ import {
   XIcon,
 } from "lucide-react-native";
 import RideItem from "@/components/common/ride-item";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import {
@@ -22,6 +22,11 @@ import RideFilters from "@/components/common/ride-filter";
 import Direction from "../../../public/direction.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { SearchRideRequest } from "@/types/ride-types";
+import { searchRide, useSearchRide } from "@/service/ride-booking";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { useRoute } from "@react-navigation/native";
+import { useSearchRideStore } from "@/store/useSearchRideStore";
 
 function Ride() {
   const loaded = useLoadFonts();
@@ -31,6 +36,36 @@ function Ride() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [notify, setNotify] = useState(false);
   const [email, setEmail] = useState("");
+  const {from_lat_long,to_lat_long} = useSearchRideStore()
+  const routes = useRoute()
+
+
+  console.log("routes==========",routes)
+
+
+  const handleSearch = async () => {
+    const requestData: SearchRideRequest = {
+      user_lat: from_lat_long.lat,
+      user_lng: from_lat_long.lon,
+      destination_lat:to_lat_long.lat,
+      destination_lng: to_lat_long.lon,
+      date: routes.params?.date,
+      passengers: routes?.params?.passengers,
+      max_walking_distance_km: 10,
+    };
+    console.log(requestData,"========requestData========")
+    try {
+      const response = await searchRide(requestData); // ✅ Pass token
+      console.log("response======", response);
+    } catch (err) {
+      console.error('Search failed:', err);
+    }
+  };
+
+  useEffect(() => {
+   handleSearch()
+  }, []);
+
 
   if (!loaded) return null;
   return (

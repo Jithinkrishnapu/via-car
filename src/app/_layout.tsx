@@ -6,11 +6,21 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "@/lib/i18n";
 
 import * as NavigationBar from "expo-navigation-bar";
-import MapComponent from "@/components/ui/map-view";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { ChatProvider } from "@/store/ChatContext";
 
 NavigationBar.setButtonStyleAsync("dark");
-const queryClient = new QueryClient();
+
+// const firebaseConfig = {
+//   apiKey: "your-api-key-here",
+//   authDomain: "your-project.firebaseapp.com",
+//   projectId: "your-project-id",
+//   storageBucket: "your-project.appspot.com",
+//   messagingSenderId: "123456789",
+//   appId: "your-app-id"
+// };
+
+// export const db = getFirestore()
+
 
 function RootLayout() {
   const insets = useSafeAreaInsets();
@@ -24,7 +34,7 @@ function RootLayout() {
       keyboardShouldPersistTaps="handled"
     >
       {/* <QueryClientProvider client={queryClient}> */}
-      <Stack initialRouteName="(tabs)" screenOptions={{ headerShown: false, animation: "none" }} />
+      <Stack initialRouteName="(publish)/upload-document" screenOptions={{ headerShown: false, animation: "none" }} />
       {/* <MapComponent/> */}
     </KeyboardAwareScrollView>
       // </QueryClientProvider>

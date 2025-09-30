@@ -1,13 +1,13 @@
 import CarAnimation from "@/components/animated/car-animation";
 import SearchRide from "@/components/common/search-ride";
 import Text from "@/components/common/text";
-import { useLoadFonts } from "@/hooks/use-load-fonts";
+import { useLoadFonts } from "../../hooks/use-load-fonts";
 import { ImageBackground, ScrollView, View } from "react-native";
 import { useTranslation } from "react-i18next";
 
 function Book() {
-  const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const loaded = useLoadFonts();
   if (!loaded) return null;
 
   return (

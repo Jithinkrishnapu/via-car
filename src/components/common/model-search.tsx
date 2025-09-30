@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   ScrollView,
   TextInput,
@@ -13,6 +13,8 @@ import { models } from "@/constants/models";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { getModelList } from "@/service/vehicle";
+import { useStore } from "@/store/useStore";
 
 interface Props {
   label?: string;
@@ -33,8 +35,9 @@ export default function ModelSearch({
   const [selectedValue, setSelectedValue] = useState("");
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [inputWidth, setInputWidth] = useState<number | undefined>();
+  const [modelList, setModelList] = useState([]);
   const inputRef = useRef<View>(null);
+  const {vehicle,setVehicleColors,setVehicleModelId} = useStore()
 
   const labels = useMemo(() => {
     return models.reduce<Record<string, string>>((acc, m) => {
@@ -49,15 +52,28 @@ export default function ModelSearch({
     setOpen(true);
   };
 
+  const handleGetVehiclesModel = async()=>{
+    console.log("calling in handle")
+    const response = await getModelList(vehicle.brand_id,vehicle.category_id)
+    console.log("res=======models",response)
+    if(response.data){
+      setModelList(response.data)
+    }
+  }
+
   const filtered = useMemo(
     () =>
-      models.filter(
+      modelList?.models?.filter(
         (m) =>
-          m.label.toLowerCase().includes(searchValue.toLowerCase()) ||
-          m.value.toLowerCase().includes(searchValue.toLowerCase())
+          m.name.toLowerCase().includes(searchValue.toLowerCase())
       ),
-    [searchValue]
+    [searchValue,modelList]
   );
+
+  useEffect(()=>{
+    console.log("calling api")
+    handleGetVehiclesModel()
+  },[searchValue])
 
   const selectItem = (value: string) => {
     setSelectedValue(value);
@@ -103,12 +119,15 @@ export default function ModelSearch({
           <View className="p-4">
             <Text fontSize={16}>Loading...</Text>
           </View>
-        ) : filtered.length > 0 ? (
-          filtered.map((opt, idx) => (
+        ) : filtered?.length > 0 ? (
+          filtered?.map((opt, idx) => (
             <Pressable
-              key={opt.value}
+              key={opt.id}
               activeOpacity={0.8}
-              onPress={() => selectItem(opt.value)}
+              onPress={() => {
+                setVehicleColors(opt.colors)
+                setVehicleModelId(opt.id)
+                selectItem(opt.name)}}
               className={cn(
                 "flex-row items-center justify-between px-4 py-4",
                 idx + 1 < filtered.length && "border-b border-[#EBEBEB]"
@@ -118,14 +137,14 @@ export default function ModelSearch({
                 <HistoryIcon width={20} height={20} />
                 <View className="flex-1">
                   <Text fontSize={14} className="text-sm">
-                    {opt.label}
+                    {opt.name}
                   </Text>
-                  <Text
+                  {/* <Text
                     fontSize={16}
                     className="text-xs font-[Kanit-Light] text-[#666666]"
                   >
                     {opt.desc}
-                  </Text>
+                  </Text> */}
                 </View>
               </View>
               {swap(

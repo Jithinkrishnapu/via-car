@@ -29,21 +29,19 @@ const VerifyOtp = ({phoneNumber}:{phoneNumber:string}) => {
 const handleLogin =async()=>{
     const formdata = new FormData()
     formdata.append("country_code","+966")
-    formdata.append("mobile_number",phoneNumber)
+    formdata.append("mobile_number",phoneNumber.replace(/\D/g, ''))
     console.log("sheeet==========",formdata)
-   try {
     const response = await handleSendOtp(formdata)
+    console.log("response============",response)
     if(response?.data?.otpId){
       setOtpId(response?.data?.otpId)
       useAsyncStorage("otp_id").setItem(response?.data?.otpId)
-      console.log("response============",response)
        openSheet()
     }else{
-      Alert.alert(response?.message)
+      // Alert.alert(response?.message)
+      console.log("response============",response)
     }
-   } catch (error) {
-    console.log("error===========",error)
-   }
+    
   }
 const handleValidate =async()=>{
     const formdata = new FormData()

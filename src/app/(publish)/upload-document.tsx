@@ -15,6 +15,8 @@ import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker  from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { Assets } from '@react-navigation/elements';
+import { router } from 'expo-router';
+import { handleVerifyId } from '@/service/auth';
 
 const UploadDocumentsScreen = () => {
   const [nationalId, setNationalId] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -22,6 +24,7 @@ const UploadDocumentsScreen = () => {
   const [vehicleRegistration, setVehicleRegistration] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [carPlateNumber, setCarPlateNumber] = useState('');
   const [carSequenceNumber, setCarSequenceNumber] = useState('');
+  const [nationalIdnum, setNationalIdnum] = useState<string>("");
   const [isLoading, setIsLoading] = useState(false);
 
   // Request camera permissions
@@ -98,18 +101,44 @@ const UploadDocumentsScreen = () => {
     }
 
     setIsLoading(true);
+    const formdata = new FormData()
+    formdata.append("national_id_number",nationalIdnum)
+    formdata.append("car_plate_number",carPlateNumber)
+    formdata.append("sequence_number",carSequenceNumber)
+    formdata.append("driving_license", {
+      uri: drivingLicense.uri,
+      type: drivingLicense.mimeType || 'application/octet-stream',
+      name: drivingLicense.name || 'driving_license'
+    } as any)
+    formdata.append("vehicle_registration", {
+      uri: vehicleRegistration.uri,
+      type: vehicleRegistration.mimeType || 'application/octet-stream',
+      name: vehicleRegistration.name || 'vehicle_registration'
+    } as any)
+    formdata.append("national_id", {
+      uri: nationalId.uri,
+      type: nationalId.type || 'image/jpeg',
+      name: 'national_id.jpg'
+    } as any)
+    console.log("sheeet==========",JSON.stringify(formdata))
     
-    // Simulate API call
-    setTimeout(() => {
-      setIsLoading(false);
+    const response = await handleVerifyId(formdata)
+    if(response?.ok){
+      router.push("/book")
       Alert.alert('Success', 'Documents uploaded successfully!', [
         { text: 'OK', onPress: () => console.log('Documents submitted') }
       ]);
-    }, 2000);
+      setIsLoading(false)
+    }else{
+      Alert.alert('Error', 'Documents not uploaded!', [
+        { text: 'OK', onPress: () => console.log('Documents not submitted') }
+      ]);
+      setIsLoading(false)
+    }
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white">
+    <SafeAreaView className="flex-1 py-3 bg-white">
       <StatusBar barStyle="dark-content" />
       <ScrollView className="flex-1" showsVerticalScrollIndicator={false}>
         <View className="px-6 py-4">
@@ -123,12 +152,13 @@ const UploadDocumentsScreen = () => {
             <Text className="text-base font-semibold text-gray-900 mb-2">
               National ID
             </Text>
-            <TouchableOpacity 
-              onPress={() => handleDocumentUpload('nationalId')}
-              className="text-blue-500 mb-3"
-            >
-              <Text className="text-blue-500 text-sm underline">Enter Here</Text>
-            </TouchableOpacity>
+            <TextInput
+              value={nationalIdnum}
+              onChangeText={setNationalIdnum}
+              placeholder="Enter Here"
+              className="border border-gray-300 mb-2 rounded-lg px-4 py-3 text-gray-900"
+              placeholderTextColor="#9ca3af"
+            />
 
             <Text className="text-sm text-gray-600 mb-3">
               Upload National ID
@@ -257,14 +287,6 @@ const UploadDocumentsScreen = () => {
           </TouchableOpacity>
         </View>
       </ScrollView>
-
-      {/* Floating Action Button */}
-      <TouchableOpacity 
-        className="absolute bottom-6 right-6 w-14 h-14 bg-pink-500 rounded-full items-center justify-center shadow-lg"
-        onPress={() => Alert.alert('Help', 'Need assistance? Contact support.')}
-      >
-        <Text className="text-white text-xl font-bold">C</Text>
-      </TouchableOpacity>
     </SafeAreaView>
   );
 };

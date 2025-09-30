@@ -5,9 +5,24 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Avatar from "@/components/ui/avatar";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
-import { Fragment } from "react";
+import { Fragment, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { db } from "@/firebase";
+import {
+  collection,
+  query,
+  where,
+  onSnapshot,
+  orderBy,
+} from "firebase/firestore";
+
+interface Chat {
+  id: string;
+  users: string[];
+  lastMessage: string;
+  updatedAt: any;
+}
 
 export default function Page() {
   const loaded = useLoadFonts();
@@ -47,6 +62,33 @@ export default function Page() {
     },
   ];
 
+  const [chats, setChats] = useState<Chat[]>([]);
+  const userId = 
+  "user_123"; // 👈 inject from your backend auth
+
+  useEffect(() => {
+    if (!userId) return;
+
+    const q = query(
+      collection(db, "chats"),
+      where("participants", "array-contains", userId),
+      orderBy("lastMessageAt", "desc")
+    );
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const list: Chat[] = snapshot.docs.map((doc) => ({
+        id: doc.id,
+        ...(doc.data() as Chat),
+      }));
+      setChats(list);
+    });
+
+    return () => unsub();
+  }, [userId]);
+
+  return chats;
+}
+
   return (
     <ScrollView className="font-[Kanit-Regular] w-full mx-auto px-6 pt-16 pb-10 flex-col gap-2 bg-white">
       <Text
@@ -55,68 +97,36 @@ export default function Page() {
       >
         {t("inbox.title")}
       </Text>
-      {requests.map((request, index) => (
-        <Fragment key={index}>
-          <TouchableOpacity
-            onPress={() => router.push("/(inbox)/chat")}
-            className="flex-row items-center gap-4 py-2"
-            activeOpacity={0.8}
-          >
-            <Avatar
-              source={require(`../../../public/profile-img.png`)}
-              size={35}
-              initials="CN"
-            />
-            <View className="flex-col flex-1">
-              <Text
-                fontSize={14}
-                className="text-[14px] text-black font-[Kanit-Regular]"
-              >
-                {request.name}
-              </Text>
-              <View className="flex-row items-center gap-1">
-                <Text
-                  fontSize={12}
-                  className="text-[12px] font-[Kanit-Light] text-[#666666]"
-                >
-                  {t("inbox.from", { from: request.from })}
-                </Text>
-                <ArrowRight
-                  width={12}
-                  height={12}
-                  className="size-[12px]"
-                  color="#A5A5A5"
-                />
-                <Text
-                  fontSize={12}
-                  className="text-[12px] font-[Kanit-Light] text-[#666666]"
-                >
-                  {t("inbox.to", { to: request.to })}
-                </Text>
-              </View>
-              <Text
-                fontSize={12}
-                className="text-[12px] text-[#939393] font-[Kanit-Light] flex-row items-center gap-2"
-              >
-                <Text fontSize={12}>
-                  {t("inbox.date", { date: request.date })}
-                </Text>
-                <Text fontSize={12}>
-                  {t("inbox.time", { time: request.time })}
-                </Text>
-              </Text>
-            </View>
-            <ChevronRight
-              className="size-[15px] ml-auto"
-              color="#AAAAAA"
-              strokeWidth={1}
-            />
-          </TouchableOpacity>
-          {index !== requests.length - 1 && (
-            <Separator className="border-t !border-dashed !border-[#CDCDCD] bg-transparent my-[15px]" />
-          )}
-        </Fragment>
-      ))}
+      {chats.map((chat, index) => {
+  const otherUser = chat.users.find((u) => u !== userId); // get the other participant
+  return (
+    <Fragment key={chat.id}>
+      <TouchableOpacity
+        onPress={() => router.push({ pathname: "/(inbox)/chat", params: { chatId: chat.id } })}
+        className="flex-row items-center gap-4 py-2"
+        activeOpacity={0.8}
+      >
+        <Avatar
+          source={require("../../../public/profile-img.png")}
+          size={35}
+          initials={otherUser?.[0] ?? "?"}
+        />
+        <View className="flex-col flex-1">
+          <Text fontSize={14} className="text-[14px] text-black font-[Kanit-Regular]">
+            {otherUser}
+          </Text>
+          <Text fontSize={12} className="text-[12px] text-[#666] font-[Kanit-Light]" numberOfLines={1}>
+            {chat.lastMessage || "No messages yet"}
+          </Text>
+        </View>
+        <ChevronRight className="size-[15px] ml-auto" color="#AAAAAA" strokeWidth={1} />
+      </TouchableOpacity>
+      {index !== chats.length - 1 && (
+        <Separator className="border-t !border-dashed !border-[#CDCDCD] bg-transparent my-[15px]" />
+      )}
+    </Fragment>
+  );
+})}
     </ScrollView>
   );
 }

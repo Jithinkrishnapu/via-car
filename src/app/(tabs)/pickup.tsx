@@ -4,10 +4,25 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { router } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useStore } from "@/store/useStore";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 function Pickup() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const {setIsPublish} = useStore()
+
+  const handleBookNow = async()=>{
+    setIsPublish(true)
+    const stored = await useAsyncStorage("userDetails").getItem()
+    const userDetails = stored ? JSON.parse(stored) : null
+    if (userDetails?.type === "login") {
+      router.push('/(publish)/pickup-selected')
+    } else {
+      router.replace('/login')
+    }
+  }
+
   if (!loaded) return null;
   return (
     <ScrollView className="w-full px-6 pt-16 pb-12 bg-white">
@@ -20,7 +35,7 @@ function Pickup() {
       <LocationSearch />
       <TouchableOpacity
         className="bg-[#FF4848] rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center"
-        onPress={() => router.push("/(publish)/pickup-selected")}
+        onPress={handleBookNow}
         activeOpacity={0.8}
       >
         <Text

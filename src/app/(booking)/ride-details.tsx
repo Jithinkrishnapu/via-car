@@ -24,6 +24,7 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import MapComponent from "@/components/ui/map-view";
+import { useStore } from "@/store/useStore";
 
 function RideDetails() {
 
@@ -47,6 +48,7 @@ function RideDetails() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const {isPublish} = useStore()
 
   const handleBookNow = async()=>{
     const stored = await useAsyncStorage("userDetails").getItem()
@@ -451,8 +453,7 @@ function RideDetails() {
                     fontSize={19}
                     className="text-[19px] text-white font-[Kanit-Regular]"
                   >
-                    {/* {t("rideDetails.manageRide")} */}
-                    Book Now
+                    { isPublish ? t("rideDetails.manageRide") : "Book Now"}
                   </Text>
                 </TouchableOpacity>
               </View>

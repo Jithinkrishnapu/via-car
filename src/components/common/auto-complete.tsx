@@ -18,6 +18,7 @@ const { height } = Dimensions.get("window");
 type Props<T extends string> = {
   selectedValue: T;
   onSelectedValueChange: (value: T) => void;
+  handleItemSelect?: (value: any) => void;
   searchValue: string;
   onSearchValueChange: (value: string) => void;
   items: {
@@ -37,6 +38,7 @@ export function AutoComplete<T extends string>({
   onSearchValueChange,
   items,
   placeholder = "Search...",
+  handleItemSelect
 }: Props<T>) {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
@@ -129,13 +131,13 @@ export function AutoComplete<T extends string>({
               </View>
 
               <FlatList
-                data={items.filter((item) =>
-                  item.desc?.toLowerCase().includes(searchValue?.toLowerCase())
-                )}
-                keyExtractor={(item) => item.value}
+                data={items}
+                keyExtractor={(item,i) => i.toString()}
                 renderItem={({ item }) => (
                   <TouchableOpacity
-                    onPress={() => handleSelect(item.value)}
+                    onPress={() => {
+                      handleItemSelect(item)
+                      handleSelect(item.value)}}
                     className="flex-row items-start py-3 border-b border-gray-200"
                   >
                     <Check

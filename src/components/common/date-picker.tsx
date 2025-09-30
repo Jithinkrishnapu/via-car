@@ -13,7 +13,11 @@ import { useTranslation } from "react-i18next";
 
 const { height } = Dimensions.get("window");
 
-export default function DatePicker() {
+type Props ={
+  onSelect?:(val:Date)=>void
+}
+
+export default function DatePicker({onSelect}:Props) {
   const { t } = useTranslation("components");
   const defaultDate = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
@@ -94,7 +98,9 @@ export default function DatePicker() {
             >
               <TouchableOpacity activeOpacity={1} onPress={() => {}}>
                 <Calendar
-                  onChange={(newDate) => setTempDate(new Date(newDate))}
+                  onChange={(newDate) => {
+                    onSelect(new Date(newDate))
+                    setTempDate(new Date(newDate))}}
                 />
                 <TouchableOpacity
                   onPress={() => {
