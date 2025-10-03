@@ -7,6 +7,7 @@ import {
   ImageBackground,
   useWindowDimensions,
   Modal,
+  TextInput,
 } from "react-native";
 import { Href, useRouter } from "expo-router";
 import {
@@ -20,6 +21,7 @@ import {
   Trash2,
   User,
   Users,
+  X,
 } from "lucide-react-native";
 import Text from "@/components/common/text";
 import CheckGreen from "../../../public/check-green.svg";
@@ -39,6 +41,12 @@ import { cn } from "@/lib/utils";
 import MailAnimation from "@/components/animated/mail-animation";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import EmailModal from "@/components/modals/EmailModal";
+import PreferencesModal from "@/components/modals/PrefereceModal";
+import AboutModal from "@/components/modals/AboutModal";
+
+type ModalTypes = "email" | "preferences" | "about"
 
 export default function ProfilePage() {
   const loaded = useLoadFonts();
@@ -52,6 +60,7 @@ export default function ProfilePage() {
   const indicatorX = useSharedValue(0);
   const tabWidth = (246 + 6) / tabKeys.length;
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalType, setModalTtype] = useState<ModalTypes>()
 
   const tabLabels = {
     about: t("About"),
@@ -70,6 +79,29 @@ export default function ProfilePage() {
     transform: [{ translateX: indicatorX.value }],
     width: tabWidth,
   }));
+
+  const handleLogout = () => {
+    AsyncStorage.removeItem("userDetails");
+    router.replace("/login");
+  };
+
+  const renderModalContent = () => {
+    const onClose = () => {
+      setModalTtype(undefined);
+      setModalVisible(false);
+    };
+  
+    switch (modalType) {
+      case "email":
+        return <EmailModal onClose={()=>onClose()} />;
+      case "preferences":
+        return <PreferencesModal onClose={()=>onClose()}/>;
+      case "about":
+        return <AboutModal onClose={()=>onClose()} />;
+      default:
+        return null;
+    }
+  };
 
   if (!loaded) return null;
 
@@ -204,7 +236,7 @@ export default function ProfilePage() {
               <View className="mt-4 rounded-lg">
                 <TouchableOpacity
                   className="flex-row items-center px-4 py-2"
-                  onPress={() => {}}
+                  onPress={() => { }}
                   activeOpacity={0.8}
                 >
                   <CheckGreen width={18} height={18} />
@@ -217,7 +249,10 @@ export default function ProfilePage() {
                 </TouchableOpacity>
                 <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
                 <TouchableOpacity
-                  onPress={() => setModalVisible(true)}
+                  onPress={() => {
+                    setModalTtype("email")
+                    setModalVisible(true)
+                  }}
                   className="flex-row items-center px-4 py-2 justify-between"
                   activeOpacity={0.8}
                 >
@@ -235,7 +270,7 @@ export default function ProfilePage() {
                 <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
                 <TouchableOpacity
                   className="flex-row items-center px-4 py-2"
-                  onPress={() => {}}
+                  onPress={() => { }}
                   activeOpacity={0.8}
                 >
                   <CheckGreen width={18} height={18} />
@@ -259,7 +294,7 @@ export default function ProfilePage() {
                   {t("Travel Preferences")}
                 </Text>
                 <TouchableOpacity
-                  onPress={() => router.push("/your-ride")}
+                  onPress={() => { setModalTtype("preferences"), setModalVisible(true) }}
                   className="flex-row items-center bg-transparent border border-gray-200 rounded-full h-max px-5 py-1.5"
                 >
                   <Pencil size={12} color="#FF4848" />
@@ -302,7 +337,7 @@ export default function ProfilePage() {
                 </Text>
                 <TouchableOpacity
                   className="flex-row items-center bg-transparent border border-gray-200 rounded-full h-8 px-3"
-                  onPress={() => {}}
+                  onPress={() => { setModalTtype("about"), setModalVisible(true) }}
                 >
                   <Pencil size={12} color="#FF4848" />
                   <Text
@@ -346,7 +381,7 @@ export default function ProfilePage() {
                     {t("Sedan, Black")}
                   </Text>
                 </View>
-                <TouchableOpacity onPress={() => {}} activeOpacity={0.8}>
+                <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
                   <Trash2 size={22} color="#666666" />
                 </TouchableOpacity>
               </View>
@@ -369,50 +404,11 @@ export default function ProfilePage() {
         ) : (
           <View>
             {/* Language Switcher */}
-            <View className="px-6 mt-6 space-y-6">
-              <Text
-                fontSize={16}
-                className="text-[16px] font-[Kanit-Regular] mb-2"
-              >
-                {t("Change Language")}
-              </Text>
-              <View className="flex-row gap-2">
-                <TouchableOpacity
-                  onPress={() => i18n.changeLanguage("en")}
-                  className={`px-4 py-2 rounded-full border ${
-                    i18n.language === "en" ? "bg-[#FF4848]" : "bg-white"
-                  } border-[#FF4848]`}
-                >
-                  <Text
-                    fontSize={14}
-                    className={`text-[14px] font-[Kanit-Light] ${
-                      i18n.language === "en" ? "text-white" : "text-[#FF4848]"
-                    }`}
-                  >
-                    English
-                  </Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => i18n.changeLanguage("ar")}
-                  className={`px-4 py-2 rounded-full border ${
-                    i18n.language === "ar" ? "bg-[#FF4848]" : "bg-white"
-                  } border-[#FF4848]`}
-                >
-                  <Text
-                    fontSize={14}
-                    className={`text-[14px] font-[Kanit-Light] ${
-                      i18n.language === "ar" ? "text-white" : "text-[#FF4848]"
-                    }`}
-                  >
-                    العربية
-                  </Text>
-                </TouchableOpacity>
-              </View>
-              {/* Account Settings */}
+            <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Password"), "/(profile)/change-password"],
-                [t("Privacy policy"), "/"],
-                [t("About Us"), "/"],
+                [t("Bank Account"), "/(profile)/payment"],
+                [t("Transactions"), "/"],
+                [t("Payment & Refunds"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -435,11 +431,14 @@ export default function ProfilePage() {
                 </TouchableOpacity>
               ))}
             </View>
-            <View className="px-6 mt-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
-              {/* Payment Settings */}
+            <TouchableOpacity onPress={handleLogout} className="px-6 py-4 " >
+              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >Logout</Text>
+            </TouchableOpacity>
+
+            <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Payout methods"), "/(profile)/payment"],
-                [t("Payment methods"), "/"],
+                [t("Terms & Conditions"), "/(profile)/payment"],
+                [t("Privacy Policy"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -462,36 +461,17 @@ export default function ProfilePage() {
                 </TouchableOpacity>
               ))}
             </View>
+            <View className="px-6 py-4 " >
+              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >Close my account</Text>
+            </View>
+
           </View>
+
         )}
       </View>
       <Modal visible={modalVisible} transparent animationType="fade">
         <View className="flex-1 justify-end bg-black/30">
-          <View className="bg-white px-12 lg:px-24 pt-12 lg:pt-24 rounded-t-3xl items-center">
-            <MailAnimation />
-            <Text
-              fontSize={23}
-              className="text-[23px] font-[Kanit-Regular] text-black leading-tight text-center mt-4"
-            >
-              {t("profile.verificationEmailSent")}
-            </Text>
-            <View className="flex-row items-center justify-center">
-              <TouchableOpacity
-                className="bg-[#FF4848] rounded-full w-[141px] h-[45px] mt-6 mb-12 items-center justify-center"
-                activeOpacity={0.8}
-                onPress={() => {
-                  setModalVisible(false);
-                }}
-              >
-                <Text
-                  fontSize={18}
-                  className="text-[18px] text-white text-center font-[Kanit-Medium]"
-                >
-                  {t("profile.ok")}
-                </Text>
-              </TouchableOpacity>
-            </View>
-          </View>
+          {renderModalContent()}
         </View>
       </Modal>
     </ScrollView>

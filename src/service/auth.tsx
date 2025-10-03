@@ -57,20 +57,30 @@ export const handleBankSave = async (postData: FormData,token:string) => {
 }
 
 export const handleVerifyId = async (postData: FormData) => {
-    const userDetailsString = await useAsyncStorage("userDetails").getItem()
-    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
-    const token = userDetails ? userDetails?.token : ""
-    try {
-        const response = await fetch(`${API_URL}/api/verify-id`, {
-            body: postData,
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
-              }
-        });
-        return response
-    } catch (error) {
-        console.log("api error", error)
+    const userDetailsString = await useAsyncStorage("userDetails").getItem();
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+    const token = userDetails?.token || "";
+  
+    // 🔍 DEBUG: Log request info to build curl
+    console.log('API URL:', `${API_URL}/api/verify-id`);
+    console.log('Auth Token:', token);
+    
+    // Log FormData keys (you can't log full FormData easily, but you can list keys)
+    for (const [key, value] of postData.entries()) {
+      if (typeof value === 'string') {
+        console.log(`Form field: ${key} = ${value}`);
+      } else if (value instanceof Blob || (value && typeof value === 'object' && 'uri' in value)) {
+        console.log(`File field: ${key} = [File object]`, value);
+      }
     }
-
-}
+  
+    const response = await fetch(`${API_URL}/api/verify-id`, {
+      method: 'POST',
+      body: postData,
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+      },
+    });
+  
+    return response;
+  };

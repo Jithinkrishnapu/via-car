@@ -73,11 +73,25 @@ function PhoneInput({
   );
 
   const handlePhoneChange = (text: string) => {
-    const parsed = parsePhoneNumberFromString(text, countryCode);
-    const formatted = parsed
-      ? parsed.formatNational()
-      : text.replace(/\D/g, "");
-    setPhone(formatted);
+    let digits = text.replace(/\D/g, '');
+  
+    // Strip leading zero
+    if (digits.startsWith('0')) digits = digits.slice(1);
+  
+    // Add country calling code for parsing
+    const fullNumber = '+' + getCountryCallingCode(countryCode as CountryCode) + digits;
+  
+    try {
+      const parsed = parsePhoneNumberFromString(fullNumber);
+      if (parsed?.isValid?.()) {
+        setPhone(parsed.formatNational()); // e.g., (987) 654-3210
+        // Save E.164 in state or form: parsed.format('E.164') → +19876543210
+      } else {
+        setPhone(digits);
+      }
+    } catch {
+      setPhone(digits);
+    }
   };
 
   useEffect(() => {
@@ -128,7 +142,7 @@ function PhoneInput({
           allowFontScaling={false}
           keyboardType="phone-pad"
           placeholder={t(placeholder, { ns: "components" })}
-          value={phone}
+          value={value}
           onChangeText={handlePhoneChange}
           className="flex-1 h-[50px] text-[16px] font-[Kanit-Light] px-2"
           style={{

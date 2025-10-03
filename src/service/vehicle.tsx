@@ -5,6 +5,7 @@ export const getBrandList = async (search: string) => {
     const userDetailsString = await useAsyncStorage("userDetails").getItem()
     const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
     const token = userDetails ? userDetails?.token : ""
+    console.log("token=======",token)
     try {
         const response = await fetch(`${API_URL}/api/vehicle/brands?search=${encodeURIComponent(search)}`, {
             method: 'GET',

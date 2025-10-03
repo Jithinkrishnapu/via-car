@@ -123,6 +123,7 @@ const UploadDocumentsScreen = () => {
     console.log("sheeet==========",JSON.stringify(formdata))
     
     const response = await handleVerifyId(formdata)
+    console.log("response============",response)
     if(response?.ok){
       router.push("/book")
       Alert.alert('Success', 'Documents uploaded successfully!', [

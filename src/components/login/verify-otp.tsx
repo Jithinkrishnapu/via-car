@@ -29,7 +29,7 @@ const VerifyOtp = ({phoneNumber}:{phoneNumber:string}) => {
 const handleLogin =async()=>{
     const formdata = new FormData()
     formdata.append("country_code","+966")
-    formdata.append("mobile_number",phoneNumber.replace(/\D/g, ''))
+    formdata.append("mobile_number",phoneNumber?.startsWith("0") ? phoneNumber.slice(1)?.replace(/\D/g, '') : phoneNumber?.replace(/\D/g, ''))
     console.log("sheeet==========",formdata)
     const response = await handleSendOtp(formdata)
     console.log("response============",response)

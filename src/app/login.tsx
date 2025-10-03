@@ -19,6 +19,7 @@ function Login() {
   
   const { t } = useTranslation("index")
   const [phoneNumber,setPhoneNumber]=useState<string>("")
+  const [isChecked,setIsChecked] = useState(false)
 
   return (
     <ScrollView className="grid grid-cols-[1fr_max-content] min-h-screen *:font-[Kanit-Regular] w-full">
@@ -40,12 +41,15 @@ function Login() {
             label={t("mobile_number", { ns: "components" })}
             defaultCountryCode="SA"
             className="mb-7"
-            onChange={(phone, countryCode) => setPhoneNumber(phone)}
+            value={phoneNumber}
+            onChange={(phone, countryCode) => {
+              setPhoneNumber(phone?.startsWith("0") ? phone.slice(1) : phone)}}
           />
           <View className="flex flex-row gap-4 mb-7">
             <Checkbox
+              onValueChange={(isChecked)=>setIsChecked(isChecked)}
               className="mt-0.5 border-[#EBEBEB] rounded-[1px] cursor-pointer"
-              checked={false}
+              checked={isChecked}
             />
             <Text
               fontSize={14}

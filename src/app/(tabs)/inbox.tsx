@@ -63,8 +63,7 @@ export default function Page() {
   ];
 
   const [chats, setChats] = useState<Chat[]>([]);
-  const userId = 
-  "user_123"; // 👈 inject from your backend auth
+  const userId = "user_123"; // 👈 inject from your backend auth
 
   useEffect(() => {
     if (!userId) return;
@@ -76,19 +75,21 @@ export default function Page() {
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
-      const list: Chat[] = snapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...(doc.data() as Chat),
-      }));
+      const list: Chat[] = snapshot.docs.map((doc) => {
+        const data = doc.data() as any;
+        return {
+          id: doc.id,
+          users: Array.isArray(data?.users) ? data.users : [],
+          lastMessage: data?.lastMessage ?? '',
+          updatedAt: data?.updatedAt ?? null,
+        } as Chat;
+      });
       setChats(list);
     });
 
     return () => unsub();
   }, [userId]);
-
-  return chats;
-}
-
+  
   return (
     <ScrollView className="font-[Kanit-Regular] w-full mx-auto px-6 pt-16 pb-10 flex-col gap-2 bg-white">
       <Text

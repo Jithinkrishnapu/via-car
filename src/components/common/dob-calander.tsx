@@ -61,7 +61,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
         <Text className={date ? 'text-black' : 'text-gray-400'}>
           {date ? formatDate(date) : 'DD/MM/YYYY'}
         </Text>
-        <Text className="text-blue-500 text-lg">📅</Text>
+        <Text className="text-red-500 text-lg">📅</Text>
       </TouchableOpacity>
 
       {/* Error Message */}
@@ -81,11 +81,11 @@ const DobPicker: React.FC<DobPickerProps> = ({
             <View className="bg-white rounded-t-3xl p-4">
               <View className="flex-row justify-between items-center mb-4">
                 <TouchableOpacity onPress={() => setShow(false)}>
-                  <Text className="text-blue-600 font-semibold">Cancel</Text>
+                  <Text className="text-red-600 font-semibold">Cancel</Text>
                 </TouchableOpacity>
                 <Text className="text-lg font-semibold">Select Date</Text>
                 <TouchableOpacity onPress={handleDateSelect}>
-                  <Text className="text-blue-600 font-semibold">Done</Text>
+                  <Text className="text-red-600 font-semibold">Done</Text>
                 </TouchableOpacity>
               </View>
               <ScrollView className="max-h-80">
@@ -100,7 +100,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
                           key={year}
                           onPress={() => setSelectedYear(year)}
                           className={`px-3 py-2 mx-1 rounded-lg ${
-                            selectedYear === year ? 'bg-blue-500' : 'bg-gray-200'
+                            selectedYear === year ? 'bg-red-500' : 'bg-gray-200'
                           }`}
                         >
                           <Text className={selectedYear === year ? 'text-white' : 'text-gray-700'}>
@@ -121,7 +121,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
                         key={i + 1}
                         onPress={() => setSelectedMonth(i + 1)}
                         className={`px-3 py-2 mx-1 rounded-lg ${
-                          selectedMonth === i + 1 ? 'bg-blue-500' : 'bg-gray-200'
+                          selectedMonth === i + 1 ? 'bg-red-500' : 'bg-gray-200'
                         }`}
                       >
                         <Text className={selectedMonth === i + 1 ? 'text-white' : 'text-gray-700'}>
@@ -141,7 +141,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
                         key={i + 1}
                         onPress={() => setSelectedDay(i + 1)}
                         className={`px-3 py-2 mx-1 rounded-lg ${
-                          selectedDay === i + 1 ? 'bg-blue-500' : 'bg-gray-200'
+                          selectedDay === i + 1 ? 'bg-red-500' : 'bg-gray-200'
                         }`}
                       >
                         <Text className={selectedDay === i + 1 ? 'text-white' : 'text-gray-700'}>
