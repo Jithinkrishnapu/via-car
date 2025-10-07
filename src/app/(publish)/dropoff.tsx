@@ -5,10 +5,12 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { ScrollView, TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Dropoff() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   if (!loaded) return null;
   return (
     <ScrollView className="px-6 pt-16 pb-12 bg-white">
@@ -27,7 +29,11 @@ function Dropoff() {
           {t("dropoff.title")}
         </Text>
       </View>
-      <LocationSearch />
+      <LocationSearch  onSelect={(value)=>{console.log(value,"dropoff")
+         setRideField("destination_address",value?.text)
+         setRideField("destination_lat",value?.lat)
+         setRideField("destination_lng",value?.lng)
+      }} />
       <TouchableOpacity
         className="bg-[#FF4848] rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center"
         onPress={() => router.push("/(publish)/dropoff-selected")}

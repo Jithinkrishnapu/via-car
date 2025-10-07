@@ -78,7 +78,8 @@ export const handleVerifyId = async (postData: FormData) => {
       method: 'POST',
       body: postData,
       headers: {
-        ...(token && { Authorization: `Bearer ${token}` }),
+        ...(token && { Authorization: `Bearer ${token}`,
+         })
       },
     });
   

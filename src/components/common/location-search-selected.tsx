@@ -3,19 +3,21 @@ import { CircleHelp, Search } from "lucide-react-native";
 import { Image, TextInput, TouchableOpacity, View } from "react-native";
 import Text from "./text";
 import { useTranslation } from "react-i18next";
-import MapView from 'react-native-maps';
+import MapView, { Region } from 'react-native-maps';
 import MapDirections from "../ui/map-view";
 import MapComponent from "../ui/map-view";
 import LocationPickerComponent from "./location-picker-component";
 
 interface Props {
-  onContinue?: () => void;
+  onContinue?: (location:any) => void;
+  initialRegion:Region
 }
 
-export default function LocationSearchSelected({ onContinue }: Props) {
+export default function LocationSearchSelected({ onContinue,initialRegion }: Props) {
   const { i18n, t } = useTranslation("components");
   const defaultValue = i18n.language === "ar" ? "الخبر" : "Al Khobar";
   const [searchValue, setSearchValue] = useState(defaultValue);
+  const [location, setLocation] = useState<any>(null)
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
@@ -86,7 +88,7 @@ export default function LocationSearchSelected({ onContinue }: Props) {
 
   return (
     <View className="relative flex-1 font-[Kanit-Regular]">
-      <View className="flex-row items-center gap-4 relative px-6">
+      {/* <View className="flex-row items-center gap-4 relative px-6">
         <View className="absolute left-10 my-auto z-[1]">
           <Search className="size-[20px]" strokeWidth={1} color="black" />
         </View>
@@ -98,7 +100,7 @@ export default function LocationSearchSelected({ onContinue }: Props) {
           autoComplete="off"
           className="text-lg font-[Kanit-Light] placeholder:text-[#666666] bg-[#F1F1F5] border-none h-[57px] rounded-full pl-16 flex-1"
         />
-      </View>
+      </View> */}
       <View className="flex-auto flex-col gap-4 mt-4 h-full">
         <TouchableOpacity
           onPress={()=>setWhyExact(true)}
@@ -124,9 +126,9 @@ export default function LocationSearchSelected({ onContinue }: Props) {
           /> */}
         {/* <MapComponent directions={realRoadRoute} markers={markersData} /> */}
         { whayExact ? 
-        <MapComponent  markers={markersData} /> :
-        <LocationPickerComponent onLocationSelected={(location) => {
-          console.log('Selected location:', location);
+        <MapComponent /> :
+        <LocationPickerComponent initialRegion={initialRegion} onLocationSelected={(location) => {
+        setLocation(location)
           // Handle the selected location
         }}
           // showCurrentLocation={true}
@@ -137,7 +139,7 @@ export default function LocationSearchSelected({ onContinue }: Props) {
       <View className="absolute right-0 bottom-10 left-0 px-6 z-10">
         <TouchableOpacity
           className="bg-[#FF4848] rounded-full w-full h-[55px] cursor-pointer items-center justify-center"
-          onPress={onContinue}
+          onPress={()=>onContinue?.(location)}
           activeOpacity={0.8}
         >
           <Text

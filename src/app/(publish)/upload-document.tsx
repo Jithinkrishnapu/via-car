@@ -100,41 +100,30 @@ const UploadDocumentsScreen = () => {
       return;
     }
 
-    setIsLoading(true);
+    // setIsLoading(true);
     const formdata = new FormData()
     formdata.append("national_id_number",nationalIdnum)
     formdata.append("car_plate_number",carPlateNumber)
     formdata.append("sequence_number",carSequenceNumber)
-    formdata.append("driving_license", {
-      uri: drivingLicense.uri,
-      type: drivingLicense.mimeType || 'application/octet-stream',
-      name: drivingLicense.name || 'driving_license'
-    } as any)
-    formdata.append("vehicle_registration", {
-      uri: vehicleRegistration.uri,
-      type: vehicleRegistration.mimeType || 'application/octet-stream',
-      name: vehicleRegistration.name || 'vehicle_registration'
-    } as any)
-    formdata.append("national_id", {
-      uri: nationalId.uri,
-      type: nationalId.type || 'image/jpeg',
-      name: 'national_id.jpg'
-    } as any)
+    formdata.append("driving_license",drivingLicense)
+    formdata.append("vehicle_registration", vehicleRegistration)
+    formdata.append("national_id", nationalId)
     console.log("sheeet==========",JSON.stringify(formdata))
     
     const response = await handleVerifyId(formdata)
-    console.log("response============",response)
+    const body = await response.json()
+    console.log("response============",body)
     if(response?.ok){
       router.push("/book")
       Alert.alert('Success', 'Documents uploaded successfully!', [
         { text: 'OK', onPress: () => console.log('Documents submitted') }
       ]);
-      setIsLoading(false)
+      // setIsLoading(false)
     }else{
       Alert.alert('Error', 'Documents not uploaded!', [
         { text: 'OK', onPress: () => console.log('Documents not submitted') }
       ]);
-      setIsLoading(false)
+      // setIsLoading(false)
     }
   };
 

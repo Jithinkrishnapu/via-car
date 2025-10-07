@@ -6,11 +6,13 @@ import { TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Date() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const {setRideField} = useCreateRideStore()
   if (!loaded) return null;
   return (
     <View className="w-full font-[Kanit-Regular] bg-white flex-1 relative">
@@ -30,7 +32,7 @@ function Date() {
             {t("date.title")}
           </Text>
         </View>
-        <Calendar onChange={() => {}} />
+        <Calendar onChange={(date) => {setRideField("date",date)}} />
       </View>
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity

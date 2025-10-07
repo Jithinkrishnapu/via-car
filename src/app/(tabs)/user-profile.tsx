@@ -81,7 +81,7 @@ export default function ProfilePage() {
   }));
 
   const handleLogout = () => {
-    AsyncStorage.removeItem("userDetails");
+    // AsyncStorage.removeItem("userDetails");
     router.replace("/login");
   };
 

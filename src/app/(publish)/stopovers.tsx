@@ -8,38 +8,54 @@ import Building from "../../../public/building.svg";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
+import { useGetPopularPlaces } from "@/service/ride-booking";
 
 function Stopovers() {
   const loaded = useLoadFonts();
   const { t, i18n } = useTranslation("components");
-  const { isRTL, swap } = useDirection();
+  const { isRTL } = useDirection();
+  const [places, setPlaces] = useState<any[]>([]);
+  const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
 
-  // Dynamically generate city list based on language
-  const getRoutes = () => [
-    { id: "1", title: t("stopovers.city1"), defaultChecked: true },
-    { id: "2", title: t("stopovers.city2"), defaultChecked: false },
-    { id: "3", title: t("stopovers.city3"), defaultChecked: false },
-  ];
+  const handleStopOvers = async () => {
+    const request = {
+      pickup_lat: ride.pickup_lat,
+      pickup_lng: ride.pickup_lng,
+      dropoff_lat: ride.destination_lat,
+      dropoff_lng: ride.destination_lng,
+      encoded_polyline: polyline,
+      type: "city",
+    };
 
-  const [cities, setCities] = useState(getRoutes());
-  const [checkedIds, setCheckedIds] = useState<string[]>(
-    getRoutes()
-      .filter((c) => c.defaultChecked)
-      .map((c) => c.id)
-  );
+    try {
+      const response = await useGetPopularPlaces(request);
+      setPlaces(response?.data?.places || []);
+    } catch (err) {
+      console.error("Error fetching stopovers:", err);
+    }
+  };
 
-  // Update city names when language changes
   useEffect(() => {
-    setCities(getRoutes());
-  }, [i18n.language]);
+    handleStopOvers();
+  }, []);
 
-  const toggleChecked = (id: string) => {
-    setCheckedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+  const toggleStopover = (loc: any) => {
+    const exists = selectedPlaces.some((p) => p.lat === loc.lat);
+    if (exists) {
+      // Remove place
+      setSelectedPlaces(selectedPlaces.filter((p) => p.lat !== loc.lat));
+    } else {
+      // Add place
+      setSelectedPlaces([
+        ...selectedPlaces,
+        { lat: loc.lat, lng: loc.lng, address: loc.mainText },
+      ]);
+    }
   };
 
   if (!loaded) return null;
+
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="px-6 pt-16 pb-10 flex flex-col gap-4">
@@ -60,14 +76,14 @@ function Stopovers() {
           </Text>
         </View>
 
-        {/* City List */}
+        {/* Stopover List */}
         <View className="flex-col gap-[14px] max-w-lg w-full self-center">
-          {cities.map(({ id, title }) => {
-            const isChecked = checkedIds.includes(id);
+          {places?.map((loc) => {
+            const isChecked = selectedPlaces.some((p) => p.lat === loc.lat);
             return (
               <TouchableOpacity
-                key={id}
-                onPress={() => toggleChecked(id)}
+                key={loc.lat}
+                onPress={() => toggleStopover(loc)}
                 className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${
                   isChecked
                     ? "border-[#69D2A5] bg-[#F1FFF9]"
@@ -81,7 +97,7 @@ function Stopovers() {
                     fontSize={15}
                     className="text-[15px] font-[Kanit-Regular]"
                   >
-                    {title}
+                    {loc.mainText}
                   </Text>
                 </View>
                 {isChecked && (
@@ -95,7 +111,7 @@ function Stopovers() {
         </View>
       </View>
 
-      {/* Fixed Footer Buttons */}
+      {/* Footer */}
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center border border-[#EBEBEB] rounded-full h-[55px] gap-[4px]"

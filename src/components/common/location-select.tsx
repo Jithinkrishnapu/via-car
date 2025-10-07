@@ -92,8 +92,10 @@ export default function LocationSelect({
 
   const handleLocationSelect=(item:any)=>{
    if(name == "to"){
+    store.setTo(item?.mainText)
     store.setToLatLong(item.lat,item.lng)
    }else{
+    store.setFrom(item?.mainText)
     store.setFromLatLong(item.lat,item.lng)
    }
   }

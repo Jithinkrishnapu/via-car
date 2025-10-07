@@ -4,6 +4,8 @@ import {
   TouchableOpacity,
   ScrollView,
   useWindowDimensions,
+  FlatList,
+  Alert,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -15,6 +17,7 @@ import RideStatusItem from "@/components/common/ride-status-item";
 import Text from "@/components/common/text";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { useGetAllBooking } from "@/service/ride-booking";
 
 const tabs = ["Pending", "Cancelled", "Completed"] as const;
 type Tab = (typeof tabs)[number];
@@ -23,11 +26,24 @@ export default function RidesTabsScreen() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { width } = useWindowDimensions();
-  const [activeTab, setActiveTab] = useState<Tab>("Completed");
+  const [activeTab, setActiveTab] = useState<Tab>("Pending");
+  const [bookingList, setBookingList] = useState<any[]>([]);
   const indicatorX = useSharedValue(0);
   const tabWidth = (width - 48 + 6) / tabs.length;
 
+
+  const handleGetAllBooking = async () => {
+    const response = await useGetAllBooking("booked", activeTab.toLowerCase() as "pending" | "completed" | "cancelled");
+    console.log(response, "booking list response")
+    if (response?.data?.length) {
+      setBookingList(response?.data)
+    }else{
+      setBookingList([])
+    }
+  }
+
   useEffect(() => {
+    handleGetAllBooking()
     const index = tabs.indexOf(activeTab);
     indicatorX.value = withSpring(index * tabWidth, {
       damping: 20,
@@ -42,9 +58,14 @@ export default function RidesTabsScreen() {
 
   const renderContent = () => (
     <View className="flex-row flex-wrap justify-between gap-[20px] py-[20px]">
-      {Array.from({ length: 3 }).map((_, idx) => (
+      {/* {Array.from({ length: 3 }).map((_, idx) => (
         <RideStatusItem status={activeTab} key={`${activeTab}-${idx}`} />
-      ))}
+      ))} */}
+      <FlatList
+        data={bookingList}
+        renderItem={(({ item, index }) => <RideStatusItem data={item} status={activeTab} key={`${activeTab}-${index}`} />)}
+        ListEmptyComponent={() => <View className="justify-center items-center" ><Text>No Bookings Found</Text></View>}
+      />
     </View>
   );
 
@@ -76,11 +97,11 @@ export default function RidesTabsScreen() {
                   "flex-1 items-center justify-center rounded-full",
                   !isActive && "z-10",
                   activeTab === "Pending" &&
-                    tab === "Cancelled" &&
-                    "border-r border-[#EBEBEB]",
+                  tab === "Cancelled" &&
+                  "border-r border-[#EBEBEB]",
                   activeTab === "Completed" &&
-                    tab === "Cancelled" &&
-                    "border-l border-[#EBEBEB]"
+                  tab === "Cancelled" &&
+                  "border-l border-[#EBEBEB]"
                 )}
               >
                 <Text

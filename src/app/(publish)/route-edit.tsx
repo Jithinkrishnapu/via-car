@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { ChevronLeft, ChevronRight, Circle } from "lucide-react-native";
 import { Image, TouchableOpacity, View } from "react-native";
@@ -8,12 +8,15 @@ import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import MapComponent from "@/components/ui/map-view";
+import { placeRoutes } from "@/service/ride-booking";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Route() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [selectedRoute, setSelectedRoute] = useState("1");
+  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   if (!loaded) return null;
 
   // Use translation for routes
@@ -69,6 +72,20 @@ function Route() {
     }
   ];
 
+  const handleRoutes = async () => {
+    const request = {
+      "pickup_lat": ride.pickup_lat,
+      "pickup_lng": ride.pickup_lng,
+      "dropoff_lat": ride.destination_lat,
+      "dropoff_lng": ride.destination_lng
+    }
+    const response = await placeRoutes(request)
+    console.log(response, "======================response")
+  }
+
+  useEffect(() => {
+    handleRoutes()
+  }, [])
 
   return (
     <View className="flex-1 bg-white">
@@ -88,7 +105,7 @@ function Route() {
           className="w-full h-full"
           resizeMode="cover"
         /> */}
-         <MapComponent directions={realRoadRoute} markers={markersData} />
+        <MapComponent directions={realRoadRoute} markers={markersData} />
       </View>
 
       <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
@@ -103,11 +120,10 @@ function Route() {
               key={id}
               onPress={() => setSelectedRoute(id)}
               activeOpacity={0.8}
-              className={`border px-[20px] py-[18px] rounded-2xl mb-4 flex-row justify-between items-center ${
-                isSelected
+              className={`border px-[20px] py-[18px] rounded-2xl mb-4 flex-row justify-between items-center ${isSelected
                   ? "border-[#69D2A5] bg-[#F1FFF9]"
                   : "border-[#EBEBEB] bg-white"
-              }`}
+                }`}
             >
               <View className="flex-1">
                 <Text

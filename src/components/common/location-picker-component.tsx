@@ -112,7 +112,7 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
                     .filter(Boolean)
                     .join(', ');
             }
-
+            onLocationSelected({lat:location.latitude,lng:location.longitude,address:formattedAddress})
             setAddress(formattedAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`);
         } catch (err) {
             console.warn('Reverse geocoding failed:', err);

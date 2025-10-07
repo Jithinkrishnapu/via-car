@@ -6,6 +6,8 @@ import { ScrollView, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/store/useStore";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { useCreateRideStore } from "@/store/useRideStore";
+import { LocationData } from "@/types/ride-types";
 
 function Pickup() {
   const loaded = useLoadFonts();
@@ -23,6 +25,8 @@ function Pickup() {
     }
   }
 
+  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
+
   if (!loaded) return null;
   return (
     <ScrollView className="w-full px-6 pt-16 pb-12 bg-white">
@@ -32,7 +36,11 @@ function Pickup() {
       >
         {t("pickup.title")}
       </Text>
-      <LocationSearch />
+      <LocationSearch onSelect={(value:LocationData)=>{
+        setRideField("pickup_address",value?.text)
+        setRideField("pickup_lat",value?.lat)
+        setRideField("pickup_lng",value?.lng)
+        console.log(value,"pickup")}} />
       <TouchableOpacity
         className="bg-[#FF4848] rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center"
         onPress={handleBookNow}

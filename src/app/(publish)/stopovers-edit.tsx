@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { View, TouchableOpacity } from "react-native";
 import { ChevronLeft, Plus } from "lucide-react-native";
 import { router } from "expo-router";
@@ -8,6 +8,8 @@ import Building from "../../../public/building.svg";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useGetPopularPlaces } from "@/service/ride-booking";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 const initialRoutes = [
   { id: "1", cityIndex: 0, defaultChecked: true },
@@ -20,7 +22,7 @@ function Stopovers() {
   const { t, i18n } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [cities] = useState(initialRoutes);
-
+  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   const [checkedIds, setCheckedIds] = useState<string[]>(
     initialRoutes.filter((c) => c.defaultChecked).map((c) => c.id)
   );
@@ -30,6 +32,22 @@ function Stopovers() {
       prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
     );
   };
+
+  const handleStopOvers =async()=>{
+    const request ={
+      "pickup_lat": ride.pickup_lat,
+      "pickup_lng": ride.pickup_lng,
+      "dropoff_lat": ride.destination_lat,
+      "dropoff_lng": ride.destination_lng,
+      "type": "city"
+    }
+    const response = await useGetPopularPlaces(request)
+    console.log("res========popular",response)
+  }
+
+  useEffect(() => {
+    handleStopOvers();
+  }, []);
 
   if (!loaded) return null;
   return (

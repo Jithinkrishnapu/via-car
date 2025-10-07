@@ -51,6 +51,31 @@ export const getModelList = async (brand_id: string, category_id: string) => {
         throw error; // Let the caller handle the error
     }
 };
+
+export const getVehicleList = async () => {
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
+    try {
+        const response = await fetch(`${API_URL}/api/vehicle/list`, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+                'accept': 'application/json',
+                Authorization: `Bearer ${token}`,
+            }
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+    } catch (error) {
+        console.error("API error:", error);
+        throw error; // Let the caller handle the error
+    }
+};
 // /api/vehicle/add
 
 export const addVehicle = async (postData: FormData) => {

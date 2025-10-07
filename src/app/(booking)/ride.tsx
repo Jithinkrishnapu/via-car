@@ -10,9 +10,9 @@ import { useEffect, useState } from "react";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import {
+  FlatList,
   Modal,
   Pressable,
-  ScrollView,
   TextInput,
   TouchableOpacity,
   View,
@@ -22,9 +22,8 @@ import RideFilters from "@/components/common/ride-filter";
 import Direction from "../../../public/direction.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
-import { SearchRideRequest } from "@/types/ride-types";
-import { searchRide, useSearchRide } from "@/service/ride-booking";
-import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { Rides, SearchRideRequest } from "@/types/ride-types";
+import { searchRide } from "@/service/ride-booking";
 import { useRoute } from "@react-navigation/native";
 import { useSearchRideStore } from "@/store/useSearchRideStore";
 
@@ -36,212 +35,204 @@ function Ride() {
   const [filterVisible, setFilterVisible] = useState(false);
   const [notify, setNotify] = useState(false);
   const [email, setEmail] = useState("");
-  const {from_lat_long,to_lat_long} = useSearchRideStore()
-  const routes = useRoute()
+  const [rides, setRides] = useState<Rides[]>([]);
 
-
-  console.log("routes==========",routes)
-
+  const { from_lat_long, to_lat_long, from, to } = useSearchRideStore();
+  const route = useRoute();
 
   const handleSearch = async () => {
     const requestData: SearchRideRequest = {
       user_lat: from_lat_long.lat,
       user_lng: from_lat_long.lon,
-      destination_lat:to_lat_long.lat,
+      destination_lat: to_lat_long.lat,
       destination_lng: to_lat_long.lon,
-      date: routes.params?.date,
-      passengers: routes?.params?.passengers,
+      date: route.params?.date,
+      passengers: route.params?.passengers,
       max_walking_distance_km: 10,
     };
-    console.log(requestData,"========requestData========")
+
     try {
-      const response = await searchRide(requestData); // ✅ Pass token
-      console.log("response======", response);
+      const response = await searchRide(requestData);
+      if (response?.data?.rides?.length) {
+        setRides(response.data.rides);
+      }
     } catch (err) {
-      console.error('Search failed:', err);
+      console.error("Search failed:", err);
     }
   };
 
   useEffect(() => {
-   handleSearch()
+    handleSearch();
   }, []);
 
-
   if (!loaded) return null;
+
+  const renderRideItem = ({ item, index }: { item: Rides; index: number }) => (
+    <RideItem ride={item} key={`${index}-rideitem`} />
+  );
+
   return (
-    <ScrollView>
-      <View className="flex flex-col gap-[18px] bg-[#F5F5F5] pt-20 pb-[20px] px-6 w-full font-[Kanit-Regular]">
-        <View className="flex flex-row items-center justify-between w-full">
-          <View className="flex-1 flex-row items-center justify-between gap-4">
-            <TouchableOpacity
-              className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
-              activeOpacity={0.8}
-              onPress={() => router.replace("..")}
-            >
-              {swap(<ChevronLeft />, <ChevronRight />)}
-            </TouchableOpacity>
-            <View className="flex-1 flex-col">
-              <Text
-                fontSize={16}
-                className="text-[16px] text-[#263238] font-[Kanit-Bold] truncate flex-1"
-                numberOfLines={1}
-              >
-                {t("booking.ride.location")}
-              </Text>
-              <Text
-                fontSize={14}
-                className="text-[14px] text-[#666666] font-[Kanit-Light]"
-              >
-                {t("booking.ride.todayPassenger")}
-              </Text>
-            </View>
-          </View>
-          <TouchableOpacity
-            className="flex-row items-center gap-[4px] px-[11px] py-[5px] w-max shadow-none lg:hidden rounded-full border border-[#FFBDBD]"
-            onPress={() => setFilterVisible(true)}
-          >
-            <SlidersHorizontal size={16} />
-            <Text
-              fontSize={15}
-              className="text-[15px] text-[#263238] font-[Kanit-Regular]"
-            >
-              {t("booking.ride.filters")}
-            </Text>
-          </TouchableOpacity>
-          <Modal
-            animationType="slide"
-            visible={filterVisible}
-            onRequestClose={() => setFilterVisible(false)}
-          >
-            <RideFilters close={() => setFilterVisible(false)} />
-          </Modal>
-        </View>
-        <Text fontSize={22} className="text-[22px] font-[Kanit-Regular] pt-4">
-          {t("booking.ride.today")}
-        </Text>
-        <View className="flex-col p-0 !pb-2 gap-5">
-          {Array.from({ length: 14 }, (_, index) => (
-            <RideItem key={index + "rideitem"} />
-          ))}
-        </View>
-        <View className="flex items-center justify-center pb-5 pt-0 mb-5">
-          {!notify ? (
-            <View className="flex-1 w-full">
+    <View className="flex-1 bg-[#F5F5F5]">
+      <FlatList
+        data={rides}
+        renderItem={renderRideItem}
+        keyExtractor={(item, index) => `${item.id ?? index}`}
+        contentContainerStyle={{
+          paddingTop: 80,
+          paddingBottom: 100,
+          paddingHorizontal: 24,
+          gap: 18,
+        }}
+        ListHeaderComponent={
+          <>
+            {/* Header */}
+            <View className="flex-row items-center justify-between">
               <TouchableOpacity
-                className="bg-[#FF4848] rounded-full h-[55px] justify-center items-center px-8 w-full"
-                onPress={() => setModalVisible(true)}
+                className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
+                onPress={() => router.replace("..")}
                 activeOpacity={0.8}
               >
-                <Text
-                  fontSize={20}
-                  className="text-xl text-white font-[Kanit-Regular]"
-                >
-                  {t("booking.ride.createAlert")}
-                </Text>
+                {swap(<ChevronLeft />, <ChevronRight />)}
               </TouchableOpacity>
 
-              <Modal
-                animationType="fade"
-                transparent={true}
-                visible={modalVisible}
-                onRequestClose={() => setModalVisible(false)}
+              <View className="flex-1 mx-4">
+                <Text
+                  fontSize={16}
+                  className="text-[#263238] font-[Kanit-Bold] truncate"
+                  numberOfLines={1}
+                >
+                  {t(`${from},${to}`)}
+                </Text>
+                <Text fontSize={14} className="text-[#666666] font-[Kanit-Light]">
+                  {t(`Today ${route.params?.passengers} Passengers`)}
+                </Text>
+              </View>
+
+              <TouchableOpacity
+                className="flex-row items-center gap-[4px] px-[11px] py-[5px] rounded-full border border-[#FFBDBD]"
+                onPress={() => setFilterVisible(true)}
               >
-                <View className="flex-1 justify-end bg-black/40">
-                  <View className="bg-white rounded-t-3xl px-6 pt-10 pb-16">
-                    <TouchableOpacity
-                      className="ml-auto"
-                      onPress={() => setModalVisible(false)}
-                    >
-                      <XIcon color="#666666" size={20} />
-                    </TouchableOpacity>
-                    <Text
-                      fontSize={25}
-                      className="text-[25px] text-center font-[Kanit-Regular] mb-5"
-                    >
-                      {t("booking.ride.enterEmail")}
-                    </Text>
-
-                    <View className="flex-row items-center justify-center gap-4 mb-4">
-                      <Direction className="w-max h-8 bg-red-500" />
-                      <View className="w-max">
-                        <Text
-                          fontSize={13}
-                          className="text-[13px] text-[#939393] font-[Kanit-Light]"
-                        >
-                          {t("booking.ride.pickup")}
-                        </Text>
-                        <Text
-                          fontSize={15}
-                          className="text-[15px] mb-4 font-[Kanit-Regular]"
-                        >
-                          {t("booking.ride.pickupLocation")}
-                        </Text>
-                        <Text
-                          fontSize={13}
-                          className="text-[13px] text-[#939393] font-[Kanit-Light]"
-                        >
-                          {t("booking.ride.drop")}
-                        </Text>
-                        <Text
-                          fontSize={15}
-                          className="text-[15px] font-[Kanit-Regular]"
-                        >
-                          {t("booking.ride.dropLocation")}
-                        </Text>
-                      </View>
-                    </View>
-
-                    <View className="border-t border-dashed border-[#CDCDCD] my-2" />
-
-                    <Text
-                      fontSize={16}
-                      className="text-base text-[#666666] font-[Kanit-Light] text-center my-4"
-                    >
-                      {t("booking.ride.emailInstruction")}
-                    </Text>
-
-                    <TextInput
-                      allowFontScaling={false}
-                      className="bg-[#F1F1F5] border-0 rounded-full h-[55px] w-full text-[18px] font-[Kanit-Light] text-[#000] px-8 mb-5"
-                      placeholder={t("booking.ride.emailPlaceholder")}
-                      placeholderTextColor="#757478"
-                      value={email}
-                      onChangeText={setEmail}
-                      keyboardType="email-address"
-                    />
-
-                    <TouchableOpacity
-                      onPress={() => {
-                        setNotify(true);
-                        setModalVisible(false);
-                      }}
-                      className="bg-[#FF4848] rounded-full w-[229px] h-[54px] justify-center items-center self-center"
-                    >
-                      <Text
-                        fontSize={20}
-                        className="text-xl text-white font-[Kanit-Regular]"
-                      >
-                        {t("booking.ride.createAlert")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </Modal>
+                <SlidersHorizontal size={16} />
+                <Text fontSize={15} className="text-[#263238] font-[Kanit-Regular]">
+                  {t("booking.ride.filters")}
+                </Text>
+              </TouchableOpacity>
             </View>
-          ) : (
-            <Pressable className="bg-[#2DA771] rounded-full w-full h-[55px] px-8 cursor-pointer flex-row items-center justify-center gap-[14px]">
-              <Text
-                fontSize={20}
-                className="text-xl text-white font-[Kanit-Regular]"
-              >
-                {t("booking.ride.rideAlert")}
-              </Text>
-              <Check className="size-[20px]" stroke="#FFFFFF" />
-            </Pressable>
-          )}
-        </View>
+
+            {/* Today Section */}
+            <Text fontSize={22} className="font-[Kanit-Regular] pt-4">
+              {t("booking.ride.today")}
+            </Text>
+          </>
+        }
+        ListEmptyComponent={
+          <View className="py-10 items-center">
+            <Text>{t("booking.ride.noRides")}</Text>
+          </View>
+        }
+      />
+
+      {/* Alert Button / Confirmation */}
+      <View className="absolute bottom-5 left-6 right-6">
+        {!notify ? (
+          <TouchableOpacity
+            className="bg-[#FF4848] rounded-full h-[55px] justify-center items-center w-full"
+            onPress={() => setModalVisible(true)}
+            activeOpacity={0.8}
+          >
+            <Text fontSize={20} className="text-white font-[Kanit-Regular]">
+              {t("booking.ride.createAlert")}
+            </Text>
+          </TouchableOpacity>
+        ) : (
+          <Pressable className="bg-[#2DA771] rounded-full h-[55px] flex-row items-center justify-center gap-[14px]">
+            <Text fontSize={20} className="text-white font-[Kanit-Regular]">
+              {t("booking.ride.rideAlert")}
+            </Text>
+            <Check size={20} stroke="#FFFFFF" />
+          </Pressable>
+        )}
       </View>
-    </ScrollView>
+
+      {/* Filter Modal */}
+      <Modal
+        animationType="slide"
+        visible={filterVisible}
+        onRequestClose={() => setFilterVisible(false)}
+      >
+        <RideFilters close={() => setFilterVisible(false)} />
+      </Modal>
+
+      {/* Email Alert Modal */}
+      <Modal
+        animationType="fade"
+        transparent
+        visible={modalVisible}
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="bg-white rounded-t-3xl px-6 pt-10 pb-16">
+            <TouchableOpacity
+              className="ml-auto mb-4"
+              onPress={() => setModalVisible(false)}
+            >
+              <XIcon color="#666666" size={20} />
+            </TouchableOpacity>
+
+            <Text fontSize={25} className="text-center font-[Kanit-Regular] mb-5">
+              {t("booking.ride.enterEmail")}
+            </Text>
+
+            <View className="flex-row items-start gap-4 mb-4">
+              <Direction width={32} height={32} />
+              <View>
+                <Text fontSize={13} className="text-[#939393] font-[Kanit-Light]">
+                  {t("booking.ride.pickup")}
+                </Text>
+                <Text fontSize={15} className="font-[Kanit-Regular] mb-2">
+                  {t("booking.ride.pickupLocation")}
+                </Text>
+                <Text fontSize={13} className="text-[#939393] font-[Kanit-Light]">
+                  {t("booking.ride.drop")}
+                </Text>
+                <Text fontSize={15} className="font-[Kanit-Regular]">
+                  {t("booking.ride.dropLocation")}
+                </Text>
+              </View>
+            </View>
+
+            <View className="border-t border-dashed border-[#CDCDCD] my-4" />
+
+            <Text fontSize={16} className="text-[#666666] font-[Kanit-Light] text-center mb-4">
+              {t("booking.ride.emailInstruction")}
+            </Text>
+
+            <TextInput
+              className="bg-[#F1F1F5] rounded-full h-[55px] text-[18px] font-[Kanit-Light] text-[#000] px-6 mb-5"
+              placeholder={t("booking.ride.emailPlaceholder")}
+              placeholderTextColor="#757478"
+              value={email}
+              onChangeText={setEmail}
+              keyboardType="email-address"
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+
+            <TouchableOpacity
+              onPress={() => {
+                setNotify(true);
+                setModalVisible(false);
+              }}
+              className="bg-[#FF4848] rounded-full h-[54px] justify-center items-center self-center w-[229px]"
+            >
+              <Text fontSize={20} className="text-white font-[Kanit-Regular]">
+                {t("booking.ride.createAlert")}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+    </View>
   );
 }
 

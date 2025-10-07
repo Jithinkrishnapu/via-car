@@ -6,17 +6,35 @@ import { Ban, Download, Hourglass, Star } from "lucide-react-native";
 import Direction from "../../../public/direction.svg";
 import TickGreen from "../../../public/tick-green.svg";
 import { useTranslation } from "react-i18next";
+import { format, parseISO } from "date-fns";
 
 interface Props {
   status: "Pending" | "Cancelled" | "Completed";
+  data:any
 }
 
-function RideStatusItem({ status = "Pending" }: Props) {
+function RideStatusItem({ status = "Pending",data }: Props) {
   const { t } = useTranslation("components");
+  const formatUTC = (isoString: string | undefined): string => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const hours = String(date.getUTCHours()).padStart(2, "0");
+    const minutes = String(date.getUTCMinutes()).padStart(2, "0");
+    return `${hours}:${minutes}`;
+  };
+
+  console.log(data)
+  
+  const departure_time = formatUTC(data?.pickupTime); // "07:00"
+  const arrival_time = formatUTC(data?.dropTime);  
+
   return (
     <TouchableOpacity
       className="w-full"
-      onPress={() => router.push(`/(your-rides)/ride-details`)}
+      onPress={() =>{
+        router.push({ pathname: "/(your-rides)/ride-details", params: {rideId: data?.rideId,ride_amount_id:data?.rideAmount?.id} })
+        // router.push(`/(your-rides)/ride-details`)
+      }}
       activeOpacity={0.8}
     >
       <View className="p-4 rounded-2xl shadow-sm bg-white">
@@ -27,13 +45,13 @@ function RideStatusItem({ status = "Pending" }: Props) {
             </View>
             <View className="flex-row items-center gap-12 mb-2">
               <Text fontSize={14} className="text-[14px] font-[Kanit-Regular]">
-                {t("rideStatusItem.departureTime")}
+                {departure_time}
               </Text>
               <Text
                 fontSize={14}
                 className="text-[14px] font-[Kanit-Regular] flex-1"
               >
-                {t("rideStatusItem.departureLocation")}
+                {data?.pickupAddress}
               </Text>
             </View>
             <Text
@@ -44,13 +62,13 @@ function RideStatusItem({ status = "Pending" }: Props) {
             </Text>
             <View className="flex-row items-center gap-12">
               <Text fontSize={14} className="text-[14px] font-[Kanit-Regular]">
-                {t("rideStatusItem.arrivalTime")}
+                {arrival_time}
               </Text>
               <Text
                 fontSize={14}
                 className="text-[14px] font-[Kanit-Regular] flex-1"
               >
-                {t("rideStatusItem.arrivalLocation")}
+                {data?.dropAddress}
               </Text>
             </View>
           </View>
@@ -58,7 +76,7 @@ function RideStatusItem({ status = "Pending" }: Props) {
             fontSize={18}
             className="text-lg text-[#00665A] font-[Kanit-Medium]"
           >
-            {t("rideStatusItem.price")}
+            SR {data?.totalAmount}
           </Text>
         </View>
         <View className="border-t border-dashed border-[#CDCDCD] my-3" />

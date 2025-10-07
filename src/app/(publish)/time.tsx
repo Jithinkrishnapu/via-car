@@ -12,6 +12,7 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Time() {
   const loaded = useLoadFonts();
@@ -20,6 +21,8 @@ function Time() {
   const [hour, setHour] = useState("7");
   const [minute, setMinute] = useState("00");
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
+
+  const {setRideField} = useCreateRideStore()
 
   if (!loaded) return null;
 
@@ -32,14 +35,14 @@ function Time() {
       setHour(text);
     }
   };
-
+  
   const onChangeMinute = (text: string) => {
     const num = parseInt(text, 10);
     if (
       /^\d{0,2}$/.test(text) &&
       (!isNaN(num) ? num >= 0 && num <= 59 : text === "")
     ) {
-      setMinute(text.padStart(2, "0"));
+      setMinute(text);
     }
   };
 
@@ -136,7 +139,9 @@ function Time() {
       {/* Continue Button */}
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => router.push("/(publish)/passenger-count")}
+          onPress={() => {
+            setRideField("time",`${hour}:${minute}`)
+            router.push("/(publish)/passenger-count")}}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

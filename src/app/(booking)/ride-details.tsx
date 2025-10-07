@@ -15,6 +15,7 @@ import {
   View,
   ImageBackground,
   Image,
+  FlatList,
 } from "react-native";
 import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
@@ -25,6 +26,11 @@ import { useDirection } from "@/hooks/useDirection";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import MapComponent from "@/components/ui/map-view";
 import { useStore } from "@/store/useStore";
+import { useRoute } from "@react-navigation/native";
+import { placeRoutes, useCreateBooking, useGetRideDetails } from "@/service/ride-booking";
+import { useEffect, useState } from "react";
+import { RideDetail } from "@/types/ride-types";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function RideDetails() {
 
@@ -48,17 +54,76 @@ function RideDetails() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const {isPublish} = useStore()
+  const { isPublish } = useStore()
+  const route = useRoute();
+  const [rideDetail, setRideDetail] = useState<RideDetail>()
+  const [routes, setRoutes] = useState()
+  const { setPolyline,polyline:EncodedLine } = useCreateRideStore();
 
-  const handleBookNow = async()=>{
+
+  const handleBookNow = async () => {
     const stored = await useAsyncStorage("userDetails").getItem()
     const userDetails = stored ? JSON.parse(stored) : null
     if (userDetails?.type === "login") {
-      router.push('/(booking)/payment')
+      // router.push('/(booking)/payment')
+      handleRideBooking()
     } else {
       router.replace('/login')
     }
   }
+
+  const handleRoutes = async (rideDetail:any) => {
+    const request = {
+      pickup_lat: rideDetail?.pickUpStop?.lat,
+      pickup_lng: rideDetail?.pickUpStop?.lng,
+      dropoff_lat: rideDetail?.dropOffStop?.lat,
+      dropoff_lng: rideDetail?.dropOffStop?.lng,
+    };
+
+    console.log(request, "Request Payload");
+
+    const response = await placeRoutes(request);
+    console.log(response?.data?.routes, "Routes Response");
+    setPolyline(response?.data?.routes[0]?.polyline)
+    // setRoutes(response?.data?.routes || []);
+  };
+
+  const handleGetRideDetails = async () => {
+    const postData = {
+      ride_id: route?.params?.rideId,
+      ride_amount_id: route?.params?.ride_amount_id
+    }
+    console.log("postData========", postData)
+    const response = await useGetRideDetails(postData)
+    if (response?.data) {
+      handleRoutes(response?.data)
+      setRideDetail(response.data)
+    }
+    console.log("responde===========", JSON.stringify(response))
+  }
+
+
+  const handleRideBooking =async()=>{
+    const postData={
+      "ride_id": rideDetail?.rideId?.id,
+      "passengers": 2,
+      "pickup_lat": rideDetail?.pickUpStop?.lat,
+      "pickup_lng": rideDetail?.pickUpStop?.lng,
+      "pickup_address": rideDetail?.pickUpStop?.address,
+      "notes": "Please wait at the main entrance",
+      ride_amount_id:rideDetail?.rideAmount?.id
+    }
+    const response = await useCreateBooking(postData)
+    if(response){
+      console.log("success===========",response)
+      router.push({ pathname: "/(booking)/payment", params: {rideId: ride?.rideId,ride_amount_id:ride?.rideAmount?.id} })
+    }
+  }
+
+
+  useEffect(() => {
+    handleGetRideDetails()
+  }, [route])
 
   if (!loaded) return null;
   return (
@@ -100,7 +165,7 @@ function RideDetails() {
                   fontSize={16}
                   className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
                 >
-                  {t("rideDetails.alKhobar")}
+                  {rideDetail?.pickUpStop.address}
                 </Text>
                 <Text
                   fontSize={14}
@@ -113,10 +178,10 @@ function RideDetails() {
                   fontSize={16}
                   className="text-base lg:text-lg text-white font-[Kanit-Regular]"
                 >
-                  {t("rideDetails.riyadh")}
+                  {rideDetail?.dropOffStop?.address}
                 </Text>
               </View>
-              <View
+              {rideDetail?.pickUpStop?.time && <View
                 className={swap(
                   "flex flex-col text-end ml-auto",
                   "flex flex-col text-start mr-auto"
@@ -132,7 +197,7 @@ function RideDetails() {
                   fontSize={16}
                   className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
                 >
-                  13:00
+                  {rideDetail?.pickUpStop?.time?.slice(0, 5)}
                 </Text>
                 <Text
                   fontSize={14}
@@ -146,15 +211,15 @@ function RideDetails() {
                 >
                   17:40
                 </Text>
-              </View>
+              </View>}
             </View>
           </View>
         </ImageBackground>
         <View className="max-w-[1410px] w-full mx-auto">
           <View className="flex-col gap-2">
-            <View className="h-[280px] bg-white p-4" >
-            <MapComponent directions={realRoadRoute} />
-            </View>
+           {EncodedLine && <View className="h-[280px] bg-white p-4" >
+              <MapComponent />
+            </View>}
             <View className="px-8 py-6 rounded-none border-none bg-white">
               <View className="flex-row items-center justify-between">
                 <View className="flex flex-col">
@@ -168,7 +233,7 @@ function RideDetails() {
                     fontSize={10}
                     className="text-[10px] text-[#666666] font-[Kanit-Light]"
                   >
-                    {t("rideDetails.sedan")}
+                    {rideDetail?.vehicle?.vehicleModel?.category_name}
                   </Text>
                 </View>
                 <View className="w-[68px] h-[25px]">
@@ -195,9 +260,9 @@ function RideDetails() {
                     <View className="flex-row items-center gap-2">
                       <Text
                         fontSize={14}
-                        className="text-[14px] mb-1 font-[Kanit-Regular]"
+                        className="text-[14px] mb-1 px-2 font-[Kanit-Regular]"
                       >
-                        {t("rideDetails.abhimanyu")}
+                        {rideDetail?.driver?.first_name}
                       </Text>
                       <Verified width={15} height={15} />
                     </View>
@@ -269,97 +334,58 @@ function RideDetails() {
               <Text fontSize={17} className="text-[17px] font-[Kanit-Regular]">
                 {t("rideDetails.passengers")}
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="flex-row items-center justify-between"
-                onPress={() => router.push("/passenger-profile")}
-              >
-                <View className="flex-row items-center gap-4">
-                  <Avatar
-                    source={require(`../../../public/profile-img.png`)}
-                    size={40}
-                    initials="CN"
-                  />
-                  <View className="flex flex-col">
-                    <Text
-                      fontSize={14}
-                      className="text-[14px] mb-1 font-[Kanit-Regular]"
-                    >
-                      {t("rideDetails.karthik")}
-                    </Text>
-                    <View className="flex-row items-center justify-between gap-1">
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.chennai")}
-                      </Text>
-                      {swap(
-                        <ArrowRight size={10} color="#A5A5A5" />,
-                        <ArrowLeft size={10} color="#A5A5A5" />
-                      )}
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.banglaluru")}
-                      </Text>
+              <FlatList
+                data={rideDetail?.passengers}
+                renderItem={({ item }) => {
+                  return <TouchableOpacity
+                    activeOpacity={0.8}
+                    className="flex-row items-center justify-between"
+                    onPress={() => router.push("/passenger-profile")}
+                  >
+                    <View className="flex-row items-center gap-4">
+                      <Avatar
+                        source={require(`../../../public/profile-img.png`)}
+                        size={40}
+                        initials="CN"
+                      />
+                      <View className="flex flex-col">
+                        <Text
+                          fontSize={14}
+                          className="text-[14px] mb-1 font-[Kanit-Regular]"
+                        >
+                          {t("rideDetails.karthik")}
+                        </Text>
+                        <View className="flex-row items-center justify-between gap-1">
+                          <Text
+                            fontSize={12}
+                            className="text-[12px] text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t("rideDetails.chennai")}
+                          </Text>
+                          {swap(
+                            <ArrowRight size={10} color="#A5A5A5" />,
+                            <ArrowLeft size={10} color="#A5A5A5" />
+                          )}
+                          <Text
+                            fontSize={12}
+                            className="text-[12px] text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t("rideDetails.banglaluru")}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                </View>
-                <View>
-                  {swap(
-                    <ChevronRight color="#A69A9A" className="size-[24px]" />,
-                    <ChevronLeft color="#A69A9A" className="size-[24px]" />
-                  )}
-                </View>
-              </TouchableOpacity>
-              <Separator className="my-1 border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="flex-row items-center justify-between"
-                onPress={() => router.push("/passenger-profile")}
-              >
-                <View className="flex-row items-center gap-4">
-                  <Avatar
-                    source={require(`../../../public/profile-img.png`)}
-                    size={40}
-                    initials="CN"
-                  />
-                  <View className="flex flex-col">
-                    <Text
-                      fontSize={14}
-                      className="text-[14px] mb-1 font-[Kanit-Regular]"
-                    >
-                      {t("rideDetails.karthik")}
-                    </Text>
-                    <View className="flex-row items-center justify-between gap-1">
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.chennai")}
-                      </Text>
+                    <View>
                       {swap(
-                        <ArrowRight size={10} color="#A5A5A5" />,
-                        <ArrowLeft size={10} color="#A5A5A5" />
+                        <ChevronRight color="#A69A9A" className="size-[24px]" />,
+                        <ChevronLeft color="#A69A9A" className="size-[24px]" />
                       )}
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.banglaluru")}
-                      </Text>
                     </View>
-                  </View>
-                </View>
-                <View>
-                  {swap(
-                    <ChevronRight color="#A69A9A" className="size-[24px]" />,
-                    <ChevronLeft color="#A69A9A" className="size-[24px]" />
-                  )}
-                </View>
-              </TouchableOpacity>
+                  </TouchableOpacity>
+                }}
+                ListEmptyComponent={()=><View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}
+                ItemSeparatorComponent={() => <Separator className="my-1 border-t !border-dashed !border-[#CDCDCD] bg-transparent" />}
+              />
             </View>
             <View className="px-8 py-4 gap-4 rounded-none bg-white">
               <Text fontSize={17} className="text-[17px] font-[Kanit-Regular]">
@@ -378,7 +404,7 @@ function RideDetails() {
                   </Text>
                   <Text fontSize={15} className="ml-2 font-[Kanit-Regular]">
                     {" "}
-                    460.00
+                   {rideDetail?.rideAmount?.amount}
                   </Text>
                 </Text>
               </View>
@@ -400,7 +426,7 @@ function RideDetails() {
                   fontSize={12}
                   className="text-[12px] text-end font-[Kanit-Regular]"
                 >
-                  SR 460.00
+                  SR {rideDetail?.serviceAmount}
                 </Text>
               </View>
               <View className="flex-row gap-2 items-center">
@@ -420,7 +446,7 @@ function RideDetails() {
                   fontSize={12}
                   className="text-[12px] text-end font-[Kanit-Regular]"
                 >
-                  SR 100.00
+                  SR {rideDetail?.vatAmount}
                 </Text>
               </View>
               <View className="flex-row gap-2 items-center">
@@ -440,7 +466,7 @@ function RideDetails() {
                   fontSize={17}
                   className="text-[17px] text-[#00665A] font-[Kanit-Medium] text-end"
                 >
-                  SR 560.00
+                  SR {rideDetail?.totalAmount}
                 </Text>
               </View>
               <View className="flex-row items-center justify-center py-4">
@@ -453,7 +479,7 @@ function RideDetails() {
                     fontSize={19}
                     className="text-[19px] text-white font-[Kanit-Regular]"
                   >
-                    { isPublish ? t("rideDetails.manageRide") : "Book Now"}
+                    {isPublish ? t("rideDetails.manageRide") : "Book Now"}
                   </Text>
                 </TouchableOpacity>
               </View>

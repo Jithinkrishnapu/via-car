@@ -10,12 +10,14 @@ import FlagRed from "../../../public/flag-red.svg";
 import Path from "../../../public/path.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function StopoversPreview() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [modalVisible, setModalVisible] = useState(false);
+  const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
 
   const stops = [
     {
@@ -25,6 +27,7 @@ function StopoversPreview() {
   ];
 
   if (!loaded) return null;
+
 
   return (
     <View className="flex-1 bg-white">
@@ -50,9 +53,9 @@ function StopoversPreview() {
         <View className="bg-white border border-[#EBEBEB] rounded-2xl p-4 overflow-hidden">
           {/* vertical line */}
           <View className="absolute top-6 bottom-6 left-[24px] w-[3px] z-0 overflow-hidden">
-            <Path />
-            <Path />
-            <Path />
+            {Array.from({ length: selectedPlaces.length + 3 }, (_, index) => (
+              <Path key={index} />
+            ))}
           </View>
 
           {/* Start point */}
@@ -62,12 +65,12 @@ function StopoversPreview() {
               fontSize={16}
               className="text-[14px] text-[#3F3C3C] font-[Kanit-Light]"
             >
-              {t("stopoversPreview.start")}
+              {ride.pickup_address}
             </Text>
           </View>
 
           {/* Stops */}
-          {stops.map(({ title, desc }, idx) => (
+          {selectedPlaces.map(({ address }, idx) => (
             <View
               key={idx}
               className="flex-row items-center justify-between mb-6 z-10"
@@ -79,16 +82,16 @@ function StopoversPreview() {
                     fontSize={15}
                     className="text-[14px] font-[Kanit-Regular]"
                   >
-                    {title}
+                    {address}
                   </Text>
-                  <Text
+                  {/* <Text
                     fontSize={13}
                     className="text-[12px] text-[#666666] font-[Kanit-Light]"
                   >
                     {desc}
-                  </Text>
+                  </Text> */}
                 </View>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   onPress={() => setModalVisible(true)}
                   activeOpacity={0.8}
                   className="rounded-full size-[46px] items-center justify-center"
@@ -99,7 +102,7 @@ function StopoversPreview() {
                     color="#666666"
                     className="-scale-[1]"
                   />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             </View>
           ))}
@@ -111,7 +114,7 @@ function StopoversPreview() {
               fontSize={16}
               className="text-[16px] text-[#3F3C3C] font-[Kanit-Light]"
             >
-              {t("stopoversPreview.end")}
+              {ride.destination_address}
             </Text>
           </View>
         </View>
