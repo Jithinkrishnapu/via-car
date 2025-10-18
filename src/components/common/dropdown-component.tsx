@@ -1,8 +1,16 @@
 // components/CustomPicker.tsx
 import React, { useState } from 'react';
-import { View, Text, Platform, TouchableOpacity, StyleSheet } from 'react-native';
-import {Picker} from '@react-native-picker/picker';
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Platform,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
+import { Picker } from '@react-native-picker/picker';
 import Modal from 'react-native-modal';
+import { Check } from 'lucide-react-native';
 
 interface PickerItem {
   label: string;
@@ -15,7 +23,7 @@ interface CustomPickerProps {
   selectedValue: string | number;
   onValueChange: (value: string | number) => void;
   placeholder?: string;
-  style?: string; // Tailwind classes (for container)
+  style?: string; // Tailwind classes for outer container
 }
 
 const CustomPicker: React.FC<CustomPickerProps> = ({
@@ -26,15 +34,14 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
   placeholder = 'Select an option',
   style = '',
 }) => {
-  const [isModalVisible, setIsModalVisible] = useState(false);
+  const [visible, setVisible] = useState(false);
 
-  // Get selected label for display
-  const selectedLabel = items.find(item => item.value === selectedValue)?.label || placeholder;
+  const selectedLabel =
+    items.find((i) => i.value === selectedValue)?.label || placeholder;
 
-  // Handle selection and close modal
-  const handleSelect = (itemValue: string | number) => {
-    onValueChange(itemValue);
-    setIsModalVisible(false);
+  const handleSelect = (val: string | number) => {
+    onValueChange(val);
+    setVisible(false);
   };
 
   return (
@@ -43,117 +50,93 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
         <Text className="text-gray-700 text-sm font-medium mb-1">{label}</Text>
       )}
 
-      {/* Display Button / Input Field (looks like input) */}
+      {/* Trigger button (looks like an input) */}
       <TouchableOpacity
-        onPress={() => setIsModalVisible(true)}
+        onPress={() => setVisible(true)}
         activeOpacity={0.8}
         className="h-[50px] border border-[#EBEBEB] rounded-full bg-white flex-row items-center justify-between px-4"
       >
         <Text
-          style={{
-            color: selectedValue ? '#1f2937' : '#9ca3af',
-            fontSize: 16,
-          }}
+          className={`text-base ${
+            selectedValue ? 'text-gray-900' : 'text-gray-400'
+          }`}
         >
           {selectedLabel}
         </Text>
-        <Text style={{ color: '#6b7280', fontSize: 18 }}>▼</Text>
+        <Text className="text-gray-500 text-lg">▼</Text>
       </TouchableOpacity>
 
-      {/* iOS Modal Picker (Full Screen Alert Style) */}
-      {Platform.OS === 'ios' && (
-        <Modal
-          isVisible={isModalVisible}
-          backdropColor="rgba(0, 0, 0, 0.5)"
-          backdropOpacity={0.6}
-          animationIn="slideInUp"
-          animationOut="slideOutDown"
-          onBackdropPress={() => setIsModalVisible(false)}
-          onBackButtonPress={() => setIsModalVisible(false)}
-          style={styles.modal}
-          avoidKeyboard
-        >
-          <View style={styles.modalContent}>
-            <View style={styles.header}>
-              <Text style={styles.headerTitle}>Select an Option</Text>
-              <TouchableOpacity onPress={() => setIsModalVisible(false)}>
-                <Text style={styles.cancelText}>Cancel</Text>
-              </TouchableOpacity>
-            </View>
-
-            <Picker
-              selectedValue={selectedValue}
-              onValueChange={handleSelect}
-              style={styles.picker}
-              dropdownIconColor="#6b7280"
-            >
-              {placeholder && (
-                <Picker.Item
-                  label={placeholder}
-                  value=""
-                  color="#9ca3af"
-                />
-              )}
-              {items.map((item, index) => (
-                <Picker.Item
-                  key={index}
-                  label={item.label}
-                  value={item.value}
-                  color="#1f2937"
-                />
-              ))}
-            </Picker>
-
-            <TouchableOpacity
-              style={styles.doneButton}
-              onPress={() => setIsModalVisible(false)}
-            >
-              <Text style={styles.doneButtonText}>Done</Text>
+      {/* Identical modal on both platforms */}
+      <Modal
+        isVisible={visible}
+        backdropColor="rgba(0,0,0,0.5)"
+        backdropOpacity={0.6}
+        animationIn="slideInUp"
+        animationOut="slideOutDown"
+        onBackdropPress={() => setVisible(false)}
+        onBackButtonPress={() => setVisible(false)}
+        style={styles.modal}
+        avoidKeyboard
+      >
+        <View style={styles.sheet}>
+          {/* Header */}
+          <View style={styles.header}>
+            <Text style={styles.title}>Select an option</Text>
+            <TouchableOpacity onPress={() => setVisible(false)}>
+              <Text style={styles.cancel}>Cancel</Text>
             </TouchableOpacity>
           </View>
-        </Modal>
-      )}
 
-      {/* Android: Normal Picker (Dropdown) */}
-      {Platform.OS === 'android' && isModalVisible && (
-        <Picker
-          selectedValue={selectedValue}
-          onValueChange={handleSelect}
-          mode="dropdown"
-          dropdownIconColor="#6b7280"
-          style={styles.androidPicker}
-        >
-          {placeholder && (
-            <Picker.Item
-              label={placeholder}
-              value=""
-              color="#9ca3af"
-            />
+          {items.map((it, idx) => (
+              <Pressable className='flex-row p-2 border mb-2 border-gray-200 rounded-lg items-center justify-between' key={idx} onPress={()=>handleSelect(it.value)}>
+                <Text className='text-[16px] font-[Kanit-Regular]' >{it.label}</Text>
+                <Check size={20} color="#666666" style={{ opacity: selectedValue === it.value ? 1 : 0 }} />
+                {/* <Text>{it.value}</Text> */}
+              </Pressable>
+            ))}
+
+          {/* Native picker */}
+          {/* <Picker
+            selectedValue={selectedValue}
+            onValueChange={handleSelect}
+            style={styles.picker}
+            dropdownIconColor="#6b7280"
+          >
+            {placeholder && (
+              <Picker.Item label={placeholder} value="" color="#9ca3af" />
+            )}
+            {items.map((it, idx) => (
+              <Picker.Item
+                key={idx}
+                label={it.label}
+                value={it.value}
+                color="#1f2937"
+              />
+            ))}
+          </Picker> */}
+
+          {/* Done bar (iOS habit) – hidden on Android if you want pure native */}
+          {Platform.OS === 'ios' && (
+            <TouchableOpacity
+              style={styles.doneButton}
+              onPress={() => setVisible(false)}
+            >
+              <Text style={styles.doneText}>Done</Text>
+            </TouchableOpacity>
           )}
-          {items.map((item, index) => (
-            <Picker.Item
-              key={index}
-              label={item.label}
-              value={item.value}
-              color="#1f2937"
-            />
-          ))}
-        </Picker>
-      )}
+        </View>
+      </Modal>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  modal: {
-    margin: 0,
-    justifyContent: 'flex-end',
-  },
-  modalContent: {
+  modal: { margin: 0, justifyContent: 'flex-end' },
+  sheet: {
     backgroundColor: 'white',
     borderTopLeftRadius: 20,
     borderTopRightRadius: 20,
-    paddingVertical: 16,
+    paddingVertical: 12,
     paddingHorizontal: 20,
     maxHeight: '80%',
   },
@@ -161,41 +144,19 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 8,
   },
-  headerTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1f2937',
-  },
-  cancelText: {
-    fontSize: 16,
-    color: '#6b7280',
-    fontWeight: '500',
-  },
-  picker: {
-    height: 200,
-    width: '100%',
-    marginBottom: 20,
-  },
+  title: { fontSize: 18, fontWeight: '600', color: '#1f2937' },
+  cancel: { fontSize: 16, color: '#6b7280', fontWeight: '500' },
+  picker: { width: '100%', height: 180 },
   doneButton: {
     backgroundColor: '#3b82f6',
+    marginTop: 8,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
   },
-  doneButtonText: {
-    color: 'white',
-    fontSize: 16,
-    fontWeight: '600',
-  },
-  androidPicker: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    zIndex: 100,
-  },
+  doneText: { color: 'white', fontSize: 16, fontWeight: '600' },
 });
 
 export default CustomPicker;

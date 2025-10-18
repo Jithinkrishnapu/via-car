@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { CircleHelp, Search } from "lucide-react-native";
 import { Image, TextInput, TouchableOpacity, View } from "react-native";
 import Text from "./text";
@@ -7,6 +7,8 @@ import MapView, { Region } from 'react-native-maps';
 import MapDirections from "../ui/map-view";
 import MapComponent from "../ui/map-view";
 import LocationPickerComponent from "./location-picker-component";
+import { useGetExactLocation } from "@/service/ride-booking";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 interface Props {
   onContinue?: (location:any) => void;
@@ -18,10 +20,29 @@ export default function LocationSearchSelected({ onContinue,initialRegion }: Pro
   const defaultValue = i18n.language === "ar" ? "الخبر" : "Al Khobar";
   const [searchValue, setSearchValue] = useState(defaultValue);
   const [location, setLocation] = useState<any>(null)
+  const [markers, setMarkers] = useState<any>(null)
+  const [whayExact,setWhyExact] = useState<boolean>(false)
+
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
   };
+
+  const handleGetExactLocation =async()=>{
+    const request ={
+      "lat": initialRegion?.latitude,
+      "lng": initialRegion?.longitude,
+      "radius": 5000,
+      "limit": 20
+    }
+    const response = await useGetExactLocation(request)
+    console.log("response==========",JSON.stringify(response))
+    setMarkers(response?.data?.places)
+  }
+
+  useEffect(()=>{
+    handleGetExactLocation()
+  },[whayExact])
 
   const directionsData = [
     {
@@ -83,8 +104,6 @@ export default function LocationSearchSelected({ onContinue,initialRegion }: Pro
     }
   ];
 
-  const [whayExact,setWhyExact] = useState<boolean>(false)
-
 
   return (
     <View className="relative flex-1 font-[Kanit-Regular]">
@@ -126,7 +145,7 @@ export default function LocationSearchSelected({ onContinue,initialRegion }: Pro
           /> */}
         {/* <MapComponent directions={realRoadRoute} markers={markersData} /> */}
         { whayExact ? 
-        <MapComponent /> :
+        <MapComponent markers={markers} /> :
         <LocationPickerComponent initialRegion={initialRegion} onLocationSelected={(location) => {
         setLocation(location)
           // Handle the selected location

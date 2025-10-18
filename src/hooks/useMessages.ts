@@ -20,11 +20,13 @@ export function useMessages(chatId: string) {
   const [messages, setMessages] = useState<Message[]>([]);
 
   useEffect(() => {
+    console.log(`chats/${chatId}/messages`)
     if (!chatId) return;
     const q = query(
       collection(db, `chats/${chatId}/messages`),
       orderBy("createdAt", "asc")
     );
+
 
     const unsub = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => {

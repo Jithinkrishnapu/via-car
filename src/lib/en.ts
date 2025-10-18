@@ -143,6 +143,8 @@ const en = {
       pickupPlaceholder: "Enter pickup location",
       dropPlaceholder: "Enter drop location",
       searchButton: "Search",
+      "missingLocation": "Please select both pickup and drop-off locations.",
+      "missingDate": "Please select a ride date."
     },
     locationSelect: {
       placeholder: "Search location...",

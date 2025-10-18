@@ -23,7 +23,7 @@ import Direction from "../../../public/direction.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { Rides, SearchRideRequest } from "@/types/ride-types";
-import { searchRide } from "@/service/ride-booking";
+import { rideAlert, searchRide } from "@/service/ride-booking";
 import { useRoute } from "@react-navigation/native";
 import { useSearchRideStore } from "@/store/useSearchRideStore";
 
@@ -51,6 +51,8 @@ function Ride() {
       max_walking_distance_km: 10,
     };
 
+    console.log(requestData)
+
     try {
       const response = await searchRide(requestData);
       if (response?.data?.rides?.length) {
@@ -61,6 +63,18 @@ function Ride() {
     }
   };
 
+  const handleAlert = async () => {
+    const request = {
+      email: email,
+      ride_id: rides[0]?.rideId
+    }
+    const response = await rideAlert(request)
+    if (response) {
+      setNotify(true);
+      setModalVisible(false);
+    }
+  }
+
   useEffect(() => {
     handleSearch();
   }, []);
@@ -68,7 +82,7 @@ function Ride() {
   if (!loaded) return null;
 
   const renderRideItem = ({ item, index }: { item: Rides; index: number }) => (
-    <RideItem ride={item} key={`${index}-rideitem`} />
+    <RideItem passengers={route.params?.passengers} ride={item} key={`${index}-rideitem`} />
   );
 
   return (
@@ -190,13 +204,13 @@ function Ride() {
                   {t("booking.ride.pickup")}
                 </Text>
                 <Text fontSize={15} className="font-[Kanit-Regular] mb-2">
-                  {t("booking.ride.pickupLocation")}
+                  {from}
                 </Text>
                 <Text fontSize={13} className="text-[#939393] font-[Kanit-Light]">
                   {t("booking.ride.drop")}
                 </Text>
                 <Text fontSize={15} className="font-[Kanit-Regular]">
-                  {t("booking.ride.dropLocation")}
+                  {to}
                 </Text>
               </View>
             </View>
@@ -219,10 +233,7 @@ function Ride() {
             />
 
             <TouchableOpacity
-              onPress={() => {
-                setNotify(true);
-                setModalVisible(false);
-              }}
+              onPress={handleAlert}
               className="bg-[#FF4848] rounded-full h-[54px] justify-center items-center self-center w-[229px]"
             >
               <Text fontSize={20} className="text-white font-[Kanit-Regular]">

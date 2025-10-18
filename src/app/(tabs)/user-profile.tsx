@@ -8,6 +8,7 @@ import {
   useWindowDimensions,
   Modal,
   TextInput,
+  Alert,
 } from "react-native";
 import { Href, useRouter } from "expo-router";
 import {
@@ -45,6 +46,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import EmailModal from "@/components/modals/EmailModal";
 import PreferencesModal from "@/components/modals/PrefereceModal";
 import AboutModal from "@/components/modals/AboutModal";
+import { handleLogOut, useGetProfileDetails } from "@/service/auth";
 
 type ModalTypes = "email" | "preferences" | "about"
 
@@ -81,8 +83,14 @@ export default function ProfilePage() {
   }));
 
   const handleLogout = () => {
-    // AsyncStorage.removeItem("userDetails");
-    router.replace("/login");
+    handleLogOut().then((res)=>{
+      AsyncStorage.removeItem("userDetails");
+      router.replace("/login");
+    }).catch((err)=>{
+      console.log("error===========",err)
+      Alert.alert("Something went wrong")
+    })
+    
   };
 
   const renderModalContent = () => {
@@ -102,6 +110,22 @@ export default function ProfilePage() {
         return null;
     }
   };
+
+  const [userDetails, setUserDetails] = useState();
+
+
+  const handleProfileDetails=async()=>{
+    const response = await useGetProfileDetails()
+    console.log("response=====================",response?.data)
+    if(response?.data){
+      setUserDetails(response?.data)
+      // setUserId(response?.data?.id)
+    }
+    }
+  
+    useEffect(()=>{
+      handleProfileDetails()
+    },[])
 
   if (!loaded) return null;
 

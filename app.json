@@ -85,7 +85,8 @@
           "locationAlwaysAndWhenInUsePermission": "ViaCar needs location access to show your position on the map and provide navigation services.",
           "locationWhenInUsePermission": "ViaCar needs location access to show your position on the map and provide navigation services."
         }
-      ]
+      ],
+      "expo-secure-store"
     ],
     "experiments": {
       "typedRoutes": true

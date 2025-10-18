@@ -21,106 +21,116 @@ import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useCreateRide } from "@/service/ride-booking";
 import { RideDetails } from "@/types/ride-types";
-import { combineDateAndTimeToUTC } from "@/utils/convertdatetime";
-import { useGetProfileDetails } from "@/service/auth";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
-function ShowPricing() {
+function ShowPricingReturn() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const { setRideField, ride, selectedPlaces,polyline } = useCreateRideStore();
+  const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
 
-
-  const [userDetails, setUserDetails] = useState();
-
-
-  const handleProfileDetails=async()=>{
-    const response = await useGetProfileDetails()
-    console.log("response=====================",response?.data)
-    if(response?.data){
-      setUserDetails(response?.data)
-      // setUserId(response?.data?.id)
-    }
-    }
-  
-    useEffect(()=>{
-      handleProfileDetails()
-    },[])
-
-
-  // Build full route
+  /* -------------------------------------------------
+   * 1.  BUILD THE RETURN ROUTE  (reversed outbound)
+   * ------------------------------------------------- */
   const fullRoute = useMemo(() => {
     const route = [];
-    if (ride.pickup_address?.trim() && typeof ride.pickup_lat === "number" && typeof ride.pickup_lng === "number") {
-      route.push({ address: ride.pickup_address, lat: ride.pickup_lat, lng: ride.pickup_lng });
+    if (
+      ride.pickup_address?.trim() &&
+      typeof ride.pickup_lat === "number" &&
+      typeof ride.pickup_lng === "number"
+    ) {
+      route.push({
+        address: ride.pickup_address,
+        lat: ride.pickup_lat,
+        lng: ride.pickup_lng,
+      });
     }
     selectedPlaces.forEach((place) => {
-      if (place.address?.trim() && typeof place.lat === "number" && typeof place.lng === "number") {
+      if (
+        place.address?.trim() &&
+        typeof place.lat === "number" &&
+        typeof place.lng === "number"
+      ) {
         route.push(place);
       }
     });
-    if (ride.destination_address?.trim() && typeof ride.destination_lat === "number" && typeof ride.destination_lng === "number") {
-      route.push({ address: ride.destination_address, lat: ride.destination_lat, lng: ride.destination_lng });
+    if (
+      ride.destination_address?.trim() &&
+      typeof ride.destination_lat === "number" &&
+      typeof ride.destination_lng === "number"
+    ) {
+      route.push({
+        address: ride.destination_address,
+        lat: ride.destination_lat,
+        lng: ride.destination_lng,
+      });
     }
-    return route;
+    return route.slice().reverse(); //  <---  RETURN LEG
   }, [ride, selectedPlaces]);
 
   const numSegments = Math.max(0, fullRoute.length - 1);
-  const [segmentPrices, setSegmentPrices] = useState<number[]>(Array(numSegments).fill(10));
+
+  /* -------------------------------------------------
+   * 2.  SEGMENT PRICES  (also reversed)
+   * ------------------------------------------------- */
+  const [segmentPrices, setSegmentPrices] = useState<number[]>(() =>
+    Array(numSegments).fill(10)
+  );
 
   useEffect(() => {
     if (numSegments <= 0) {
       setSegmentPrices([]);
       return;
     }
+    // If we already have prices for the return leg – use them
     if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
       setSegmentPrices([...ride.segmentPrices]);
+    } else if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
+      // fallback: reverse the outbound prices
+      setSegmentPrices([...ride.segmentPrices].reverse());
     } else {
       setSegmentPrices(Array(numSegments).fill(10));
     }
-  }, [numSegments, ride.segmentPrices]);
+  }, [numSegments, ride.segmentPrices, ride.segmentPrices]);
 
-  const clampPrice = (value: number) => Math.max(10, Math.min(14000, value));
-  const clampSeatPrice = (value: number) => Math.max(10, Math.min(14000, value));
+  const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
 
-  const updateSegmentPrice = (index: number, delta: number) => {
+  const updateSegmentPrice = (index: number, delta: number) =>
     setSegmentPrices((prev) => {
-      const newPrices = [...prev];
-      newPrices[index] = clampPrice(newPrices[index] + delta);
-      return newPrices;
+      const next = [...prev];
+      next[index] = clampPrice(next[index] + delta);
+      return next;
     });
-  };
 
   const updatePricePerSeat = (delta: number) => {
-    const newPrice = clampSeatPrice((ride.price_per_seat || 10) + delta);
-    setRideField("price_per_seat", newPrice);
+    const next = clampPrice((ride.price_per_seat ?? 10) + delta);
+    setRideField("price_per_seat", next);
   };
 
-  // ✅ Handle Continue: save all required data
+  /* -------------------------------------------------
+   * 3.  CONTINUE  –  store canonical left->right data
+   * ------------------------------------------------- */
   const handleContinue = () => {
-    // 1. Save segment prices (for returning to this screen)
+    // 3a. remember what the driver typed (for this screen)
     setRideField("segmentPrices", segmentPrices);
 
-    // 2. Build ordered stops
-    const stops = fullRoute.map((point, idx) => ({
-      address: point.address,
-      lat: point.lat,
-      lng: point.lng,
+    // 3b. build stops in REAL driving order  (already reversed)
+    const stops = fullRoute.map((p, idx) => ({
+      address: p.address,
+      lat: p.lat,
+      lng: p.lng,
       order: idx + 1,
     }));
 
-    // 3. Build full pricing matrix from segmentPrices
+    // 3c. build pricing matrix  (prefix sums)
     const n = fullRoute.length;
     const prices = [];
-
     if (n >= 2) {
       const prefix = [0];
       for (let i = 0; i < segmentPrices.length; i++) {
         prefix.push(prefix[i] + segmentPrices[i]);
       }
-
       for (let i = 0; i < n; i++) {
         for (let j = i + 1; j < n; j++) {
           prices.push({
@@ -132,26 +142,14 @@ function ShowPricing() {
       }
     }
 
-    // 4. Save stops and prices matrix
     setRideField("stops", stops);
     setRideField("prices", prices);
-    
-    // console.log("stopr===============",stops,"===================",prices)
-    // 5. Navigate
-    // router.push("/(publish)/return");
-
-    handlePublishRide()
-
-
-  //  if(userDetails?.about !== null && userDetails?.travel_preferences?.length){
-  //   handlePublishRide()
-  //  }else if(userDetails?.about == null){
-  //     router.push("/about")
-  //   }else if(userDetails?.travel_preferences.length == 0){
-  //    router.push("/travel_preferences")
-  //   }
+    handlePublishRide();
   };
 
+  /* -------------------------------------------------
+   * 4.  PUBLISH
+   * ------------------------------------------------- */
   const handlePublishRide = async()=>{
     const postData ={
       "vehicle_id": ride.vehicle_id,
@@ -174,13 +172,7 @@ function ShowPricing() {
     const { ok, data } = await useCreateRide(postData);
     console.log(data,"response----------data")
     if (ok && data?.data?.id ) {
-      router.push({
-        pathname: '/(publish)/return',
-        params : {
-          ride_id: data?.data?.id,
-          ride_amount_id : data?.data?.rideAmounts[0]?.pickup_id,
-        },
-      });
+        router.push({pathname:"/(publish)/publish-ride",params:{ride_id:data?.data?.id,ride_amount_id:data?.data?.rideAmounts[0].pickup_id}});
     } else {
       Alert.alert('Failed to create ride');
     }
@@ -213,10 +205,13 @@ function ShowPricing() {
   const heroHeight = Math.max(200, SCREEN_WIDTH * 0.55);
   const currentSeatPrice = ride.price_per_seat ?? 10;
 
+  /* -------------------------------------------------
+   * UI – almost identical to outbound, only labels
+   * ------------------------------------------------- */
   return (
     <SafeAreaView className="flex-1 bg-white">
       <ScrollView contentContainerStyle={{ paddingBottom: 90 }} className="flex-1">
-        {/* Hero: Full trip + price_per_seat */}
+        {/* Hero */}
         <View style={{ height: heroHeight }}>
           <ImageBackground
             source={require("../../../public/hero.png")}
@@ -236,7 +231,7 @@ function ShowPricing() {
                   )}
                 </TouchableOpacity>
                 <Text className="text-lg md:text-xl lg:text-2xl text-white font-[Kanit-Medium]">
-                  {t("showPricing.rideDetails")}
+                  {t("showPricing.rideDetails")} · {t("showPricing.return")}
                 </Text>
               </View>
 
@@ -257,7 +252,7 @@ function ShowPricing() {
                   </Text>
                 </View>
 
-                {/* ✅ price_per_seat control */}
+                {/* price_per_seat control */}
                 <View className="flex-row items-center gap-2 md:gap-3 ml-auto">
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(-10)}
@@ -288,27 +283,30 @@ function ShowPricing() {
           </ImageBackground>
         </View>
 
-        {/* Segment List: for internal pricing matrix */}
+        {/* Segment list */}
         <View className="px-4 pt-6 md:px-6">
-          {fullRoute.slice(0, -1).map((from, index) => {
-            const to = fullRoute[index + 1];
-            const price = segmentPrices[index] ?? 10;
+          {fullRoute.slice(0, -1).map((from, idx) => {
+            const to = fullRoute[idx + 1];
+            const price = segmentPrices[idx] ?? 10;
 
-            const fromLabel = index === 0 ? t("showPricing.pickup") : t("showPricing.stopover");
-            const toLabel = index === fullRoute.length - 2 ? t("showPricing.drop") : t("showPricing.stopover");
+            const isFirst = idx === 0;
+            const isLast = idx === fullRoute.length - 2;
 
             return (
-              <View key={index} className="flex-row items-start gap-3 md:gap-4 py-4 border-b border-gray-100">
+              <View
+                key={idx}
+                className="flex-row items-start gap-3 md:gap-4 py-4 border-b border-gray-100"
+              >
                 <Direction5 width={32} height={32} className="mt-1.5" />
                 <View className="flex-1">
                   <Text className="text-[10px] md:text-xs text-gray-500 font-[Kanit-Light] uppercase tracking-wider">
-                    {fromLabel}
+                    {isFirst ? t("showPricing.pickup") : t("showPricing.stopover")}
                   </Text>
                   <Text className="text-xs md:text-sm text-black font-[Kanit-Regular] mb-1.5">
                     {from.address}
                   </Text>
                   <Text className="text-[10px] md:text-xs text-gray-500 font-[Kanit-Light] uppercase tracking-wider">
-                    {toLabel}
+                    {isLast ? t("showPricing.drop") : t("showPricing.stopover")}
                   </Text>
                   <Text className="text-xs md:text-sm text-black font-[Kanit-Regular]">
                     {to.address}
@@ -316,7 +314,7 @@ function ShowPricing() {
                 </View>
                 <View className="flex-row items-center gap-2 md:gap-3">
                   <TouchableOpacity
-                    onPress={() => updateSegmentPrice(index, -10)}
+                    onPress={() => updateSegmentPrice(idx, -10)}
                     disabled={price <= 10}
                     className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${
                       price <= 10 ? "opacity-50" : "bg-gray-100"
@@ -328,7 +326,7 @@ function ShowPricing() {
                     SR {price}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => updateSegmentPrice(index, 10)}
+                    onPress={() => updateSegmentPrice(idx, 10)}
                     disabled={price >= 4000}
                     className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${
                       price >= 4000 ? "opacity-50" : "bg-gray-100"
@@ -343,7 +341,7 @@ function ShowPricing() {
         </View>
       </ScrollView>
 
-      {/* Continue Button */}
+      {/* Continue */}
       <View className="absolute bottom-0 left-0 right-0 px-4 pb-4 md:px-6 md:pb-6">
         <TouchableOpacity
           onPress={handleContinue}
@@ -358,4 +356,4 @@ function ShowPricing() {
   );
 }
 
-export default ShowPricing;
+export default ShowPricingReturn;

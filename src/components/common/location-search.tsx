@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { LocateFixed, Search } from "lucide-react-native";
+import { LocateFixed, Search, Check } from "lucide-react-native";
 import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
 import Text from "./text";
 import LocationPin from "../../../public/location-pin.svg";
@@ -18,9 +18,10 @@ export default function LocationSearch({ onSelect }: Props) {
   const { i18n, t } = useTranslation("components");
 
   const [locations, setLocations] = useState<any[]>([]);
-  const defaultValue = i18n.language === "ar" ? "الخبر" : "Al Khobar";
+  const defaultValue = i18n.language === "ar" ? "" : "";
   const [searchValue, setSearchValue] = useState(defaultValue);
-  const [selectedValue, setSelectedValue] = useState<string>("");
+  const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
+  const [showDropdown, setShowDropdown] = useState(false);
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -30,6 +31,7 @@ export default function LocationSearch({ onSelect }: Props) {
       const response = await usePlacesAutocomplete(formData);
       if (Array.isArray(response?.data)) {
         setLocations(response.data);
+        setShowDropdown(true);
       } else {
         setLocations([]);
       }
@@ -45,16 +47,27 @@ export default function LocationSearch({ onSelect }: Props) {
   );
 
   useEffect(() => {
-    if (searchValue.length < 2) return;
+    if (searchValue.length < 2) {
+      setShowDropdown(false);
+      return;
+    }
     debouncedFetchLocations();
     return () => debouncedFetchLocations.cancel();
   }, [searchValue, debouncedFetchLocations]);
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
+    setShowDropdown(true);
+    // Clear selection if user modifies the search
+    if (selectedLocation && text !== selectedLocation.mainText) {
+      setSelectedLocation(null);
+    }
   };
 
   const selectItem = (loc: any) => {
+    setSelectedLocation(loc);
+    setSearchValue(loc.mainText);
+    setShowDropdown(false);
     onSelect?.(loc);
   };
 
@@ -70,10 +83,13 @@ export default function LocationSearch({ onSelect }: Props) {
           allowFontScaling={false}
           value={searchValue}
           onChangeText={handleInputChange}
+          onFocus={() => setShowDropdown(locations.length > 0)}
           placeholder={t("locationSearchSelected.label", "Enter full address")}
           autoComplete="off"
           autoCorrect={false}
-          className="text-lg font-[Kanit-Light] placeholder:text-[#666666] bg-[#F1F1F5] border-none h-[57px] rounded-full pl-16 flex-1"
+          className={cn(
+            "text-lg font-[Kanit-Light] placeholder:text-[#666666] bg-[#F1F1F5] border-none h-[57px] rounded-full pl-16 flex-1"
+          )}
         />
         <TouchableOpacity
           className="rounded-full bg-[#F1F1F5] size-[57px] items-center justify-center"
@@ -83,12 +99,29 @@ export default function LocationSearch({ onSelect }: Props) {
         </TouchableOpacity>
       </View>
 
+      {/* ✅ Selected Location Indicator */}
+      {selectedLocation && !showDropdown && (
+        <View className="mt-2 px-4 py-3 bg-[#ff484835] rounded-lg flex-row items-center gap-3">
+          <View className="bg-[#FF4848] rounded-full p-1">
+            <Check className="size-[16px]" strokeWidth={3} color="white" />
+          </View>
+          <View className="flex-1">
+            <Text fontSize={13} className="text-[#FF4848] font-semibold">
+              Selected: {selectedLocation.mainText}
+            </Text>
+            <Text fontSize={11} className="text-[#FF4848] font-[Kanit-Light]">
+              {selectedLocation.text}
+            </Text>
+          </View>
+        </View>
+      )}
+
       {/* 📍 Dropdown List */}
-      {locations.length > 0 && (
+      {showDropdown && locations.length > 0 && (
         <ScrollView
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="flex-grow-1"
-          className="bg-white w-full mt-1 rounded-lg max-h-[300px]"
+          className="bg-white w-full mt-1 rounded-lg max-h-[300px] shadow-lg"
         >
           <View className="px-4 py-2">
             {locations.map((loc, index) => (
@@ -97,23 +130,21 @@ export default function LocationSearch({ onSelect }: Props) {
                 className={cn(
                   "flex-col rounded-xl transition-all duration-200",
                   index + 1 < locations.length && "border-b border-[#EBEBEB]",
-                  selectedValue === loc.placeId &&
-                    "bg-[#FFE1E1] border border-[#FF5B5B] shadow-sm"
+                  selectedLocation?.placeId === loc.placeId &&
+                    "bg-[#fff] border border-[#FF4848]"
                 )}
-                onPress={() => {
-                  // setSelectedValue(loc?.placeId);
-                  selectItem(loc)}}
+                onPress={() => selectItem(loc)}
                 activeOpacity={0.8}
               >
-                <View className="py-5 flex-row items-center gap-6">
+                <View className="py-5 px-2 flex-row items-center gap-6">
                   <LocationPin width={19} height={22} />
-                  <View className="flex-col">
+                  <View className="flex-1 flex-col">
                     <Text
                       fontSize={14}
                       className={cn(
                         "text-sm",
-                        selectedValue === loc.placeId
-                          ? "text-[#FF2B2B] font-semibold"
+                        selectedLocation?.placeId === loc.placeId
+                          ? "text-[#000] font-semibold"
                           : "text-black"
                       )}
                     >
@@ -123,14 +154,19 @@ export default function LocationSearch({ onSelect }: Props) {
                       fontSize={12}
                       className={cn(
                         "text-xs font-[Kanit-Light]",
-                        selectedValue === loc.placeId
-                          ? "text-[#FF2B2B]"
+                        selectedLocation?.placeId === loc.placeId
+                          ? "text-[#558B5B]"
                           : "text-[#666666]"
                       )}
                     >
                       {loc.text}
                     </Text>
                   </View>
+                  {selectedLocation?.placeId === loc.placeId && (
+                    <View className="bg-[#FF4848] rounded-full p-1">
+                      <Check className="size-[10px]" strokeWidth={3} color="white" />
+                    </View>
+                  )}
                 </View>
               </TouchableOpacity>
             ))}
@@ -139,7 +175,7 @@ export default function LocationSearch({ onSelect }: Props) {
       )}
 
       {/* 🪶 No Results */}
-      {locations.length === 0 && searchValue.length > 1 && (
+      {showDropdown && locations.length === 0 && searchValue.length > 1 && (
         <View className="px-6 py-4 text-sm text-gray-500">No items.</View>
       )}
     </View>

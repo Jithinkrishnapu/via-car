@@ -10,6 +10,7 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useGetPopularPlaces } from "@/service/ride-booking";
+import { useRoute } from "@react-navigation/native";
 
 function Stopovers() {
   const loaded = useLoadFonts();
@@ -17,6 +18,9 @@ function Stopovers() {
   const { isRTL } = useDirection();
   const [places, setPlaces] = useState<any[]>([]);
   const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
+  const route = useRoute()
+
+  console.log(places)
 
   const handleStopOvers = async () => {
     const request = {
@@ -30,9 +34,20 @@ function Stopovers() {
 
     try {
       const response = await useGetPopularPlaces(request);
-      setPlaces(response?.data?.places || []);
+      const newPlaces = response?.data?.places ?? [];
+    
+      setPlaces(curr => {
+        const merged = [...curr, ...newPlaces];
+    
+        if (route?.params?.location) {
+          // route.params.location is a JSON-stringified array
+          const loc = JSON.parse(route.params.location); // => [{…}]
+          merged.push(...loc);                           // add the objects, not the string
+        }
+        return merged;
+      });
     } catch (err) {
-      console.error("Error fetching stopovers:", err);
+      console.error('Error fetching stopovers:', err);
     }
   };
 
@@ -84,18 +99,17 @@ function Stopovers() {
               <TouchableOpacity
                 key={loc.lat}
                 onPress={() => toggleStopover(loc)}
-                className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${
-                  isChecked
+                className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${isChecked
                     ? "border-[#69D2A5] bg-[#F1FFF9]"
                     : "border-[#EBEBEB] bg-white"
-                }`}
+                  }`}
                 activeOpacity={0.8}
               >
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row w-[95%] items-center gap-2">
                   <Building width={22} height={22} />
                   <Text
                     fontSize={15}
-                    className="text-[15px] font-[Kanit-Regular]"
+                    className="text-[15px] text-wrap w-[90%] font-[Kanit-Regular]"
                   >
                     {loc.mainText}
                   </Text>
@@ -115,7 +129,7 @@ function Stopovers() {
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center border border-[#EBEBEB] rounded-full h-[55px] gap-[4px]"
-          onPress={() => router.push("/(publish)/add-city")}
+          onPress={() => router.push({pathname:"/(publish)/add-city",params:{place:route?.params?.location}})}
           activeOpacity={0.8}
         >
           <Plus size={20} className="mr-2" />

@@ -89,22 +89,5 @@ export const useCreateRideStore = create<CreateRideStore>()(
         selectedPlaces: [],
         polyline: '',
       }),
-
-    createRide: async () => {
-      const { ride } = get()
-      set({ loading: true, error: null, success: false })
-
-      try {
-        const response = await useCreateRide(ride)
-        if (!response.ok) {
-          throw new Error('Failed to create ride')
-        }
-        set({ success: true })
-      } catch (err: any) {
-        set({ error: err.message })
-      } finally {
-        set({ loading: false })
-      }
-    },
   }))
 )

@@ -18,32 +18,50 @@ function Time() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const [hour, setHour] = useState("7");
-  const [minute, setMinute] = useState("00");
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
 
-  const {setRideField} = useCreateRideStore()
+  const { setRideField } = useCreateRideStore();
 
   if (!loaded) return null;
 
+  const [hour, setHour] = useState("07");
+
   const onChangeHour = (text: string) => {
-    const num = parseInt(text, 10);
-    if (
-      /^\d{0,2}$/.test(text) &&
-      (!isNaN(num) ? num >= 1 && num <= 12 : text === "")
-    ) {
-      setHour(text);
-    }
+    // allow empty or up-to-two digits while typing
+    if (!/^\d{0,2}$/.test(text)) return;
+    setHour(text);
   };
   
+  const onBlurHour = () => {
+    // final clamp 1-12
+    let h = parseInt(hour, 10);
+    if (Number.isNaN(h) || h < 1) h = 1;
+    if (h > 12) h = 12;
+    setHour(h.toString().padStart(2, "0"));
+  };
+  
+  /* ---------- minute handling ---------- */
+  const [minute, setMinute] = useState("00");
+  
   const onChangeMinute = (text: string) => {
-    const num = parseInt(text, 10);
-    if (
-      /^\d{0,2}$/.test(text) &&
-      (!isNaN(num) ? num >= 0 && num <= 59 : text === "")
-    ) {
-      setMinute(text);
-    }
+    if (!/^\d{0,2}$/.test(text)) return;
+    setMinute(text);
+  };
+  
+  const onBlurMinute = () => {
+    let m = parseInt(minute, 10);
+    if (Number.isNaN(m) || m < 0) m = 0;
+    if (m > 59) m = 59;
+    setMinute(m.toString().padStart(2, "0"));
+  };
+  
+  /* ---------- continue ---------- */
+  const handleContinue = () => {
+    // ensure valid values even if user never blurred
+    onBlurHour();
+    onBlurMinute();
+    setRideField("time", `${hour.padStart(2,"0")}:${minute.padStart(2,"0")}`);
+    router.push("/(publish)/passenger-count");
   };
 
   return (
@@ -74,9 +92,9 @@ function Time() {
           {/* Hour */}
           <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
             <TextInput
-              allowFontScaling={false}
               value={hour}
               onChangeText={onChangeHour}
+              onBlur={onBlurHour}
               keyboardType="number-pad"
               maxLength={2}
               className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center leading-[59px]"
@@ -94,9 +112,9 @@ function Time() {
           {/* Minute */}
           <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
             <TextInput
-              allowFontScaling={false}
               value={minute}
               onChangeText={onChangeMinute}
+              onBlur={onBlurMinute}
               keyboardType="number-pad"
               maxLength={2}
               className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center leading-[59px]"
@@ -139,9 +157,7 @@ function Time() {
       {/* Continue Button */}
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => {
-            setRideField("time",`${hour}:${minute}`)
-            router.push("/(publish)/passenger-count")}}
+          onPress={handleContinue}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

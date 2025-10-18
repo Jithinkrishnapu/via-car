@@ -18,55 +18,74 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 const { height } = Dimensions.get("window");
 
-const VerifyOtp = ({phoneNumber}:{phoneNumber:string}) => {
+const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const translateY = useRef(new Animated.Value(height)).current;
+  const refs = useRef<TextInput[]>([]);
   const [otpId, setOtpId] = useState("");
 
-  
-const handleLogin =async()=>{
+  const handleChange = (text: string, idx: number) => {
+    const newOtp = [...otp];
+    newOtp[idx] = text.slice(-1);                // keep only last char
+    setOtp(newOtp);
+
+    // jump to next box if a digit was entered and we are not on the last box
+    if (text && idx < 5) {
+      refs.current[idx + 1]?.focus();
+    }
+  };
+
+  const handleKeyPress = (e: any, idx: number) => {
+    // jump to previous box on back-space if current box is empty
+    if (e.nativeEvent.key === 'Backspace' && !otp[idx] && idx > 0) {
+      refs.current[idx - 1]?.focus();
+    }
+  };
+
+
+  const handleLogin = async () => {
     const formdata = new FormData()
-    formdata.append("country_code","+966")
-    formdata.append("mobile_number",phoneNumber?.startsWith("0") ? phoneNumber.slice(1)?.replace(/\D/g, '') : phoneNumber?.replace(/\D/g, ''))
-    console.log("sheeet==========",formdata)
+    formdata.append("country_code", "+966")
+    formdata.append("mobile_number", phoneNumber?.startsWith("0") ? phoneNumber.slice(1)?.replace(/\D/g, '') : phoneNumber?.replace(/\D/g, ''))
+    console.log("sheeet==========", formdata)
     const response = await handleSendOtp(formdata)
-    console.log("response============",response)
-    if(response?.data?.otpId){
+    console.log("response============", response)
+    if (response?.data?.otpId) {
       setOtpId(response?.data?.otpId)
       useAsyncStorage("otp_id").setItem(response?.data?.otpId)
-       openSheet()
-    }else{
+      openSheet()
+    } else {
       // Alert.alert(response?.message)
-      console.log("response============",response)
+      console.log("response============", response)
     }
-    
+
   }
-const handleValidate =async()=>{
+  const handleValidate = async () => {
     const formdata = new FormData()
-    formdata.append("otp_id",otpId)
+    formdata.append("otp_id", otpId)
     formdata.append("otp", otp.join(''))
-    formdata.append("device_type","1")
-    formdata.append("fcm_token","test")
-    console.log("sheeet==========",formdata)
-   try {
-    const response = await handleVerifyOtp(formdata)
-    if(response?.data?.type){
-      console.log("response============",response)
-      closeSheet();
-      if(response?.data?.type == "register"){
-        router.replace(`/register`);
-      }else{
-        await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
-        router.push(`/(booking)/payment`);
+    formdata.append("device_type", "1")
+    formdata.append("fcm_token", "test")
+    console.log("sheeet==========", formdata)
+    try {
+      const response = await handleVerifyOtp(formdata)
+      if (response?.data?.type) {
+        console.log("response============", response)
+        closeSheet();
+        if (response?.data?.type == "register") {
+          router.replace(`/register`);
+        } else {
+          await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
+          router.push(`/(tabs)/book`);
+        }
+      } else {
+        Alert.alert(response?.message)
       }
-    }else{
-      Alert.alert(response?.message)
+    } catch (error) {
+      console.log("error===========", error)
     }
-   } catch (error) {
-    console.log("error===========",error)
-   }
   }
 
   const openSheet = () => {
@@ -134,25 +153,17 @@ const handleValidate =async()=>{
                   "Please enter the six-digit verification code that we have sent to your mobile number ending in"
                 )}
                 <Text fontSize={14} className="text-[#FF4848]">
-                  {t("endingDigits", { ns: "components", digits: "***325" })}
+                  {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
                 </Text>
               </Text>
               <View className="flex-row justify-center">
-                {Array.from({ length: 6 }).map((_, index) => (
+                {Array.from({ length: 6 }).map((_, i) => (
                   <TextInput
-                    allowFontScaling={false}
-                    key={index}
-                    value={otp[index]}
-                    onChangeText={(text) => {
-                      const newOtp = [...otp];
-                      newOtp[index] = text;
-                      setOtp(newOtp);
-                      
-                      // Auto-focus next input
-                      if (text && index < 5) {
-                        // You can add refs here to auto-focus next input
-                      }
-                    }}
+                    key={i}
+                    ref={(r) => { refs.current[i] = r!; }}
+                    value={otp[i]}
+                    onChangeText={(t) => handleChange(t, i)}
+                    onKeyPress={(e) => handleKeyPress(e, i)}
                     maxLength={1}
                     keyboardType="number-pad"
                     className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"

@@ -7,22 +7,63 @@ import { useTranslation } from "react-i18next";
 import { useStore } from "@/store/useStore";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useCreateRideStore } from "@/store/useRideStore";
-import { LocationData } from "@/types/ride-types";
+import { LocationData, UserStatusResp } from "@/types/ride-types";
+import { getUserStatus } from "@/service/auth";
+import { useEffect } from "react";
 
 function Pickup() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const {setIsPublish} = useStore()
+  const { setIsPublish,setPath } = useStore()
 
-  const handleBookNow = async()=>{
-    setIsPublish(true)
-    const stored = await useAsyncStorage("userDetails").getItem()
-    const userDetails = stored ? JSON.parse(stored) : null
-    if (userDetails?.type === "login") {
-      router.push('/(publish)/pickup-selected')
-    } else {
+  async function enforceProfileCompleteness() {
+    try {
+      const json: UserStatusResp = await getUserStatus();
+      const d = json.data;
+
+      setIsPublish(true)
+      const stored = await useAsyncStorage("userDetails").getItem()
+      const userDetails = stored ? JSON.parse(stored) : null
+      if (userDetails?.type === "login") {
+        if (!d.bank_details.has_bank_details) {
+          router.replace('/bank-save');
+          return;
+        }
+        /* 1. Identity not done yet */
+        if (!d.id_verification.completed) {
+          if (d.id_verification.status == "pending") {
+            router.push('/pending-verification')
+          } else {
+            router.replace('/(publish)/upload-document');
+          }
+          // or your ID screen
+          return;
+        }
+
+        /* 3. No vehicles (for driver flow) */
+        if (d.account.is_driver && !d.vehicles.has_vehicles) {
+          setPath("/(tabs)/pickup")
+          router.replace('/add-vehicles');
+          return;
+        }
+      } else {
+        router.replace('/login')
+      }
+
+    } catch (e) {
+      console.log('Status check failed', e);
       router.replace('/login')
+      /* optionally send to login */
     }
+  }
+
+  useEffect(() => {
+    enforceProfileCompleteness()
+  }, [])
+
+
+  const handleBookNow = async () => {
+    router.push("/(publish)/pickup-selected")
   }
 
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
@@ -36,11 +77,12 @@ function Pickup() {
       >
         {t("pickup.title")}
       </Text>
-      <LocationSearch onSelect={(value:LocationData)=>{
-        setRideField("pickup_address",value?.text)
-        setRideField("pickup_lat",value?.lat)
-        setRideField("pickup_lng",value?.lng)
-        console.log(value,"pickup")}} />
+      <LocationSearch onSelect={(value: LocationData) => {
+        setRideField("pickup_address", value?.text)
+        setRideField("pickup_lat", value?.lat)
+        setRideField("pickup_lng", value?.lng)
+        console.log(value, "pickup")
+      }} />
       <TouchableOpacity
         className="bg-[#FF4848] rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center"
         onPress={handleBookNow}

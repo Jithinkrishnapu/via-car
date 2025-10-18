@@ -1,39 +1,36 @@
-import Text from "@/components/common/text";
+import React, { useState } from 'react';
 import {
   Alert,
   Dimensions,
   Image,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
-import VerifyOtp from "@/components/login/verify-otp";
-import { router } from "expo-router";
-import { useTranslation } from "react-i18next";
-import { InputComponent } from "@/components/inputs/common-input";
-import Dropdown from "@/components/common/dropdown-component";
-import { useState } from "react";
-import CustomPicker from "@/components/common/dropdown-component";
-import DatePicker from "@/components/common/date-picker";
-import DobCalendarPicker from "@/components/common/dob-calander";
-import DobPicker from "@/components/common/dob-calander";
-import { handleBankSave, handleRegister } from "@/service/auth";
-import { useAsyncStorage } from "@react-native-async-storage/async-storage";
-import { useStore } from "@/store/useStore";
+  ActivityIndicator,
+} from 'react-native';
+import Text from '@/components/common/text';
+import { InputComponent } from '@/components/inputs/common-input';
+import { router } from 'expo-router';
+import { useTranslation } from 'react-i18next';
+import { getUserStatus, handleBankSave } from '@/service/auth';
+import { UserStatusResp } from '@//types/ride-types';
 
-const { height } = Dimensions.get("window");
+const { height } = Dimensions.get('window');
 
-function BankSave() {
-  const { t } = useTranslation("index");
-  const [category, setCategory] = useState<string>('');
-  const {isPublish} = useStore()
-  const categories = [
-    { label: 'Male', value: '1' },
-    { label: 'Female', value: '2' },
-    { label: 'Other', value: '3' },
-  ];
+/* ---------- tiny helpers ---------- */
+const isEmpty = (v: string) => !v || !v.trim();
 
+/* basic IBAN test (starts with 2 letters + 2 digits, min 15) */
+const ibanRegex = /^[A-Z]{2}\d{2}[A-Z0-9]{9,30}$/i;
+
+/* SWIFT/BIC = 8 or 11 alphanumeric */
+const swiftRegex = /^[A-Z0-9]{8}([A-Z0-9]{3})?$/i;
+
+/* ---------------------------------- */
+export default function BankSave() {
+  const { t } = useTranslation('index');
+
+  /* ---------- form fields ---------- */
   const [accountHolderName, setAccountHolderName] = useState('');
   const [bankName, setBankName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
@@ -41,104 +38,192 @@ function BankSave() {
   const [swiftCode, setSwiftCode] = useState('');
   const [branch, setBranch] = useState('');
 
+  /* ---------- validation ---------- */
+  type Errors = {
+    accountHolderName?: string;
+    bankName?: string;
+    accountNumber?: string;
+    iban?: string;
+    swiftCode?: string;
+    branch?: string;
+  };
+  const [errors, setErrors] = useState<Errors>({});
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSaveBank =async()=>{
-    const userDetailsString = await useAsyncStorage("userDetails").getItem()
-    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
-    const token = userDetails ? userDetails?.token : ""
-    const formdata = new FormData()
-    formdata.append("account_holder_name",accountHolderName!)
-    formdata.append("bank_name",bankName)
-    formdata.append("bank_branch",branch)
-    formdata.append("account_number",accountNumber)
-    formdata.append("iban",iban)
-    formdata.append("swift_code",swiftCode)
-    console.log("sheeet==========",formdata)
-   try {
-    const response = await handleBankSave(formdata,token)
-    if(response){
-      console.log("response============",response)
-      router.push("/(publish)/upload-document")
+  const validate = (): boolean => {
+    const e: Errors = {};
+
+    if (isEmpty(accountHolderName)) e.accountHolderName = 'Required';
+    if (isEmpty(bankName)) e.bankName = 'Required';
+    if (isEmpty(accountNumber)) e.accountNumber = 'Required';
+    else if (!/^\d+$/.test(accountNumber))
+      e.accountNumber = 'Only digits allowed';
+
+    if (isEmpty(iban)) e.iban = 'Required';
+    else if (!ibanRegex.test(iban)) e.iban = 'Invalid IBAN format';
+
+    if (isEmpty(swiftCode)) e.swiftCode = 'Required';
+    else if (!swiftRegex.test(swiftCode)) e.swiftCode = 'Invalid SWIFT/BIC';
+
+    if (isEmpty(branch)) e.branch = 'Required';
+
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
+
+  /* ---------- submit ---------- */
+  const handleSaveBank = async () => {
+    if (!validate()) return; // stop early
+
+    setSubmitting(true);
+    const payload = {
+      account_holder_name: accountHolderName.trim(),
+      bank_name: bankName.trim(),
+      bank_branch: branch.trim(),
+      account_number: accountNumber.trim(),
+      iban: iban.trim().toUpperCase(),
+      swift_code: swiftCode.trim().toUpperCase(),
+    };
+
+    try {
+      const res = await handleBankSave(payload);
+      const body = await res.json();
+
+      if (res.ok) {
+        enforceProfileCompleteness(); // your existing redirect logic
+      } else {
+        Alert.alert('Error', body.message || 'Unable to save bank details');
+      }
+    } catch (err: any) {
+      console.log(err);
+      Alert.alert('Error', 'Network error – please try again');
+    } finally {
+      setSubmitting(false);
     }
-   } catch (error) {
-    console.log("error===========",error)
-   }
+  };
+
+  /* ---------- existing redirect helper ---------- */
+  async function enforceProfileCompleteness() {
+    try {
+      const json: UserStatusResp = await getUserStatus();
+      const d = json.data;
+
+      if (!d.id_verification.completed) {
+        router.replace('/(publish)/upload-document');
+        return;
+      }
+      if (d.account.is_driver && !d.vehicles.has_vehicles) {
+        router.replace('/add-vehicles');
+        return;
+      }
+      router.replace('/(tabs)/book');
+    } catch (e) {
+      console.log('Status check failed', e);
+    }
   }
 
+  /* ---------- UI ---------- */
   return (
-    <ScrollView className="grid grid-cols-[1fr_max-content] min-h-screen *:font-[Kanit-Regular] w-full">
+    <ScrollView className="min-h-screen w-full bg-white">
       <Image
         style={{ height: height / 4 }}
-        className="object-cover w-full"
-        source={require(`../../public/login.png`)}
-        alt=""
+        className="w-full"
+        source={require('../../public/login.png')}
       />
-      <View className="flex flex-col items-center justify-start p-5 w-full overflow-y-auto rounded-t-2xl -mt-[60px] bg-white h-full">
-        <View className="max-w-[420px] w-full pt-4 lg:pt-20 pb-10">
-          <Text
-            fontSize={25}
-            className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
-          >
+
+      <View className="-mt-14 rounded-t-2xl bg-white px-5 pt-4">
+        <View className="mx-auto w-full max-w-[420px] pt-4 pb-10">
+          <Text fontSize={25} className="mb-6 text-start">
             Add your bank details
           </Text>
 
+          {/* ----- fields ----- */}
           <InputComponent
-        label="Account Holder Name"
-        placeHolder="Enter here"
-        onChangeText={setAccountHolderName}
-        value={accountHolderName}
-      />
-      
-      <InputComponent
-        label="Bank Name"
-        placeHolder="Enter here"
-        onChangeText={setBankName}
-        value={bankName}
-      />
-      
-      <InputComponent
-        label="Account Number"
-        placeHolder="Enter here"
-        onChangeText={setAccountNumber}
-        value={accountNumber}
-      />
-      
-      <InputComponent
-        label="IBAN"
-        placeHolder="Enter here"
-        onChangeText={setIban}
-        value={iban}
-      />
-      
-      <InputComponent
-        label="SWIFT Code"
-        placeHolder="Enter here"
-        onChangeText={setSwiftCode}
-        value={swiftCode}
-      />
-      
-      <InputComponent
-        label="Branch"
-        placeHolder="Enter here"
-        onChangeText={setBranch}
-        value={branch}
-      />
-            <TouchableOpacity
-        onPress={handleSaveBank}
-        className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
-        activeOpacity={0.8}
-      >
-        <Text
-          fontSize={20}
-          className="my-auto text-[20px] text-white font-[Kanit-Regular]"
-        >
-          {t("Verify")}
-        </Text>
-      </TouchableOpacity>
+            label="Account Holder Name"
+            placeHolder="Enter here"
+            value={accountHolderName}
+            onChangeText={(t) => {
+              setAccountHolderName(t);
+              setErrors((x) => ({ ...x, accountHolderName: undefined }));
+            }}
+            error={errors.accountHolderName}
+          />
+
+          <InputComponent
+            label="Bank Name"
+            placeHolder="Enter here"
+            value={bankName}
+            onChangeText={(t) => {
+              setBankName(t);
+              setErrors((x) => ({ ...x, bankName: undefined }));
+            }}
+            error={errors.bankName}
+          />
+
+          <InputComponent
+            label="Account Number"
+            placeHolder="Enter here"
+            keyboardType="number-pad"
+            value={accountNumber}
+            onChangeText={(t) => {
+              setAccountNumber(t);
+              setErrors((x) => ({ ...x, accountNumber: undefined }));
+            }}
+            error={errors.accountNumber}
+          />
+
+          <InputComponent
+            label="IBAN"
+            placeHolder="Enter here"
+            autoCapitalize="characters"
+            value={iban}
+            onChangeText={(t) => {
+              setIban(t);
+              setErrors((x) => ({ ...x, iban: undefined }));
+            }}
+            error={errors.iban}
+          />
+
+          <InputComponent
+            label="SWIFT Code"
+            placeHolder="Enter here"
+            autoCapitalize="characters"
+            value={swiftCode}
+            onChangeText={(t) => {
+              setSwiftCode(t);
+              setErrors((x) => ({ ...x, swiftCode: undefined }));
+            }}
+            error={errors.swiftCode}
+          />
+
+          <InputComponent
+            label="Branch"
+            placeHolder="Enter here"
+            value={branch}
+            onChangeText={(t) => {
+              setBranch(t);
+              setErrors((x) => ({ ...x, branch: undefined }));
+            }}
+            error={errors.branch}
+          />
+
+          {/* ----- button ----- */}
+          <TouchableOpacity
+            onPress={handleSaveBank}
+            disabled={submitting}
+            className="bg-[#FF4848] rounded-full w-full h-[54px] items-center justify-center mt-4"
+            activeOpacity={0.8}
+          >
+            {submitting ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text fontSize={20} className="text-white">
+                {t('Verify')}
+              </Text>
+            )}
+          </TouchableOpacity>
         </View>
       </View>
     </ScrollView>
   );
 }
-
-export default BankSave;

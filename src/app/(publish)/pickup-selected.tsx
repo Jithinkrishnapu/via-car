@@ -6,12 +6,25 @@ import { TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
+import { useEffect } from "react";
+import * as Location from "expo-location";
 
 function PickupSelected() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
+  const { ride, setRideField } = useCreateRideStore();
+
+  useEffect(() => {
+    (async () => {
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        alert("Permission to access location was denied");
+      }
+    })();
+  }, []);
+
   if (!loaded) return null;
+
   return (
     <View className="flex-auto h-full pt-16 bg-white">
       <View className="flex-row items-center gap-4 mb-6 px-6">
@@ -34,12 +47,12 @@ function PickupSelected() {
           latitude: ride.pickup_lat,
           longitude: ride.pickup_lng,
           latitudeDelta: 0.01,
-          longitudeDelta: 0.01
+          longitudeDelta: 0.01,
         }}
         onContinue={(location) => {
-          setRideField("pickup_lat",location.lat)
-          setRideField("pickup_lng",location.lng)
-          setRideField("pickup_address",location.address)
+          setRideField("pickup_lat", location.latitude);
+          setRideField("pickup_lng", location.longitude);
+          setRideField("pickup_address", location.address);
           router.push("/(publish)/dropoff");
         }}
       />

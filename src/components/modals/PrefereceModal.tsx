@@ -8,7 +8,7 @@ import { X } from "lucide-react-native";
 import { useTranslation } from "react-i18next";
 
 // 📂 components/modals/PreferencesModal.tsx
-const PreferencesModal = ({ onClose}: { onClose: () => void}) => {
+const PreferencesModal = ({ onClose}: { onClose?: () => void}) => {
   const { t, i18n } = useTranslation();
   return(
     <View className="bg-white h-[60%] px-12 lg:px-24 pt-12 lg:pt-24 rounded-t-3xl items-center">

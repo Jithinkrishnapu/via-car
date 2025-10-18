@@ -9,6 +9,7 @@ import { useCreateRideStore } from "@/store/useRideStore";
 import { useState } from "react";
 import { Separator } from "@/components/ui/separator";
 import { getVehicleList } from "@/service/vehicle";
+import { useStore } from "@/store/useStore";
 
 function DropoffSelected() {
   const loaded = useLoadFonts();
@@ -17,6 +18,7 @@ function DropoffSelected() {
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   const [vehicleList, setVehhicleList] = useState([])
   const [selectedVehicle, setVehhicleSelected] = useState([])
+  const {setPath} = useStore()
 
 
   const handleGetVehicles = async () => {
@@ -52,8 +54,8 @@ function DropoffSelected() {
           longitudeDelta: 0.01
         }}
         onContinue={(location) => {
-          setRideField("destination_lat", location.lat)
-          setRideField("destination_lng", location.lng)
+          setRideField("destination_lat", location.latitude)
+          setRideField("destination_lng", location.longitude)
           setRideField("destination_address", location.address)
           // router.push("/(publish)/route");
           handleGetVehicles().then(() => {
@@ -102,7 +104,9 @@ function DropoffSelected() {
             />
             <Separator className="border-gray-200 mt-4 mb-10" />
             <TouchableOpacity
-              onPress={() => router.push("/(profile)/add-vehicles")}
+              onPress={() => {
+                setPath("/(publish)/dropoff-selected")
+                router.push("/(profile)/add-vehicles")}}
               className="flex-row items-center justify-center h-14 rounded-full bg-red-500"
               activeOpacity={0.8}
             >

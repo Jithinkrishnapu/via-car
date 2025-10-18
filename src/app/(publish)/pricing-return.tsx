@@ -8,15 +8,17 @@ import MinusLarge from "../../../public/minus-large.svg";
 import PlusLarge from "../../../public/plus-large.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Pricing() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const [amount, setAmount] = useState(3000);
+  const [amount, setAmount] = useState(10);
+  const {setRideField} = useCreateRideStore()
 
   const adjustAmount = (delta: number) => {
-    setAmount((prev) => Math.max(1000, Math.min(4000, prev + delta)));
+    setAmount((prev) => Math.max(10, Math.min(14000, prev + delta)));
   };
 
   if (!loaded) return null;
@@ -44,9 +46,9 @@ function Pricing() {
         {/* Adjuster */}
         <View className="flex-row items-center justify-center space-x-2 px-6">
           <TouchableOpacity
-            onPress={() => adjustAmount(-500)}
+            onPress={() => adjustAmount(-10)}
             activeOpacity={0.8}
-            disabled={amount === 1000}
+            disabled={amount === 10}
             className="w-8 h-8 rounded-full items-center justify-center"
           >
             <MinusLarge width={32} height={32} />
@@ -62,9 +64,9 @@ function Pricing() {
           </View>
 
           <TouchableOpacity
-            onPress={() => adjustAmount(500)}
+            onPress={() => adjustAmount(10)}
             activeOpacity={0.8}
-            disabled={amount === 4000}
+            disabled={amount === 14000}
             className="w-8 h-8 rounded-full items-center justify-center"
           >
             <PlusLarge width={32} height={32} />
@@ -103,7 +105,7 @@ function Pricing() {
 
       {/* Footer Buttons */}
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
-        <TouchableOpacity
+        {/* <TouchableOpacity
           onPress={() => router.push("/(publish)/show-pricing")}
           activeOpacity={0.8}
           className="flex-1 rounded-full h-[55px] border border-[#EBEBEB] items-center justify-center"
@@ -111,9 +113,11 @@ function Pricing() {
           <Text fontSize={20} className="text-xl font-[Kanit-Regular]">
             {t("pricing.showPrices")}
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity> */}
         <TouchableOpacity
-          onPress={() => router.push("/(publish)/publish-comment-return")}
+          onPress={() => {
+            setRideField("price_per_seat",amount)
+            router.push("/(publish)/show-pricing-return")}}
           activeOpacity={0.8}
           className="flex-1 rounded-full h-[55px] bg-[#FF4848] items-center justify-center"
         >

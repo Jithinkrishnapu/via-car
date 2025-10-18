@@ -12,6 +12,7 @@ import { Rides } from "@/types/ride-types";
 
 interface RideItemProps {
   ride?: Rides;
+  passengers:string
 }
 
 function formatDuration(minutes?: number) {
@@ -23,11 +24,11 @@ function formatDuration(minutes?: number) {
   return `${m} minute${m > 1 ? "s" : ""}`;
 }
 
-function RideItem({ ride }: RideItemProps) {
+function RideItem({ ride,passengers }: RideItemProps) {
   const { t } = useTranslation();
   return (
     <Pressable onPress={() =>{
-      router.push({ pathname: "/(booking)/ride-details", params: {rideId: ride?.rideId,ride_amount_id:ride?.rideAmount?.id} })}}>
+      router.push({ pathname: "/(booking)/ride-details", params: {rideId: ride?.rideId,ride_amount_id:ride?.rideAmount?.id,passengers:passengers} })}}>
       <View className="p-4 rounded-2xl shadow-sm bg-white">
         <View className="flex-row justify-between items-start gap-4 flex-wrap">
           <View className="flex-1">

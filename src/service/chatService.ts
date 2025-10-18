@@ -1,7 +1,7 @@
 import { db } from '../firebase';
 import { doc, collection, writeBatch, serverTimestamp, orderBy, query, onSnapshot } from 'firebase/firestore';
 
-export async function sendMessage(chatId: string, fromId: string, toId: string, text: string) {
+export async function sendMessage(chatId: string, fromId: string, toId: string, text: string,from_name:string,to_name:string) {
     const chatRef = doc(db, `chats/${chatId}`);
     const messagesRef = collection(chatRef, 'messages');
     const batch = writeBatch(db);
@@ -12,12 +12,15 @@ export async function sendMessage(chatId: string, fromId: string, toId: string, 
         to: toId,
         text,
         createdAt: serverTimestamp(),
+        arguments:{from_name,to_name}
     });
 
     batch.set(chatRef, {
         participants: [fromId, toId],
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
+        from_name,
+        to_name
     }, { merge: true });
 
     await batch.commit();

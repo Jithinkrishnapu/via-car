@@ -34,7 +34,7 @@ function RootLayout() {
       keyboardShouldPersistTaps="handled"
     >
       {/* <QueryClientProvider client={queryClient}> */}
-      <Stack initialRouteName="(publish)/upload-document" screenOptions={{ headerShown: false, animation: "none" }} />
+      <Stack  screenOptions={{ headerShown: false, animation: "none" }} />
       {/* <MapComponent/> */}
     </KeyboardAwareScrollView>
       // </QueryClientProvider>

@@ -10,6 +10,7 @@ import People from "../../../public/people.svg";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 export default function Page() {
   const loaded = useLoadFonts();
@@ -17,6 +18,8 @@ export default function Page() {
   const { isRTL, swap } = useDirection();
   const [passengers, setPassengers] = useState(3);
   const [comfortMode, setComfortMode] = useState(false);
+
+  const {setRideField} = useCreateRideStore()
 
   const adjustPassengers = (delta: number) => {
     setPassengers((prev) => Math.max(1, Math.min(3, prev + delta)));
@@ -82,7 +85,8 @@ export default function Page() {
           {t("passengerCount.options")}
         </Text>
         <TouchableOpacity
-          onPress={() => setComfortMode((prev) => !prev)}
+          onPress={() => {
+            setComfortMode((prev) => !prev)}}
           activeOpacity={0.8}
           className="flex-row items-center gap-4 w-full border border-[#EBEBEB] rounded-2xl px-4 py-4 mb-8"
         >
@@ -118,7 +122,10 @@ export default function Page() {
       </View>
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => router.push("/(publish)/pricing-return")}
+          onPress={() => {
+            setRideField("available_seats",passengers)
+            setRideField("max_2_in_back",comfortMode)
+            router.push("/(publish)/pricing-return")}}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

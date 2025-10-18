@@ -6,9 +6,19 @@ import { ArrowRight, ChevronLeft, ChevronRight, Ellipsis, Send, TriangleAlert } 
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { makeChatId, sendMessage } from "@/service/chatService";
-import { useMessages } from "@/hooks/useMessages";
+import { Message, useMessages } from "@/hooks/useMessages";
 import { Separator } from "@/components/ui/separator";
 import i18n from "@/lib/i18n";
+import { useGetProfileDetails } from "@/service/auth";
+import { router } from "expo-router";
+import { useRoute } from "@react-navigation/native";
+import {
+  collection,
+  query,
+  orderBy,
+  onSnapshot,
+} from "firebase/firestore";
+import { db } from "@/firebase";
 
 // fake ids for now (replace with real user ids from your backend)
 const currentUserId = "user_123";
@@ -19,16 +29,71 @@ function Chat() {
   const { isRTL } = useDirection();
   const [message, setMessage] = useState("");
   const [showGuidelines, setShowGuidelines] = useState(false);
-  const chatId = makeChatId(currentUserId, targetUserId);
-  const messages = useMessages("user_123_user_456");
+  const [userDetails, setUserDetails] = useState();
+  const route =useRoute()
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [chatId, setChatId] = useState<string>('');
+  
+   
+  const handleProfileDetails=async()=>{
+  const response = await useGetProfileDetails()
+  console.log("response=====================",response)
+  if(response?.data){
+    setUserDetails(response?.data)
+  const chatId = makeChatId(response?.data?.id, route?.params?.driver_id);
+  console.log("chatId===============",chatId)
+  setChatId(chatId)
+  const messages = useMessages(chatId);
+  console.log(messages,"=======================messages====")
+  setMessages(messages)
+  }
+  }
+
+  useEffect(()=>{
+    handleProfileDetails()
+  },[])
+
+
+  useEffect(() => {
+    console.log(`chats/${chatId}/messages`)
+    if (!chatId) return;
+    const q = query(
+      collection(db, `chats/${chatId}/messages`),
+      orderBy("createdAt", "asc")
+    );
+
+   console.log("q===================",JSON.stringify(q))
+
+    const unsub = onSnapshot(q, (snapshot) => {
+      const msgs = snapshot.docs.map((doc) => {
+        const data = doc.data() as Omit<Message, "id">;
+        return {
+          ...data,
+          id: doc.id,
+        };
+      });
+
+      console.log("qmess===================",JSON.stringify(msgs))
+      setMessages(msgs);
+    });
+
+    return () => unsub();
+  }, [chatId]);
+
+
+
 
   const handleSend = async () => {
     if (!message.trim()) return;
-    await sendMessage(chatId, currentUserId, targetUserId, message.trim());
+    console?.log(userDetails.id,"userDeatails===============,",route?.params?.driver_id,route?.params?.driver_name,chatId)
+    await sendMessage(chatId, userDetails?.id, route?.params?.driver_id, message.trim(),route?.params?.driver_name,userDetails?.first_name);
     setMessage("");
   };
 
-  const userName = i18n.language === "ar" ? t("inbox.nameAr") : t("inbox.nameEn"); const from = t("inbox.fromValue"); const to = t("inbox.toValue"); const date = t("inbox.dateValue"); const time = t("inbox.timeValue");
+  const userName = i18n.language === "ar" ? t("inbox.nameAr") : t("inbox.nameEn"); 
+  const from = t("inbox.fromValue"); 
+  const to = t("inbox.toValue"); 
+  const date = t("inbox.dateValue"); const time = t("inbox.timeValue");
 
   return (
     // <View className="flex-1 bg-white">
@@ -59,7 +124,7 @@ function Chat() {
             <View className="flex-row items-center gap-6">
               <TouchableOpacity
                 className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-                onPress={() => { }}
+                onPress={() => {router.replace("..") }}
                 activeOpacity={0.8}
               >
                 <ChevronLeft size={16} />
@@ -75,7 +140,7 @@ function Chat() {
                   initials="CN"
                 />
                 <Text fontSize={20} className="text-xl">
-                  {userName}
+                  {route?.params?.driver_name || ""}
                 </Text>
               </TouchableOpacity>
               <TouchableOpacity
@@ -86,9 +151,9 @@ function Chat() {
                 <Ellipsis size={25} stroke="#FF4848" fill="none" strokeWidth={1} />
               </TouchableOpacity>
             </View>
-            <Separator className="my-[15px] border-t border-dashed border-[#CDCDCD]" />
+            {/* <Separator className="my-[15px] border-t border-dashed border-[#CDCDCD]" /> */}
             {/* Ride summary */}
-            <TouchableOpacity
+            {/* <TouchableOpacity
               className="flex-row items-center justify-between py-4"
               onPress={() => { }}
               activeOpacity={0.8}
@@ -111,11 +176,11 @@ function Chat() {
                 </Text>
               </View>
               <ChevronRight size={16} color="#AAAAAA" />
-            </TouchableOpacity>
+            </TouchableOpacity> */}
             <Separator className="mb-4 border-t border-dashed border-[#CDCDCD]" />
           </View>
           {/* Chat area */}
-          <View className="bg-[#F5F5F5] rounded-xl mx-[30px] px-4 pt-12 relative h-[90%]">
+          <View className="bg-[#F5F5F5] rounded-xl mx-[30px] px-4 pt-12 relative h-[100%]">
             {/* Guidelines & Alerts notice */}
             <View className="items-center mb-4 px-4">
               <Text fontSize={10} className="text-[10px] text-center text-[#939393]">

@@ -1,16 +1,18 @@
 import { router } from "expo-router";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { ChevronLeft } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Calendar from "@/components/ui/calendar-pricing";
 import { TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 function Date() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const {setRideField} = useCreateRideStore()
   if (!loaded) return null;
   return (
     <View className="w-full font-[Kanit-Regular] bg-white flex-1 relative">
@@ -21,7 +23,7 @@ function Date() {
             onPress={() => router.replace("..")}
             activeOpacity={0.8}
           >
-            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+            <ChevronLeft size={16} />
           </TouchableOpacity>
           <Text
             fontSize={25}
@@ -30,7 +32,7 @@ function Date() {
             {t("date.title")}
           </Text>
         </View>
-        <Calendar onChange={() => {}} />
+        <Calendar onChange={(date) => {setRideField("date",date)}} />
       </View>
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity

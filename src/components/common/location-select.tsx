@@ -25,7 +25,7 @@ export default function LocationSelect({
   const setStoreValue: (val: string) => void =
     (store as any)[setterName] || (() => {});
   const [selectedValue, setSelectedValue] = useState<string>(storeValue);
-  const [searchValue, setSearchValue] = useState<string>("kunnamkulam"); // User's current input
+  const [searchValue, setSearchValue] = useState<string>(""); // User's current input
   const [locations, setLocations] = useState<any[]>([]);
 
   // ✅ Debounced API caller — only fires after user stops typing for 400ms

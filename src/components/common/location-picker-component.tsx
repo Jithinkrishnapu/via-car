@@ -14,6 +14,7 @@ import LocationPin from "../../../public/location-pin.svg";
 interface SelectedLocation {
     latitude: number;
     longitude: number;
+    address?:string
 }
 
 interface LocationPickerProps {
@@ -112,7 +113,7 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
                     .filter(Boolean)
                     .join(', ');
             }
-            onLocationSelected({lat:location.latitude,lng:location.longitude,address:formattedAddress})
+            onLocationSelected({latitude:location.latitude,longitude:location.longitude,address:formattedAddress})
             setAddress(formattedAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`);
         } catch (err) {
             console.warn('Reverse geocoding failed:', err);

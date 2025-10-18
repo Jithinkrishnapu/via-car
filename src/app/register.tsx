@@ -18,9 +18,10 @@ import CustomPicker from "@/components/common/dropdown-component";
 import DatePicker from "@/components/common/date-picker";
 import DobCalendarPicker from "@/components/common/dob-calander";
 import DobPicker from "@/components/common/dob-calander";
-import { handleRegister } from "@/service/auth";
+import { getUserStatus, handleRegister } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useStore } from "@/store/useStore";
+import { UserStatusResp } from "@/types/ride-types";
 
 const { height } = Dimensions.get("window");
 
@@ -62,6 +63,37 @@ function Register() {
     Alert.alert('Success', `DOB: ${formattedDob}`);
   };
 
+  async function enforceProfileCompleteness() {
+    try {
+      const json: UserStatusResp = await getUserStatus();
+      const d = json.data;
+  
+
+      if (!d.bank_details.has_bank_details) {
+        router.replace('/bank-save');
+        return;
+      }
+
+      /* 1. Identity not done yet */
+      if (!d.id_verification.completed) {
+        router.replace('/(publish)/upload-document'); // or your ID screen
+        return;
+      }
+  
+      /* 3. No vehicles (for driver flow) */
+      if (d.account.is_driver && !d.vehicles.has_vehicles) {
+        router.replace('/add-vehicles');
+        return;
+      }
+  
+      /* 4. All good – send to home / dashboard */
+      router.replace('/(tabs)/book');
+    } catch (e) {
+      console.log('Status check failed', e);
+      /* optionally send to login */
+    }
+  }
+
   const handleRegistration =async()=>{
     const otpId = await useAsyncStorage("otp_id").getItem()
     const formdata = new FormData()
@@ -80,9 +112,10 @@ function Register() {
       if (response?.data?.type === "login") {
         await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
         if(isPublish){
-          router.replace(`/bank-save`);
+          // router.replace(`/bank-save`);
+          enforceProfileCompleteness()
         }else{
-          router.replace(`/(booking)/payment`);
+          router.replace(`/(tabs)/book`);
         }
       } else {
         Alert.alert(response?.message)

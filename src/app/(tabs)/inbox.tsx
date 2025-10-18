@@ -16,6 +16,7 @@ import {
   onSnapshot,
   orderBy,
 } from "firebase/firestore";
+import { useGetProfileDetails } from "@/service/auth";
 
 interface Chat {
   id: string;
@@ -28,6 +29,8 @@ export default function Page() {
   const loaded = useLoadFonts();
   const { t, i18n } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const [userDetails, setUserDetails] = useState();
+  const [userId, setUserId] = useState();
   if (!loaded) return null;
 
   // Translate data
@@ -62,8 +65,22 @@ export default function Page() {
     },
   ];
 
+  const handleProfileDetails=async()=>{
+    const response = await useGetProfileDetails()
+    console.log("response=====================",response)
+    if(response?.data){
+      setUserDetails(response?.data)
+      setUserId(response?.data?.id)
+    }
+    }
+  
+    useEffect(()=>{
+      handleProfileDetails()
+    },[])
+
   const [chats, setChats] = useState<Chat[]>([]);
-  const userId = "user_123"; // 👈 inject from your backend auth
+
+  console.log("cahats============",chats)
 
   useEffect(() => {
     if (!userId) return;
@@ -77,9 +94,10 @@ export default function Page() {
     const unsub = onSnapshot(q, (snapshot) => {
       const list: Chat[] = snapshot.docs.map((doc) => {
         const data = doc.data() as any;
+        console.log(data)
         return {
           id: doc.id,
-          users: Array.isArray(data?.users) ? data.users : [],
+          users: [data?.from_name,data?.to_name],
           lastMessage: data?.lastMessage ?? '',
           updatedAt: data?.updatedAt ?? null,
         } as Chat;
@@ -103,18 +121,18 @@ export default function Page() {
   return (
     <Fragment key={chat.id}>
       <TouchableOpacity
-        onPress={() => router.push({ pathname: "/(inbox)/chat", params: { chatId: chat.id } })}
+        onPress={() => router.push({ pathname: "/(inbox)/chat", params: { driver_id: chat.id?.split("_")[1],driver_name:chat.users[1] } })}
         className="flex-row items-center gap-4 py-2"
         activeOpacity={0.8}
       >
         <Avatar
           source={require("../../../public/profile-img.png")}
           size={35}
-          initials={otherUser?.[0] ?? "?"}
+          initials={chat.users[0]}
         />
         <View className="flex-col flex-1">
           <Text fontSize={14} className="text-[14px] text-black font-[Kanit-Regular]">
-            {otherUser}
+            {chat.users[1]}
           </Text>
           <Text fontSize={12} className="text-[12px] text-[#666] font-[Kanit-Light]" numberOfLines={1}>
             {chat.lastMessage || "No messages yet"}

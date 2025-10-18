@@ -40,10 +40,35 @@ export const handleRegister = async (postData: FormData) => {
 
 }
 
-export const handleBankSave = async (postData: FormData,token:string) => {
+export const handleBankSave = async (payload: Record<string, unknown>) => {
+    const userDetailsString = await useAsyncStorage('userDetails').getItem();
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+    const token = userDetails?.token ?? '';
+  
     try {
-        const response = await fetch(`${API_URL}/api/bank/add`, {
-            body: postData,
+      const res = await fetch(`${API_URL}/api/bank/add`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify(payload),
+      });
+  
+      if (!res.ok) throw new Error(res.statusText);
+      return res;
+    } catch (error) {
+      console.log('api error', error);
+      throw error; // propagate so caller can catch it
+    }
+  };
+
+export const handleLogOut = async () => {
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
+    try {
+        const response = await fetch(`${API_URL}/api/logout`, {
             method: 'POST',
             headers: {
                 Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
@@ -78,10 +103,49 @@ export const handleVerifyId = async (postData: FormData) => {
       method: 'POST',
       body: postData,
       headers: {
-        ...(token && { Authorization: `Bearer ${token}`,
-         })
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
       },
     });
   
     return response;
   };
+
+
+  export const useGetProfileDetails = async () => {
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
+      try {
+          const response = await fetch(`${API_URL}/api/profile`, {
+              method: 'GET',
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+              }
+          });
+          return response.json()
+      } catch (error) {
+          console.log("api error", error)
+      }
+  
+  }
+
+
+  export async function getUserStatus() {
+    const userDetailsString = await useAsyncStorage('userDetails').getItem();
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+    const token = userDetails?.token ?? '';
+  
+    const res = await fetch(`${API_URL}/api/user/status`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+  
+    if (!res.ok) throw new Error(res.statusText);
+    return res.json(); // typed below
+  }
+  

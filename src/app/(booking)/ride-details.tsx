@@ -16,6 +16,7 @@ import {
   ImageBackground,
   Image,
   FlatList,
+  Alert,
 } from "react-native";
 import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
@@ -72,22 +73,6 @@ function RideDetails() {
     }
   }
 
-  const handleRoutes = async (rideDetail:any) => {
-    const request = {
-      pickup_lat: rideDetail?.pickUpStop?.lat,
-      pickup_lng: rideDetail?.pickUpStop?.lng,
-      dropoff_lat: rideDetail?.dropOffStop?.lat,
-      dropoff_lng: rideDetail?.dropOffStop?.lng,
-    };
-
-    console.log(request, "Request Payload");
-
-    const response = await placeRoutes(request);
-    console.log(response?.data?.routes, "Routes Response");
-    setPolyline(response?.data?.routes[0]?.polyline)
-    // setRoutes(response?.data?.routes || []);
-  };
-
   const handleGetRideDetails = async () => {
     const postData = {
       ride_id: route?.params?.rideId,
@@ -95,35 +80,44 @@ function RideDetails() {
     }
     console.log("postData========", postData)
     const response = await useGetRideDetails(postData)
+    console.log("responde===========", response)
     if (response?.data) {
-      handleRoutes(response?.data)
+      // handleRoutes(response?.data)
       setRideDetail(response.data)
+      setPolyline(response?.data?.rideId?.ride_route)
     }
-    console.log("responde===========", JSON.stringify(response))
   }
 
 
-  const handleRideBooking =async()=>{
-    const postData={
-      "ride_id": rideDetail?.rideId?.id,
-      "passengers": 2,
-      "pickup_lat": rideDetail?.pickUpStop?.lat,
-      "pickup_lng": rideDetail?.pickUpStop?.lng,
-      "pickup_address": rideDetail?.pickUpStop?.address,
-      "notes": "Please wait at the main entrance",
-      ride_amount_id:rideDetail?.rideAmount?.id
+  const handleRideBooking = async () => {
+    const postData = {
+      ride_id: rideDetail?.rideId?.id,
+      passengers: Number(route?.params?.passengers),
+      pickup_lat: rideDetail?.pickUpStop?.lat,
+      pickup_lng: rideDetail?.pickUpStop?.lng,
+      pickup_address: rideDetail?.pickUpStop?.address,
+      notes: 'Please wait at the main entrance',
+      ride_amount_id: rideDetail?.rideAmount?.id,
+    };
+  
+    try {
+      const res = await useCreateBooking(postData);
+      console.log('success ===========', res);
+      router.push({ pathname: '/(booking)/payment', params: {booking_id:res?.data?.booking?.id, amount:res?.data?.booking?.totalAmount} });
+    } catch (err: any) {
+      // pick the best text to show
+      const msg =
+        err?.message ??
+        err?.errors?.ride_id?.[0] ??
+        'Something went wrong. Please try again.';
+      Alert.alert('Booking failed', msg);
     }
-    const response = await useCreateBooking(postData)
-    if(response){
-      console.log("success===========",response)
-      router.push({ pathname: "/(booking)/payment", params: {rideId: ride?.rideId,ride_amount_id:ride?.rideAmount?.id} })
-    }
-  }
+  };
 
 
   useEffect(() => {
     handleGetRideDetails()
-  }, [route])
+  }, [route,EncodedLine])
 
   if (!loaded) return null;
   return (
@@ -218,7 +212,7 @@ function RideDetails() {
         <View className="max-w-[1410px] w-full mx-auto">
           <View className="flex-col gap-2">
            {EncodedLine && <View className="h-[280px] bg-white p-4" >
-              <MapComponent />
+              <MapComponent markers={[]} />
             </View>}
             <View className="px-8 py-6 rounded-none border-none bg-white">
               <View className="flex-row items-center justify-between">
@@ -287,7 +281,7 @@ function RideDetails() {
                   <TouchableOpacity
                     className="rounded-full size-[38px] border border-[#EBEBEB] flex-row items-center justify-center"
                     activeOpacity={0.8}
-                    onPress={() => router.push("/(booking)/chat")}
+                    onPress={() => router.push({pathname:"/(inbox)/chat",params:{driver_id:rideDetail?.driver?.id,driver_name:rideDetail?.driver?.first_name}})}
                   >
                     <Chat width={15} height={15} />
                   </TouchableOpacity>

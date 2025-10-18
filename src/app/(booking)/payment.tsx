@@ -3,8 +3,9 @@ import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { Separator } from "@/components/ui/separator";
 import ApprovedAnimation from "@/components/animated/approved-animation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
+  FlatList,
   Image,
   ImageSourcePropType,
   Modal,
@@ -15,6 +16,8 @@ import {
 import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
 import { useTranslation } from "react-i18next";
+import { getCards, KEY } from "@/store/card-store";
+import { useRoute } from "@react-navigation/native";
 
 type Status = "idle" | "waiting" | "approved";
 
@@ -36,6 +39,29 @@ interface Options {
 function Payment() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const route = useRoute()
+
+  const fetchSavedCards = async()=>{
+    const data = await getCards()
+    console?.log(data,"===================cards")
+    if(data?.length){
+      const iterateData = data?.map((val,index)=> {
+        return  {
+          id: index,
+          title: `${val?.brand} ending in ${val?.last4}`,
+          description: `Ex.date ${val?.expMonth}/${val?.expYear?.toString()?.slice(2,4)}`,
+          img: require("../../../public/visa.png"),
+        }
+      }  )   
+      setCardsData(iterateData)
+    }
+
+  }
+
+  useEffect(()=>{
+    fetchSavedCards()
+  },[])
+
   const cards: Options[] = [
     {
       id: "1",
@@ -63,6 +89,7 @@ function Payment() {
     },
   ];
   const [selectedId, setSelectedId] = useState<string>("1");
+  const [cardsData, setCardsData] = useState(cards);
   const [status, setStatus] = useState<Status>("idle");
 
   if (!loaded) return null;
@@ -132,9 +159,16 @@ function Payment() {
             />
           </View>
 
-          {cards.map(renderOption)}
+          {/* {cardsData.map(renderOption)} */}
+
+          <FlatList
+          contentContainerClassName="gap-4"
+          data={cardsData}
+          renderItem={(({item})=>renderOption(item))}
+          />
 
           <TouchableOpacity
+            onPress={()=>router.push({pathname:"/(booking)/add-new-card",params:{booking_id:route?.params?.booking_id}})}
             className="rounded-full w-max mx-auto border border-[#EBEBEB] px-[16px] py-[8px]"
             activeOpacity={0.8}
           >
@@ -143,10 +177,10 @@ function Payment() {
             </Text>
           </TouchableOpacity>
 
-          <Separator className="mt-2 border-t !border-dashed !border-[#DADADA] bg-transparent" />
+          {/* <Separator className="mt-2 border-t !border-dashed !border-[#DADADA] bg-transparent" /> */}
 
           {/* UPI Section */}
-          <View className="flex-row items-center gap-2">
+          {/* <View className="flex-row items-center gap-2">
             <Text
               fontSize={15}
               className="text-[15px] text-[#666666] font-[Kanit-Medium] uppercase"
@@ -157,18 +191,18 @@ function Payment() {
               className="size-[18px]"
               source={require(`../../../public/payment-method.png`)}
             />
-          </View>
+          </View> */}
 
-          {upi.map(renderOption)}
+          {/* {upi.map(renderOption)} */}
 
-          <TouchableOpacity
+          {/* <TouchableOpacity
             className="rounded-full w-max mx-auto border border-[#EBEBEB] px-[16px] py-[8px]"
             activeOpacity={0.8}
           >
             <Text fontSize={13} className="text-[13px] font-[Kanit-Regular]">
               {t("payment.addNew")}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </ScrollView>
       {/* Continue Button */}
@@ -189,7 +223,7 @@ function Payment() {
             {t("payment.amount")}
           </Text>
           <Text fontSize={25} className="text-[25px] font-[Kanit-Regular]">
-            {t("payment.currency")} 1000
+            {t("payment.currency")} {route?.params?.amount}
           </Text>
         </View>
         <View className="flex-1">

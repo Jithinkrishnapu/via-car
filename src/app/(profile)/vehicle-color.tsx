@@ -17,8 +17,9 @@ export default function VehiclePage() {
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
   if (!loaded) return null;
-  const {vehicle_model_id} = useStore()
+  const {vehicle_model_id,path} = useStore()
   const [selectedColor,setSelectedColor] = useState("")
+
 
   const handleAddVehicle =async()=>{
     const formdata = new FormData()
@@ -30,7 +31,12 @@ export default function VehiclePage() {
 
     if(response?.ok){
       console.log("response=====adsd",response)
-      router.push("/(tabs)/user-profile")
+      // Ensure path is a supported type for router.replace
+      if (typeof path === "string" && path.startsWith("/")) {
+        router.replace(path as any)
+      } else {
+        router.replace("/")
+      }
     }else{
       Alert.alert("Something went wrong")
     }

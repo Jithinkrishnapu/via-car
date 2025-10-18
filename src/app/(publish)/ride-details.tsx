@@ -1,6 +1,7 @@
 import { Separator } from "@/components/ui/separator";
 import { Link, router } from "expo-router";
 import {
+  ArrowLeft,
   ArrowRight,
   ChevronLeft,
   ChevronRight,
@@ -14,6 +15,7 @@ import {
   View,
   ImageBackground,
   Image,
+  FlatList,
 } from "react-native";
 import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
@@ -21,12 +23,42 @@ import Chat from "../../../public/chat.svg";
 import Direction from "../../../public/direction4.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useGetRideDetails } from "@/service/ride-booking";
+import { useEffect, useState } from "react";
+import { useRoute } from "@react-navigation/native";
+import { RideDetail } from "@/types/ride-types";
 
 function RideDetails() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const [rideDetail, setRideDetail] = useState<RideDetail>()
+
   if (!loaded) return null;
+
+  const route = useRoute()
+
+  console.log("ride---------------", route)
+
+  const handleGetRideDetails = async () => {
+    const postData = {
+      ride_id: route?.params?.ride_id,
+      ride_amount_id: route?.params?.ride_amount_id
+    }
+    console.log("postData========", postData)
+    const response = await useGetRideDetails(postData)
+    if (response?.data) {
+      // handleRoutes(response?.data)
+      setRideDetail(response.data)
+      // setPolyline(response?.data?.rideId?.ride_route)
+    }
+    console.log("responde===========", JSON.stringify(response))
+  }
+
+  useEffect(() => {
+    handleGetRideDetails()
+  }, [])
+
   return (
     <ScrollView>
       <View className="bg-[#F5F5F5] font-[Kanit-Regular]">
@@ -66,7 +98,7 @@ function RideDetails() {
                   fontSize={16}
                   className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
                 >
-                  {t("rideDetails.alKhobar")}
+                  {rideDetail?.pickUpStop?.address}
                 </Text>
                 <Text
                   fontSize={14}
@@ -78,10 +110,10 @@ function RideDetails() {
                   fontSize={16}
                   className="text-base lg:text-lg text-white font-[Kanit-Regular]"
                 >
-                  {t("rideDetails.riyadh")}
+                  {rideDetail?.dropOffStop?.address}
                 </Text>
               </View>
-              <View
+              {/* <View
                 className={swap(
                   "flex flex-col text-end ml-auto",
                   "flex flex-col text-start mr-auto"
@@ -111,7 +143,7 @@ function RideDetails() {
                 >
                   17:40
                 </Text>
-              </View>
+              </View> */}
             </View>
           </View>
         </ImageBackground>
@@ -130,7 +162,7 @@ function RideDetails() {
                     fontSize={10}
                     className="text-[10px] text-[#666666] font-[Kanit-Light]"
                   >
-                    {t("rideDetails.sedan")}
+                    {rideDetail?.vehicle?.vehicleModel?.category_name}
                   </Text>
                 </View>
                 <View className="w-[68px] h-[25px]">
@@ -159,7 +191,7 @@ function RideDetails() {
                         fontSize={14}
                         className="text-[14px] mb-1 font-[Kanit-Regular]"
                       >
-                        {t("rideDetails.abhimanyu")}
+                        {rideDetail?.driver?.first_name}
                       </Text>
                       <Verified width={15} height={15} />
                     </View>
@@ -184,7 +216,7 @@ function RideDetails() {
                   <TouchableOpacity
                     className="rounded-full size-[38px] border border-[#EBEBEB] flex-row items-center justify-center"
                     activeOpacity={0.8}
-                    onPress={() => router.push("/(booking)/chat")}
+                    onPress={() => router.push({ pathname: "/(inbox)/chat", params: { driver_id: rideDetail?.driver?.id, driver_name: rideDetail?.driver?.first_name } })}
                   >
                     <Chat width={15} height={15} />
                   </TouchableOpacity>
@@ -231,85 +263,58 @@ function RideDetails() {
               <Text fontSize={17} className="text-[17px] font-[Kanit-Regular]">
                 {t("rideDetails.passengers")}
               </Text>
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="flex-row items-center justify-between"
-                onPress={() => router.push("/passenger-profile")}
-              >
-                <View className="flex-row items-center gap-4">
-                  <Avatar
-                    source={require(`../../../public/profile-img.png`)}
-                    size={40}
-                    initials="CN"
-                  />
-                  <View className="flex flex-col">
-                    <Text
-                      fontSize={14}
-                      className="text-[14px] mb-1 font-[Kanit-Regular]"
-                    >
-                      {t("rideDetails.karthik")}
-                    </Text>
-                    <View className="flex-row items-center justify-between gap-1">
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.chennai")}
-                      </Text>
-                      <ArrowRight size={10} color="#A5A5A5" />
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.banglaluru")}
-                      </Text>
+              <FlatList
+                data={rideDetail?.passengers}
+                renderItem={({ item }) => {
+                  return <TouchableOpacity
+                    activeOpacity={0.8}
+                    className="flex-row items-center justify-between"
+                    onPress={() => router.push("/passenger-profile")}
+                  >
+                    <View className="flex-row items-center gap-4">
+                      <Avatar
+                        source={require(`../../../public/profile-img.png`)}
+                        size={40}
+                        initials="CN"
+                      />
+                      <View className="flex flex-col">
+                        <Text
+                          fontSize={14}
+                          className="text-[14px] mb-1 font-[Kanit-Regular]"
+                        >
+                          {t("rideDetails.karthik")}
+                        </Text>
+                        <View className="flex-row items-center justify-between gap-1">
+                          <Text
+                            fontSize={12}
+                            className="text-[12px] text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t("rideDetails.chennai")}
+                          </Text>
+                          {swap(
+                            <ArrowRight size={10} color="#A5A5A5" />,
+                            <ArrowLeft size={10} color="#A5A5A5" />
+                          )}
+                          <Text
+                            fontSize={12}
+                            className="text-[12px] text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t("rideDetails.banglaluru")}
+                          </Text>
+                        </View>
+                      </View>
                     </View>
-                  </View>
-                </View>
-                <View>
-                  <ChevronRight color="#A69A9A" className="size-[24px]" />
-                </View>
-              </TouchableOpacity>
-              <Separator className="my-1 border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
-              <TouchableOpacity
-                activeOpacity={0.8}
-                className="flex-row items-center justify-between"
-                onPress={() => router.push("/passenger-profile")}
-              >
-                <View className="flex-row items-center gap-4">
-                  <Avatar
-                    source={require(`../../../public/profile-img.png`)}
-                    size={40}
-                    initials="CN"
-                  />
-                  <View className="flex flex-col">
-                    <Text
-                      fontSize={14}
-                      className="text-[14px] mb-1 font-[Kanit-Regular]"
-                    >
-                      {t("rideDetails.karthik")}
-                    </Text>
-                    <View className="flex-row items-center justify-between gap-1">
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.chennai")}
-                      </Text>
-                      <ArrowRight size={10} color="#A5A5A5" />
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-[#666666] font-[Kanit-Light]"
-                      >
-                        {t("rideDetails.banglaluru")}
-                      </Text>
+                    <View>
+                      {swap(
+                        <ChevronRight color="#A69A9A" className="size-[24px]" />,
+                        <ChevronLeft color="#A69A9A" className="size-[24px]" />
+                      )}
                     </View>
-                  </View>
-                </View>
-                <View>
-                  <ChevronRight color="#A69A9A" className="size-[24px]" />
-                </View>
-              </TouchableOpacity>
+                  </TouchableOpacity>
+                }}
+                ListEmptyComponent={() => <View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}
+                ItemSeparatorComponent={() => <Separator className="my-1 border-t !border-dashed !border-[#CDCDCD] bg-transparent" />}
+              />
             </View>
             <View className="px-8 py-4 gap-4 rounded-none bg-white">
               <Text fontSize={17} className="text-[17px] font-[Kanit-Regular]">
@@ -328,7 +333,7 @@ function RideDetails() {
                   </Text>
                   <Text fontSize={15} className="ml-2 font-[Kanit-Regular]">
                     {" "}
-                    460.00
+                    {rideDetail?.rideAmount?.amount}
                   </Text>
                 </Text>
               </View>
@@ -350,7 +355,7 @@ function RideDetails() {
                   fontSize={12}
                   className="text-[12px] text-end font-[Kanit-Regular]"
                 >
-                  SR 460.00
+                  SR  {rideDetail?.serviceAmount}
                 </Text>
               </View>
               <View className="flex-row gap-2 items-center">
@@ -370,7 +375,7 @@ function RideDetails() {
                   fontSize={12}
                   className="text-[12px] text-end font-[Kanit-Regular]"
                 >
-                  SR 100.00
+                  SR {rideDetail?.vatAmount}
                 </Text>
               </View>
               <View className="flex-row gap-2 items-center">
@@ -390,14 +395,19 @@ function RideDetails() {
                   fontSize={17}
                   className="text-[17px] text-[#00665A] font-[Kanit-Medium] text-end"
                 >
-                  SR 560.00
+                  SR {rideDetail?.totalAmount}
                 </Text>
               </View>
               <View className="flex-row items-center justify-center py-4">
                 <TouchableOpacity
                   className="bg-[#FF4848] rounded-full h-[55px] w-full px-8 cursor-pointer flex items-center justify-center"
                   activeOpacity={0.8}
-                  onPress={() => router.push("/(publish)/your-ride")}
+                  onPress={() => router.push({
+                    pathname: "/(publish)/your-ride", params: {
+                      ride_id: rideDetail?.rideId?.id,
+                      ride_amount_id: rideDetail?.rideAmount?.id
+                    }
+                  })}
                 >
                   <Text
                     fontSize={19}

@@ -143,6 +143,8 @@ const ar = {
       pickupPlaceholder: "أدخل موقع الانطلاق",
       dropPlaceholder: "أدخل موقع الوصول",
       searchButton: "بحث",
+      "missingLocation": "يرجى اختيار موقعي الانطلاق والوصول.",
+      "missingDate": "يرجى اختيار تاريخ الرحلة."
     },
     locationSelect: {
       placeholder: "ابحث عن الموقع...",

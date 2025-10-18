@@ -65,7 +65,7 @@ function Login() {
             {t("agreement_text")}
           </Text>
           <VerifyOtp phoneNumber={phoneNumber!} />
-          <TouchableOpacity
+          {/* <TouchableOpacity
             activeOpacity={0.8}
             className="flex items-center border border-[#EBEBEB] rounded-full w-full h-[54px] cursor-pointer mb-5"
             onPress={() =>  router.push(`/(publish)/upload-document`)}
@@ -76,7 +76,7 @@ function Login() {
             >
               {t("do_it_later")}
             </Text>
-          </TouchableOpacity>
+          </TouchableOpacity> */}
         </View>
       </View>
     </ScrollView>

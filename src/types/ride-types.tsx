@@ -208,3 +208,49 @@ export interface RideDetail {
   platformFeeAmount: number; // e.g., 21
   totalAmount: number; // e.g., 252
 }
+
+export interface BookingPaymentData {
+  booking_id: number;
+  payment_brand: string; // e.g., "VISA", "MASTERCARD"
+  card_number: string; // masked or full (handle securely!)
+  card_holder_name: string;
+  card_expiration_month: number; // 1–12
+  card_expiration_year: number; // e.g., 2025
+  card_cvv: string; // usually 3 or 4 digits as string
+  customer_email: string;
+  billing_street: string;
+  billing_city: string;
+  billing_state: string;
+  billing_post_code: string;
+  billing_country: string; // ISO 3166-1 alpha-2, e.g., "SA"
+  given_name: string;
+  sur_name: string;
+  storageKey?: string;          // random id used to fetch the blob
+  alias?: string; 
+}
+
+export type UserStatusResp = {
+  data: {
+    id_verification: {
+      completed: boolean;
+      status: 'pending' | 'approved' | 'rejected';
+    };
+    account: {
+      is_verified: 0 | 1;
+      is_driver: 0 | 1;
+      is_ride_publishable: 0 | 1;
+    };
+    bank_details: { has_bank_details: boolean; count: number };
+    vehicles: { has_vehicles: boolean; count: number };
+  };
+};
+
+
+export interface SavedCard {
+  id: string;               // uuid you created in the store
+  brand: string;            // visa / mastercard / etc.
+  last4: string;            // last 4 digits only
+  expMonth: number;
+  expYear: number;
+  holder: string;           // card-holder name
+}

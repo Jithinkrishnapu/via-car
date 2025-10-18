@@ -116,7 +116,8 @@
     "tailwindcss": "^3.4.17",
     "tailwindcss-animate": "^1.0.7",
     "vaul": "^1.1.2",
-    "zustand": "^5.0.3"
+    "zustand": "^5.0.3",
+    "expo-secure-store": "~14.2.4"
   },
   "devDependencies": {
     "@babel/core": "^7.25.2",
@@ -131,6 +132,7 @@
     "@types/react-lottie": "^1.2.10",
     "@types/react-payment-inputs": "^1.1.4",
     "@types/react-test-renderer": "^18.3.0",
+    "@types/uuid": "^10.0.0",
     "autoprefixer": "^10.4.20",
     "eslint": "^9.0.0",
     "eslint-config-expo": "~9.2.0",
