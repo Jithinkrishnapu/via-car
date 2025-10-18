@@ -9,7 +9,7 @@ export const useCreateRide = async (postData: RideDetails) => {
   const token = userDetails?.token ?? '';
   console.log(token)
   const res = await fetch(`${API_URL}/api/ride/create`, {
-    method : 'POST',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${token}`,
@@ -89,16 +89,16 @@ export const useCreateBooking = async (postData: any) => {
   const token = userDetails?.token ?? '';
 
   const res = await fetch(`${API_URL}/api/booking/create`, {
-    method : 'POST',
+    method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      Authorization : `Bearer ${token}`,
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify(postData),
   });
-   const err =  res.body
+  const err = res.body
 
-   console.log(res)
+  console.log(res)
 
   const text = await res.text();          // ← read once as text first
   let data;
@@ -120,6 +120,54 @@ export const useGetExactLocation = async (postData: any) => {
   const token = userDetails ? userDetails?.token : ""
   try {
     const response = await fetch(`${API_URL}/api/places/popular-places-nearby`, {
+      body: JSON.stringify(postData),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+      }
+    });
+    return response.json()
+  } catch (error) {
+    console.log("api error", error)
+  }
+
+}
+
+export const useUpdateRideStatus = async (postData: {
+  "ride_id": number,
+  "status": number
+}) => {
+  console.log("request==========", postData)
+  const userDetailsString = await useAsyncStorage("userDetails").getItem()
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+  const token = userDetails ? userDetails?.token : ""
+  try {
+    const response = await fetch(`${API_URL}/api/ride/status`, {
+      body: JSON.stringify(postData),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+      }
+    });
+    return response.json()
+  } catch (error) {
+    console.log("api error", error)
+  }
+
+}
+
+export const useUpdateBookingStatus = async (postData: {
+  "booking_id": number,
+  "status": number
+}) => {
+  console.log("request==========", postData)
+  const userDetailsString = await useAsyncStorage("userDetails").getItem()
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+  const token = userDetails ? userDetails?.token : ""
+  try {
+    const response = await fetch(`${API_URL}/api/booking/status`, {
       body: JSON.stringify(postData),
       method: 'POST',
       headers: {
@@ -158,7 +206,7 @@ export const useGetAlRides = async () => {
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
-  console.log("token==================",token)
+  console.log("token==================", token)
   try {
     const response = await fetch(`${API_URL}/api/ride/list`, {
       method: 'GET',
@@ -240,7 +288,7 @@ export const placeRoutes = async (
 };
 
 export const rideAlert = async (
-  postData: {email:string,ride_id:number}
+  postData: { email: string, ride_id: number }
 ): Promise<any> => {
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
@@ -251,7 +299,7 @@ export const rideAlert = async (
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, 
+        Authorization: `Bearer ${token}`,
       },
     });
 

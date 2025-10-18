@@ -21,7 +21,8 @@ type Props = {
     passengerStatus: 'confirmed' | 'pending';
     onStartRide?: () => void;
     onAddPassengers?: () => void;
-    passengers:[]
+    passengers:[],
+    onRideCancel?:()=>void
 };
 
 export const RideCard: React.FC<Props> = ({
@@ -37,7 +38,8 @@ export const RideCard: React.FC<Props> = ({
     passengerStatus,
     onStartRide,
     onAddPassengers,
-    passengers
+    passengers,
+    onRideCancel
 }) => {
     /* -------------------------------------------------
      * Helper – pretty print duration
@@ -76,7 +78,7 @@ export const RideCard: React.FC<Props> = ({
                     </View>
                 </View>
 
-                <TouchableOpacity className='bg-[#FF1919] rounded-full p-2 flex-row gap-3 items-center' >
+                <TouchableOpacity onPress={onRideCancel} className='bg-[#FF1919] rounded-full p-2 flex-row gap-3 items-center' >
                     <CloseIcon />
                     <Text className="text-sm text-white font-[Kanit-Light]">Ride Cancel</Text>
                 </TouchableOpacity>

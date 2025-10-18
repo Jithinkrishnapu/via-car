@@ -12,9 +12,10 @@ import { format } from 'date-fns';
 interface Props {
   status: 'Pending' | 'Cancelled' | 'Completed';
   data: any;
+  onCancel?:()=>void
 }
 
-export default function RideStatusItem({ status = 'Pending', data }: Props) {
+export default function RideStatusItem({ status = 'Pending', data,onCancel}: Props) {
   const { t } = useTranslation('components');
 
   const fmtUTC = (iso?: string) => {
@@ -110,17 +111,17 @@ export default function RideStatusItem({ status = 'Pending', data }: Props) {
 
       {/* ---------- bottom row ---------- */}
       <View className="items-center gap-2 justify-center px-4 py-3">
-        <View className="w-full border border-dashed rounded-lg p-3 flex-row justify-center items-center">
+        <View className="w-full border my-2 border-dashed rounded-lg p-3 flex-row justify-center items-center">
           <Text fontSize={18} className="ml-2 text-gray-600 font-[Kanit-Regular]">
             PIN : {data?.secretPin}
           </Text>
         </View>
 
-        <TouchableOpacity className='p-3 justify-center items-center bg-red-500 w-full rounded-full'  >
+       { status == "Pending" && <TouchableOpacity onPress={onCancel} className='p-3 justify-center items-center bg-red-500 w-full rounded-full'  >
           <Text fontSize={18} className="text-white font-[Kanit-Regular]">
             Cancel
           </Text>
-        </TouchableOpacity>
+        </TouchableOpacity>}
       </View>
     </TouchableOpacity>
   );

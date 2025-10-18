@@ -20,7 +20,7 @@ import { format } from 'date-fns';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 import { useLoadFonts } from '@/hooks/use-load-fonts';
-import { useGetAllBooking, useGetAlRides } from '@/service/ride-booking';
+import { useGetAllBooking, useGetAlRides, useUpdateBookingStatus, useUpdateRideStatus } from '@/service/ride-booking';
 
 import RideStatusItem from '@/components/common/ride-status-item';
 import Text from '@/components/common/text';
@@ -64,6 +64,27 @@ export default function RidesTabsScreen() {
   const [sideModalVisible, setSideModalVisible] = useState(false);
   const [bookingList, setBookingList] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
+
+ const handleCancelRide =async(item:any)=>{
+  const req ={
+   ride_id:item?.id,
+   status:5
+  }
+  const response = await useUpdateRideStatus(req)
+  if(response){
+    Alert.alert("Order Cancelled")
+  }
+ }
+ const handleCancelBooking =async(item:any)=>{
+  const req ={
+   booking_id:item?.id,
+   status:5
+  }
+  const response = await useUpdateBookingStatus(req)
+  if(response){
+    Alert.alert("Order Cancelled")
+  }
+ }
 
   /* ------------------- ANIMATION -------------------- */
   const tabWidth = (width - 48 + 6) / TABS.length;
@@ -109,11 +130,12 @@ export default function RidesTabsScreen() {
 
   /* ------------------- RENDER ITEMS  ---------------- */
   const renderUserItem = ({ item, index }: any) => (
-    <RideStatusItem data={item} status={activeTab} key={`${activeTab}-${index}`} />
+    <RideStatusItem onCancel={()=>handleCancelBooking(item)} data={item} status={activeTab} key={`${activeTab}-${index}`} />
   );
 
   const renderDriverItem = ({ item, index }: any) => (
   item?.pickup_time ? <RideCard
+      onRideCancel={()=>handleCancelRide(item)}
       passengers={item?.passengers || ""}
       driverName={`${item?.driver?.first_name}` || ""}
       rating={4.5}
