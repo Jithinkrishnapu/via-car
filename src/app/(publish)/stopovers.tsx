@@ -129,7 +129,7 @@ function Stopovers() {
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center border border-[#EBEBEB] rounded-full h-[55px] gap-[4px]"
-          onPress={() => router.push({pathname:"/(publish)/add-city",params:{place:route?.params?.location}})}
+          onPress={() => router.push({pathname:"/(publish)/add-city",params:{place:route?.params?.location,path:'/(publish)/stopovers'}})}
           activeOpacity={0.8}
         >
           <Plus size={20} className="mr-2" />

@@ -18,7 +18,7 @@ export default function RideConfirmationScreen() {
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
 
-  const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
+  const { ride, setSelectedPlaces, selectedPlaces, setRideId } = useCreateRideStore();
   if (!loaded) return null;
 
   const route = useRoute()
@@ -82,6 +82,20 @@ export default function RideConfirmationScreen() {
         <TouchableOpacity
           onPress={() => {
             setSelectedPlaces([])
+            router.replace("/(tabs)/book")}}
+          activeOpacity={0.8}
+          className="border-[#FF4848] border rounded-full w-full h-[55px] items-center justify-center mt-6"
+        >
+          <Text
+            fontSize={20}
+            className="text-xl text-[#FF4848] font-[Kanit-Regular]"
+          >
+            {"Back to Home"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setRideId(route?.params?.ride_id)
             router.push({pathname:"/(publish)/your-ride",params:{ride_id:route?.params?.ride_id,ride_amount_id:route?.params?.ride_amount_id}})}}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full w-full h-[55px] items-center justify-center mt-6"

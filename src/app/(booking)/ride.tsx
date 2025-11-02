@@ -33,12 +33,21 @@ function Ride() {
   const { isRTL, swap } = useDirection();
   const [modalVisible, setModalVisible] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
+  const [filter, setFilter] = useState<{
+    sortOption: number;
+    numberOfStops: string;
+    verifiedProfile: boolean;
+    aminities:Record<string, boolean>
+  }>();
   const [notify, setNotify] = useState(false);
   const [email, setEmail] = useState("");
   const [rides, setRides] = useState<Rides[]>([]);
 
   const { from_lat_long, to_lat_long, from, to } = useSearchRideStore();
   const route = useRoute();
+
+
+  console.log(filter,"====================filter")
 
   const handleSearch = async () => {
     const requestData: SearchRideRequest = {
@@ -47,11 +56,15 @@ function Ride() {
       destination_lat: to_lat_long.lat,
       destination_lng: to_lat_long.lon,
       date: route.params?.date,
-      passengers: route.params?.passengers,
+      passengers: route.params?.passengers, 
       max_walking_distance_km: 10,
+      "sort_by":filter?.sortOption || 1,
+      "stops_filter":filter?.numberOfStops || "",
+      verified_drivers_only:filter?.verifiedProfile || false,
+      ...filter?.aminities,
     };
 
-    console.log(requestData)
+    console.log(requestData,"========================requestDtaa")
 
     try {
       const response = await searchRide(requestData);
@@ -77,7 +90,7 @@ function Ride() {
 
   useEffect(() => {
     handleSearch();
-  }, []);
+  }, [filter]);
 
   if (!loaded) return null;
 
@@ -174,7 +187,10 @@ function Ride() {
         visible={filterVisible}
         onRequestClose={() => setFilterVisible(false)}
       >
-        <RideFilters close={() => setFilterVisible(false)} />
+        <RideFilters close={(filters) => {
+          setFilterVisible(false)
+          setFilter(filters)
+        }} />
       </Modal>
 
       {/* Email Alert Modal */}

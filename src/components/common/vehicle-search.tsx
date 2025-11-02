@@ -31,7 +31,7 @@ export default function VehicleSearch({
 }: Props) {
   const { t } = useTranslation("components");
   const { swap } = useDirection();
-  const [searchValue, setSearchValue] = useState("a");
+  const [searchValue, setSearchValue] = useState("");
   const [selectedValue, setSelectedValue] = useState("");
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);

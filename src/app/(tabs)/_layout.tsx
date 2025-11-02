@@ -4,12 +4,22 @@ import ProfileIcon from "@/components/icons/profile-icon";
 import PublishIcon from "@/components/icons/publish-icon";
 import YourRidesIcon from "@/components/icons/your-rides-icon";
 import { PlatformPressable } from "@react-navigation/elements";
-import { Tabs } from "expo-router";
+import { RelativePathString, router, Tabs } from "expo-router";
 import { StyleSheet, View } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 export default function TabLayout() {
   const { t } = useTranslation("components");
+
+  /* ---------- helper that redirects if token missing ---------- */
+  const guard = async (allowedRoute: RelativePathString) => {
+    const raw = await useAsyncStorage("userDetails").getItem();
+    const token = raw ? JSON.parse(raw).token : "";
+    if (!token) router.replace("/login");
+    else router.push(allowedRoute); // normal navigation
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -21,6 +31,17 @@ export default function TabLayout() {
           <PlatformPressable
             {...props}
             android_ripple={{ color: "transparent" }}
+            onPress={(e) => {
+              /* which tab was pressed? */
+              const target = (props.children as any)?.props?.name;
+
+              /* protect only these two tabs */
+              if (target === "pickup" || target === "user-profile") {
+                guard(target);
+              } else {
+                props.onPress?.(e); // default behaviour
+              }
+            }}
           />
         ),
       }}
@@ -114,18 +135,14 @@ const styles = StyleSheet.create({
     height: 65,
     flexDirection: "row",
     backgroundColor: "#ffffff",
-    // iOS shadow
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -4 }, // Adjusted for better visibility
-    shadowOpacity: 0.1, // Reduced opacity for subtle effect
-    shadowRadius: 5, // Adjusted radius for smoother shadow
-
-    // Android shadow
-    elevation: 10, // Reduced elevation for better balance
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
     paddingBottom: 5,
   },
   tabWrapper: {
-    // flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

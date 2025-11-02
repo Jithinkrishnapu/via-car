@@ -25,13 +25,13 @@ function Pickup() {
       const stored = await useAsyncStorage("userDetails").getItem()
       const userDetails = stored ? JSON.parse(stored) : null
       if (userDetails?.type === "login") {
-        if (!d.bank_details.has_bank_details) {
+        if (!d?.bank_details?.has_bank_details) {
           router.replace('/bank-save');
           return;
         }
         /* 1. Identity not done yet */
-        if (!d.id_verification.completed) {
-          if (d.id_verification.status == "pending") {
+        if (!d?.id_verification?.completed) {
+          if (d?.id_verification?.status == "pending") {
             router.push('/pending-verification')
           } else {
             router.replace('/(publish)/upload-document');
@@ -41,7 +41,7 @@ function Pickup() {
         }
 
         /* 3. No vehicles (for driver flow) */
-        if (d.account.is_driver && !d.vehicles.has_vehicles) {
+        if (d?.account?.is_driver && !d?.vehicles?.has_vehicles) {
           setPath("/(tabs)/pickup")
           router.replace('/add-vehicles');
           return;

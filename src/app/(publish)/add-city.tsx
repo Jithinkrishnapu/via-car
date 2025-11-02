@@ -29,7 +29,7 @@ export default function Page() {
           let locations = route?.params?.place && JSON?.parse(route?.params?.place) || []
           console.log(locations)
           locations.push(value)
-          router.replace({ pathname: "/(publish)/stopovers", params: { location: JSON.stringify(locations) } });
+          router.replace({ pathname: route?.params?.path, params: { location: JSON.stringify(locations) } });
         }} />
       </View>
     </ScrollView>

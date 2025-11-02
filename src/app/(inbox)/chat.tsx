@@ -30,28 +30,30 @@ function Chat() {
   const [message, setMessage] = useState("");
   const [showGuidelines, setShowGuidelines] = useState(false);
   const [userDetails, setUserDetails] = useState();
-  const route =useRoute()
+  const route = useRoute()
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatId, setChatId] = useState<string>('');
-  
-   
-  const handleProfileDetails=async()=>{
-  const response = await useGetProfileDetails()
-  console.log("response=====================",response)
-  if(response?.data){
-    setUserDetails(response?.data)
-  const chatId = makeChatId(response?.data?.id, route?.params?.driver_id);
-  console.log("chatId===============",chatId)
-  setChatId(chatId)
-  const messages = useMessages(chatId);
-  console.log(messages,"=======================messages====")
-  setMessages(messages)
-  }
+
+
+  const handleProfileDetails = async () => {
+    const response = await useGetProfileDetails()
+    console.log("response=====================", response)
+    if (response?.data?.first_name !== "") {
+      setUserDetails(response?.data)
+      const chatId = makeChatId(response?.data?.id, route?.params?.driver_id);
+      console.log("chatId===============", chatId)
+      setChatId(chatId)
+      const messages = useMessages(chatId);
+      console.log(messages, "=======================messages====")
+      setMessages(messages)
+    } else {
+      router.replace("/login")
+    }
   }
 
-  useEffect(()=>{
+  useEffect(() => {
     handleProfileDetails()
-  },[])
+  }, [])
 
 
   useEffect(() => {
@@ -62,7 +64,7 @@ function Chat() {
       orderBy("createdAt", "asc")
     );
 
-   console.log("q===================",JSON.stringify(q))
+    console.log("q===================", JSON.stringify(q))
 
     const unsub = onSnapshot(q, (snapshot) => {
       const msgs = snapshot.docs.map((doc) => {
@@ -73,7 +75,7 @@ function Chat() {
         };
       });
 
-      console.log("qmess===================",JSON.stringify(msgs))
+      console.log("qmess===================", JSON.stringify(msgs))
       setMessages(msgs);
     });
 
@@ -85,14 +87,14 @@ function Chat() {
 
   const handleSend = async () => {
     if (!message.trim()) return;
-    console?.log(userDetails.id,"userDeatails===============,",route?.params?.driver_id,route?.params?.driver_name,chatId)
-    await sendMessage(chatId, userDetails?.id, route?.params?.driver_id, message.trim(),route?.params?.driver_name,userDetails?.first_name);
+    console?.log(userDetails.id, "userDeatails===============,", route?.params?.driver_id, route?.params?.driver_name, chatId)
+    await sendMessage(chatId, userDetails?.id, route?.params?.driver_id, message.trim(), route?.params?.driver_name, userDetails?.first_name);
     setMessage("");
   };
 
-  const userName = i18n.language === "ar" ? t("inbox.nameAr") : t("inbox.nameEn"); 
-  const from = t("inbox.fromValue"); 
-  const to = t("inbox.toValue"); 
+  const userName = i18n.language === "ar" ? t("inbox.nameAr") : t("inbox.nameEn");
+  const from = t("inbox.fromValue");
+  const to = t("inbox.toValue");
   const date = t("inbox.dateValue"); const time = t("inbox.timeValue");
 
   return (
@@ -124,7 +126,7 @@ function Chat() {
             <View className="flex-row items-center gap-6">
               <TouchableOpacity
                 className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-                onPress={() => {router.replace("..") }}
+                onPress={() => { router.replace("..") }}
                 activeOpacity={0.8}
               >
                 <ChevronLeft size={16} />

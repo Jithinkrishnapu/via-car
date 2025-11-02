@@ -1,57 +1,46 @@
 import { useEffect, useState } from "react";
+import { View, TouchableOpacity, Image } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, ChevronRight, Circle } from "lucide-react-native";
-import { Image, TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
-import { useLoadFonts } from "@/hooks/use-load-fonts";
+import MapComponent from "@/components/ui/map-view";
 import CheckGreen from "../../../public/check-green.svg";
+
+import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
-import MapComponent from "@/components/ui/map-view";
-import { placeRoutes } from "@/service/ride-booking";
 import { useCreateRideStore } from "@/store/useRideStore";
+import { placeRoutes, useEditRide } from "@/service/ride-booking";
+import { RideEditDetails } from "@/types/ride-types";
 
 function Route() {
+  // -------------------- Hooks --------------------
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const [selectedRoute, setSelectedRoute] = useState("1");
-  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
-  if (!loaded) return null;
+  const { ride,setPolyline,polyline } = useCreateRideStore();
 
-  // Use translation for routes
-  const routesData = [
+  // -------------------- States --------------------
+  const [routes, setRoutes] = useState([]);
+  const [selectedRoute, setSelectedRoute] = useState("1");
+  const [selectedRoutes, setSelectedRoutes] = useState(null);
+
+
+  // -------------------- Map Data --------------------
+  const markersData = [
     {
       id: "1",
-      title: t("route.option1.title"),
-      description: t("route.option1.description"),
+      coordinate: { latitude: 37.78825, longitude: -122.4324 },
+      title: "Location 1",
+      description: "First marker",
+      pinColor: "green",
     },
     {
       id: "2",
-      title: t("route.option2.title"),
-      description: t("route.option2.description"),
-    },
-    {
-      id: "3",
-      title: t("route.option3.title"),
-      description: t("route.option3.description"),
-    },
-  ];
-
-  const markersData = [
-    {
-      id: '1',
-      coordinate: { latitude: 37.78825, longitude: -122.4324 },
-      title: 'Location 1',
-      description: 'First marker',
-      pinColor: 'green',
-    },
-    {
-      id: '2',
       coordinate: { latitude: 37.79025, longitude: -122.4344 },
-      title: 'Location 2',
-      description: 'Second marker',
-      pinColor: 'yellow',
+      title: "Location 2",
+      description: "Second marker",
+      pinColor: "yellow",
     },
   ];
 
@@ -59,37 +48,57 @@ function Route() {
     {
       coordinates: [
         { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
-        { latitude: 24.8247, longitude: 46.7975 }, // Riyadh outskirts
-        { latitude: 25.0619, longitude: 47.1429 }, // Highway 40 - Buqayq direction
-        { latitude: 25.2847, longitude: 47.4823 }, // Buqayq area
-        { latitude: 25.3619, longitude: 48.1429 }, // Halfway point
-        { latitude: 25.4247, longitude: 48.5823 }, // Near Hofuf
-        { latitude: 26.0619, longitude: 49.4429 }, // Approaching Dammam
+        { latitude: 24.8247, longitude: 46.7975 },
+        { latitude: 25.0619, longitude: 47.1429 },
+        { latitude: 25.2847, longitude: 47.4823 },
+        { latitude: 25.3619, longitude: 48.1429 },
+        { latitude: 25.4247, longitude: 48.5823 },
+        { latitude: 26.0619, longitude: 49.4429 },
         { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
       ],
-      strokeColor: '#FF0000',
+      strokeColor: "#FF0000",
       strokeWidth: 6,
-    }
+    },
   ];
 
+  // -------------------- Handlers --------------------
   const handleRoutes = async () => {
     const request = {
-      "pickup_lat": ride.pickup_lat,
-      "pickup_lng": ride.pickup_lng,
-      "dropoff_lat": ride.destination_lat,
-      "dropoff_lng": ride.destination_lng
+      pickup_lat: ride.pickup_lat,
+      pickup_lng: ride.pickup_lng,
+      dropoff_lat: ride.destination_lat,
+      dropoff_lng: ride.destination_lng,
+    };
+
+    console.log(request, "Request Payload");
+
+    const response = await placeRoutes(request);
+    console.log(response?.data?.routes, "Routes Response");
+
+    setRoutes(response?.data?.routes || []);
+  };
+
+  // -------------------- Effects --------------------
+  useEffect(() => {
+    handleRoutes();
+  }, []);
+
+  const handleEditRoute =async()=>{
+    const req ={ride_route:polyline} as RideEditDetails
+    const res = await useEditRide(req)
+    if(res.ok){
+      router.replace("..")
     }
-    const response = await placeRoutes(request)
-    console.log(response, "======================response")
   }
 
-  useEffect(() => {
-    handleRoutes()
-  }, [])
+  // -------------------- Render --------------------
+  if (!loaded) return null;
 
   return (
     <View className="flex-1 bg-white">
+      {/* -------------------- Map Section -------------------- */}
       <View className="flex-1 relative">
+        {/* Back Button */}
         <TouchableOpacity
           className={swap(
             "absolute top-12 left-6 z-10 bg-white rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center",
@@ -100,45 +109,51 @@ function Route() {
         >
           {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
         </TouchableOpacity>
-        {/* <Image
-          source={require("../../../public/map-select.png")}
-          className="w-full h-full"
-          resizeMode="cover"
-        /> */}
-        <MapComponent directions={realRoadRoute} markers={markersData} />
+
+        {/* Map Component */}
+        <MapComponent
+        />
       </View>
 
+      {/* -------------------- Route Selection -------------------- */}
       <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
         <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] mb-6">
           {t("route.title")}
         </Text>
 
-        {routesData.map(({ id, title, description }) => {
-          const isSelected = selectedRoute === id;
+        {routes.map((loc) => {
+          const isSelected = selectedRoute === loc.route_index;
+
           return (
             <TouchableOpacity
-              key={id}
-              onPress={() => setSelectedRoute(id)}
+              key={loc.route_index}
+              onPress={() => {
+                setPolyline(loc?.polyline)
+                setSelectedRoutes(loc)
+                setSelectedRoute(loc.route_index);
+              }}
               activeOpacity={0.8}
-              className={`border px-[20px] py-[18px] rounded-2xl mb-4 flex-row justify-between items-center ${isSelected
+              className={`border px-[20px] py-[18px] rounded-2xl mb-4 flex-row justify-between items-center ${
+                isSelected
                   ? "border-[#69D2A5] bg-[#F1FFF9]"
                   : "border-[#EBEBEB] bg-white"
-                }`}
+              }`}
             >
               <View className="flex-1">
                 <Text
                   fontSize={14}
-                  className="text-[14px] font-[Kanit-Regular]"
+                  className="text-[14px] font-[Kanit-Regular] text-black"
                 >
-                  {title}
+                  {loc.duration_text}
                 </Text>
                 <Text
                   fontSize={12}
                   className="text-[12px] font-[Kanit-Regular] text-[#999999]"
                 >
-                  {description}
+                  {loc.route_description}
                 </Text>
               </View>
+
               {isSelected ? (
                 <CheckGreen width={25} height={25} />
               ) : (
@@ -154,17 +169,18 @@ function Route() {
           );
         })}
 
+        {/* Continue Button */}
         <View className="py-5">
           <TouchableOpacity
             className="bg-[#FF4848] rounded-full h-[55px] flex-row items-center justify-center"
-            onPress={() => router.push("/(publish)/your-publication")}
+            onPress={() => handleEditRoute()}
             activeOpacity={0.8}
           >
             <Text
               fontSize={20}
               className="text-xl text-white font-[Kanit-Regular]"
             >
-              {t("common.save")}
+              {t("common.continue")}
             </Text>
           </TouchableOpacity>
         </View>

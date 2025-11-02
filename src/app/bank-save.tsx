@@ -12,8 +12,9 @@ import Text from '@/components/common/text';
 import { InputComponent } from '@/components/inputs/common-input';
 import { router } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { getUserStatus, handleBankSave } from '@/service/auth';
+import { getUserStatus, handleBankSave, handleBankUpdate } from '@/service/auth';
 import { UserStatusResp } from '@//types/ride-types';
+import { useRoute } from '@react-navigation/native';
 
 const { height } = Dimensions.get('window');
 
@@ -29,14 +30,32 @@ const swiftRegex = /^[A-Z0-9]{8}([A-Z0-9]{3})?$/i;
 /* ---------------------------------- */
 export default function BankSave() {
   const { t } = useTranslation('index');
-
   /* ---------- form fields ---------- */
-  const [accountHolderName, setAccountHolderName] = useState('');
-  const [bankName, setBankName] = useState('');
-  const [accountNumber, setAccountNumber] = useState('');
-  const [iban, setIban] = useState('');
-  const [swiftCode, setSwiftCode] = useState('');
-  const [branch, setBranch] = useState('');
+  const route = useRoute();
+
+  /* ---------- safe route-data reader ---------- */
+  const routeData = React.useMemo(() => {
+    try {
+      const raw = (route.params as any)?.data;   // may be undefined
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};                                 // fallback to empty object
+    }
+  }, [route.params]);
+
+  /* ---------- form fields (fallback to empty string) ---------- */
+  const [accountHolderName, setAccountHolderName] = useState(
+    routeData?.account_holder_name ?? ''
+  );
+  const [bankName, setBankName] = useState(routeData?.bank_name ?? '');
+  const [accountNumber, setAccountNumber] = useState(
+    routeData?.account_number ?? ''
+  );
+  const [iban, setIban] = useState(routeData?.iban ?? '');
+  const [swiftCode, setSwiftCode] = useState(routeData?.swift_code ?? '');
+  const [branch, setBranch] = useState(routeData?.bank_branch ?? '');
+
+  console.log(route,"========================")
 
   /* ---------- validation ---------- */
   type Errors = {
@@ -49,6 +68,7 @@ export default function BankSave() {
   };
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+
 
   const validate = (): boolean => {
     const e: Errors = {};
@@ -74,6 +94,7 @@ export default function BankSave() {
   /* ---------- submit ---------- */
   const handleSaveBank = async () => {
     if (!validate()) return; // stop early
+    let handleSave = handleBankSave
 
     setSubmitting(true);
     const payload = {
@@ -85,12 +106,22 @@ export default function BankSave() {
       swift_code: swiftCode.trim().toUpperCase(),
     };
 
+    if(routeData.id){
+      payload.id = routeData?.id
+      handleSave = handleBankUpdate
+    }
+
     try {
-      const res = await handleBankSave(payload);
+      const res = await handleSave(payload);
       const body = await res.json();
 
       if (res.ok) {
-        enforceProfileCompleteness(); // your existing redirect logic
+       if(routes?.params?.path == "bank-list"){
+        router.replace('..')
+       }else{
+        enforceProfileCompleteness();
+       }
+        // your existing redirect logic
       } else {
         Alert.alert('Error', body.message || 'Unable to save bank details');
       }
@@ -218,7 +249,7 @@ export default function BankSave() {
               <ActivityIndicator color="#fff" />
             ) : (
               <Text fontSize={20} className="text-white">
-                {t('Verify')}
+                {routeData?.id ? t('Update') : t("Save")}
               </Text>
             )}
           </TouchableOpacity>

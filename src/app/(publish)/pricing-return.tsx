@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { View, TouchableOpacity } from "react-native";
+import { View, TouchableOpacity, TextInput } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -10,15 +10,22 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 
-function Pricing() {
+function PricingReturn() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [amount, setAmount] = useState(10);
-  const {setRideField} = useCreateRideStore()
+  const { setRideField } = useCreateRideStore();
+
+  const clamp = (val: number) => Math.max(10, Math.min(14000, val));
 
   const adjustAmount = (delta: number) => {
-    setAmount((prev) => Math.max(10, Math.min(14000, prev + delta)));
+    setAmount((prev) => clamp(prev + delta));
+  };
+
+  const handleTextChange = (text: string) => {
+    const num = Number(text.replace(/[^0-9]/g, ""));
+    if (!Number.isNaN(num)) setAmount(clamp(num));
   };
 
   if (!loaded) return null;
@@ -55,12 +62,13 @@ function Pricing() {
           </TouchableOpacity>
 
           <View className="flex-1 items-center">
-            <Text
-              fontSize={60}
-              className="text-[60px] text-[#00665A] font-[Kanit-SemiBold]"
-            >
-              SR {amount.toLocaleString()}
-            </Text>
+            <TextInput
+              value={`SR ${amount.toLocaleString()}`}
+              onChangeText={handleTextChange}
+              keyboardType="numeric"
+              className="text-[60px] text-[#00665A] font-[Kanit-SemiBold] text-center"
+              style={{ fontSize: 60 }}
+            />
           </View>
 
           <TouchableOpacity
@@ -105,19 +113,11 @@ function Pricing() {
 
       {/* Footer Buttons */}
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
-        {/* <TouchableOpacity
-          onPress={() => router.push("/(publish)/show-pricing")}
-          activeOpacity={0.8}
-          className="flex-1 rounded-full h-[55px] border border-[#EBEBEB] items-center justify-center"
-        >
-          <Text fontSize={20} className="text-xl font-[Kanit-Regular]">
-            {t("pricing.showPrices")}
-          </Text>
-        </TouchableOpacity> */}
         <TouchableOpacity
           onPress={() => {
-            setRideField("price_per_seat",amount)
-            router.push("/(publish)/show-pricing-return")}}
+            setRideField("price_per_seat", amount);
+            router.push("/(publish)/show-pricing-return");
+          }}
           activeOpacity={0.8}
           className="flex-1 rounded-full h-[55px] bg-[#FF4848] items-center justify-center"
         >
@@ -133,4 +133,4 @@ function Pricing() {
   );
 }
 
-export default Pricing;
+export default PricingReturn;

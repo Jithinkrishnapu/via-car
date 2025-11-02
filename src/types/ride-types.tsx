@@ -8,7 +8,9 @@ export interface SearchRideRequest {
     max_walking_distance_km: number;
     max_2_in_back?:boolean,
     include_total?:boolean,
-    sort_by?:number
+    sort_by?:number,
+    "stops_filter"?:string,
+    verified_drivers_only?:boolean
   }
 
 
@@ -71,7 +73,7 @@ export interface LocationData {
   text: string
 }
 
-type Stops = {
+export type Stops = {
   lat: number;
   lng: number;
   address: string;
@@ -101,6 +103,25 @@ export type RideDetails = {
   max_2_in_back: boolean;
   stops: Stops[];
   prices: Price[];
+};
+
+export type RideEditDetails = {
+  vehicle_id?: number;
+  ride_id?: number;
+  pickup_lat?: number;
+  pickup_lng?: number;
+  pickup_address?: string;
+  drop_lat?: number;
+  drop_lng?: number;
+  drop_address?: string;
+  date?: string; // ISO date (e.g., "2025-10-15")
+  pickup_time?: string; // "HH:mm" format
+  drop_time?: string; // "HH:mm" format
+  passengers?: number;
+  ride_route?: string; // encoded polyline
+  max_2_in_back?: boolean;
+  stops?: Stops[];
+  prices?: Price[];
 };
 
 

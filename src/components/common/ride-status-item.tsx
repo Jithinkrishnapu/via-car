@@ -10,7 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 
 interface Props {
-  status: 'Pending' | 'Cancelled' | 'Completed';
+  status: 'Pending' | 'Cancelled' | 'Completed' | 'In Progress';
   data: any;
   onCancel?:()=>void
 }

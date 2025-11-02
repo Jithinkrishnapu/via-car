@@ -11,7 +11,12 @@ import CheckboxCard from "../ui/checkbox-card";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  close: () => void;
+  close: (filters: {
+    sortOption: number;
+    numberOfStops: string;
+    verifiedProfile: boolean;
+    aminities:Record<string, boolean>
+  }) => void;
 }
 
 const RideFilters = ({ close }: Props) => {
@@ -21,6 +26,7 @@ const RideFilters = ({ close }: Props) => {
   );
   const [numberOfStops, setNumberOfStops] = useState("0");
   const [verifiedProfile, setVerifiedProfile] = useState(true);
+  const [checkedItems, setCheckedIds] = useState<Record<string, boolean>>();
   const [carModel, setCarModel] = useState(t("rideFilter.lastThreeYears"));
 
   const anim = useRef(new Animated.Value(0)).current;
@@ -58,6 +64,30 @@ const RideFilters = ({ close }: Props) => {
     { label: t("rideFilter.twoStopsOrMore"), value: "2+", count: 25 },
   ];
 
+  const toSortCode = (label: string): number => {
+    const map: Record<string, number> = {
+      [t("rideFilter.earliestDeparture")]: 1,
+      [t("rideFilter.lowestPrice")]: 2,
+      [t("rideFilter.closeToDeparture")]: 3,
+      [t("rideFilter.closeToArrival")]: 4,
+      [t("rideFilter.shortestRide")]: 5,
+    };
+    return map[label] ?? 1; // fallback → 1
+  };
+
+  const toStopCode = (val: string): string => {
+    switch (val) {
+      case "0":
+        return "direct_only";
+      case "1":
+        return "1_stop";
+      case "2+":
+        return "2_stops_or_more";
+      default:
+        return "direct_only";
+    }
+  };
+
   const carModelOptions = [
     {
       label: t("rideFilter.lastThreeYears"),
@@ -72,6 +102,9 @@ const RideFilters = ({ close }: Props) => {
     { label: t("rideFilter.all"), value: t("rideFilter.all"), count: 70 },
   ];
 
+
+  console.log("checked==========",checkedItems)
+
   return (
     <ScrollView>
       <View className="px-[27px] pt-6 pb-6">
@@ -81,7 +114,14 @@ const RideFilters = ({ close }: Props) => {
             <TouchableOpacity
               className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
               activeOpacity={0.8}
-              onPress={close}
+              onPress={() =>
+                close({
+                  sortOption: toSortCode(sortOption),
+                  numberOfStops: toStopCode(numberOfStops),
+                  verifiedProfile,
+                  aminities:checkedItems!
+                })
+              }
             >
               <XIcon />
             </TouchableOpacity>
@@ -89,7 +129,14 @@ const RideFilters = ({ close }: Props) => {
               {t("rideFilter.filter")}
             </Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() =>
+            close({
+              sortOption: 1,         // Default sort (earliestDeparture)
+              numberOfStops: "direct_only", // Default stops (update based on your logic)
+              verifiedProfile,
+              aminities:checkedItems!
+            })
+          }>
             <Text
               fontSize={18}
               className="text-[18px] text-[#666666] font-[Kanit-Light]"
@@ -126,9 +173,8 @@ const RideFilters = ({ close }: Props) => {
           >
             <View className="flex-row items-center gap-[23px]">
               <View
-                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${
-                  sortOption === label ? "border-gray-400" : "border-gray-400"
-                }`}
+                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${sortOption === label ? "border-gray-400" : "border-gray-400"
+                  }`}
               >
                 {sortOption === label && (
                   <View className="size-[11px] bg-red-500 rounded-full" />
@@ -173,9 +219,8 @@ const RideFilters = ({ close }: Props) => {
           >
             <View className="flex-row items-center gap-[23px]">
               <View
-                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${
-                  numberOfStops === value ? "border-red-500" : "border-gray-400"
-                }`}
+                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${numberOfStops === value ? "border-red-500" : "border-gray-400"
+                  }`}
               >
                 {numberOfStops === value && (
                   <View className="size-[11px] bg-red-500 rounded-full" />
@@ -263,12 +308,12 @@ const RideFilters = ({ close }: Props) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <CheckboxCard />
+        <CheckboxCard setCheckedItem={setCheckedIds} />
 
         <View className="border-t border-dashed border-gray-300 my-4" />
 
         {/* Car model */}
-        <View className="flex-row justify-between items-center mb-2">
+        {/* <View className="flex-row justify-between items-center mb-2">
           <Text
             fontSize={18}
             className="text-[18px] text-black font-[Kanit-Medium]"
@@ -315,10 +360,17 @@ const RideFilters = ({ close }: Props) => {
               {count}
             </Text>
           </TouchableOpacity>
-        ))}
+        ))} */}
         <TouchableOpacity
           className="bg-[#FF4848] rounded-full h-[55px] justify-center items-center px-8 w-full my-4"
-          onPress={close}
+          onPress={() =>
+            close({
+              sortOption: toSortCode(sortOption), // 1-5
+              numberOfStops: toStopCode(numberOfStops),
+              verifiedProfile,
+              aminities:checkedItems!
+            })
+          }
           activeOpacity={0.8}
         >
           <Text

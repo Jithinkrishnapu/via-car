@@ -7,6 +7,7 @@ type DobPickerProps = {
   onDateChange: (date: Date, formattedDate: string) => void;
   errorMessage?: string;
   minimumAge?: number; // e.g., 18
+  initialDate:any
 };
 
 const DEFAULT_MIN_AGE = 18;
@@ -16,6 +17,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
   onDateChange,
   errorMessage,
   minimumAge = DEFAULT_MIN_AGE,
+  initialDate
 }) => {
   const [date, setDate] = useState<Date | null>(null);
   const [show, setShow] = useState(false);
@@ -34,7 +36,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear() - minimumAge);
   const [selectedMonth, setSelectedMonth] = useState(1);
   const [selectedDay, setSelectedDay] = useState(1);
-
+  console.log("initialdate=============",initialDate)
   const handleDateSelect = () => {
     const selectedDate = new Date(selectedYear, selectedMonth - 1, selectedDay);
     setDate(selectedDate);
@@ -58,8 +60,8 @@ const DobPicker: React.FC<DobPickerProps> = ({
           `border border-[#EBEBEB] rounded-full px-4 py-3 bg-white flex-row items-center justify-between`
         }
       >
-        <Text className={date ? 'text-black' : 'text-gray-400'}>
-          {date ? formatDate(date) : 'DD/MM/YYYY'}
+        <Text className={(date || initialDate) ? 'text-black' : 'text-gray-400'}>
+          {date ? formatDate(date) : initialDate ? formatDate(initialDate) : 'DD/MM/YYYY'}
         </Text>
         <Text className="text-red-500 text-lg">📅</Text>
       </TouchableOpacity>

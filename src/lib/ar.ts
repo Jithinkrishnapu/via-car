@@ -99,6 +99,7 @@ const ar = {
         Pending: "قيد الانتظار",
         Cancelled: "ملغي",
         Completed: "مكتمل",
+        "In Progress": "جاري"
       },
     },
     inbox: {

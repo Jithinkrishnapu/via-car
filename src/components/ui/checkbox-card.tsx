@@ -26,40 +26,43 @@ interface Option {
   defaultChecked?: boolean;
 }
 
-const CheckboxCard: React.FC = () => {
-  const { t } = useTranslation("components");
+interface Props {
+  setCheckedItem: (items: Record<string, boolean>) => void
+}
 
+const CheckboxCard = ({ setCheckedItem }: Props) => {
+  const { t } = useTranslation("components");
   const options: Option[] = [
     {
       label: t("checkboxCard.maxTwoInBack"),
-      value: "max2",
+      value: "max_2_in_back",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <UsersBoldIcon width={width} height={height} stroke={color} />
       ),
-      defaultChecked: true,
+      defaultChecked: false,
     },
     {
       label: t("checkboxCard.instantBooking"),
-      value: "instantBooking",
+      value: "instant_booking",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <ClockIcon width={width} height={height} stroke={color} />
       ),
-      defaultChecked: true,
+      defaultChecked: false,
     },
     {
       label: t("checkboxCard.smokingAllowed"),
-      value: "smoking",
+      value: "smoking_allowed",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <CigaretteIcon width={width} height={height} stroke={color} />
       ),
-      defaultChecked: true,
+      defaultChecked: false,
     },
     {
       label: t("checkboxCard.petsAllowed"),
-      value: "pets",
+      value: "pets_allowed",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <PetsIcon width={width} height={height} stroke={color} />
@@ -67,7 +70,7 @@ const CheckboxCard: React.FC = () => {
     },
     {
       label: t("checkboxCard.powerOutlets"),
-      value: "power",
+      value: "power_outlets",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <BatteryCharging size={width} color={color} strokeWidth={1} />
@@ -75,7 +78,7 @@ const CheckboxCard: React.FC = () => {
     },
     {
       label: t("checkboxCard.airConditioning"),
-      value: "ac",
+      value: "air_conditioning",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <SnowFlakeIcon width={width} height={height} stroke={color} />
@@ -83,7 +86,7 @@ const CheckboxCard: React.FC = () => {
     },
     {
       label: t("checkboxCard.accessibleForDisabilities"),
-      value: "disability",
+      value: "accessible_for_disabled",
       count: 40,
       Icon: ({ width = 22, height = 22, color }) => (
         <WheelChairIcon width={width} height={height} stroke={color} />
@@ -100,6 +103,7 @@ const CheckboxCard: React.FC = () => {
 
   const toggleCheckbox = (value: string) => {
     setCheckedItems((prev) => ({ ...prev, [value]: !prev[value] }));
+    setCheckedItem({ ...checkedItems, [value]: !checkedItems[value] });
   };
 
   return (

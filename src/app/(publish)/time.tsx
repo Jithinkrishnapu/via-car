@@ -19,7 +19,6 @@ function Time() {
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
-
   const { setRideField } = useCreateRideStore();
 
   if (!loaded) return null;
@@ -27,40 +26,47 @@ function Time() {
   const [hour, setHour] = useState("07");
 
   const onChangeHour = (text: string) => {
-    // allow empty or up-to-two digits while typing
     if (!/^\d{0,2}$/.test(text)) return;
     setHour(text);
   };
-  
+
   const onBlurHour = () => {
-    // final clamp 1-12
     let h = parseInt(hour, 10);
     if (Number.isNaN(h) || h < 1) h = 1;
     if (h > 12) h = 12;
     setHour(h.toString().padStart(2, "0"));
   };
-  
-  /* ---------- minute handling ---------- */
+
   const [minute, setMinute] = useState("00");
-  
+
   const onChangeMinute = (text: string) => {
     if (!/^\d{0,2}$/.test(text)) return;
     setMinute(text);
   };
-  
+
   const onBlurMinute = () => {
     let m = parseInt(minute, 10);
     if (Number.isNaN(m) || m < 0) m = 0;
     if (m > 59) m = 59;
     setMinute(m.toString().padStart(2, "0"));
   };
-  
+
   /* ---------- continue ---------- */
   const handleContinue = () => {
     // ensure valid values even if user never blurred
     onBlurHour();
     onBlurMinute();
-    setRideField("time", `${hour.padStart(2,"0")}:${minute.padStart(2,"0")}`);
+
+    // 12-hour → 24-hour conversion
+    let h24 = parseInt(hour, 10);
+    if (period === "PM" && h24 !== 12) h24 += 12;
+    if (period === "AM" && h24 === 12) h24 = 0;
+
+    const time24 = `${h24.toString().padStart(2, "0")}:${minute.padStart(
+      2,
+      "0"
+    )}`;
+    setRideField("time", time24);
     router.push("/(publish)/passenger-count");
   };
 

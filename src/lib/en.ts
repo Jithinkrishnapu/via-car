@@ -99,6 +99,7 @@ const en = {
         Pending: "Pending",
         Cancelled: "Cancelled",
         Completed: "Completed",
+        "In Progress": "On Going",
       },
     },
     inbox: {

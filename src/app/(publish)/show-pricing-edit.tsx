@@ -20,8 +20,8 @@ import Direction5 from "../../../public/direction5.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
-import { useCreateRide } from "@/service/ride-booking";
-import { RideDetails } from "@/types/ride-types";
+import { useCreateRide, useEditRide } from "@/service/ride-booking";
+import { RideDetails, RideEditDetails } from "@/types/ride-types";
 import { useGetProfileDetails } from "@/service/auth";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -30,7 +30,7 @@ function ShowPricing() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
+  const { setRideField, ride, selectedPlaces, ride_id} = useCreateRideStore();
 
   const [userDetails, setUserDetails] = useState<any>();
   const [loading, setLoading] = useState(false);          // ← NEW
@@ -105,35 +105,17 @@ function ShowPricing() {
       }
   
       /* ---- assemble payload ---------------------------------------- */
-      const postData: RideDetails = {
-        vehicle_id   : ride.vehicle_id,
-        pickup_lat   : ride.pickup_lat,
-        pickup_lng   : ride.pickup_lng,
-        pickup_address: ride.pickup_address,
-        drop_lat     : ride.destination_lat,
-        drop_lng     : ride.destination_lng,
-        drop_address : ride.destination_address,
-        date         : ride.date,
-        pickup_time  : ride.time,
-        drop_time    : ride.time,
-        passengers   : ride.available_seats,
-        ride_route   : polyline,
-        max_2_in_back: ride.max_2_in_back,
-        stops,
-        prices,
+      const postData: RideEditDetails = {
+        prices:prices,
+        ride_id:ride_id
       };
   
+      console.log(postData,"ride=======postdata")
       /* ---- hit the endpoint ---------------------------------------- */
-      const { ok, data } = await useCreateRide(postData);
+      const { ok, data } = await useEditRide(postData);
   
       if (ok && data?.data?.id) {
-        router.push({
-          pathname: '/(publish)/return',
-          params  : {
-            ride_id       : data.data.id,
-            ride_amount_id: data.data.rideAmounts?.[0]?.pickup_id,
-          },
-        });
+        router.replace("..");
       }
       /* ---- error already shown by useCreateRide -------------------- */
     } catch (err: any) {

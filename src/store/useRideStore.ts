@@ -34,6 +34,8 @@ interface CreateRideStore {
   error: string | null
   success: boolean
   polyline: string
+  ride_id:number,
+  setRideId:(ride_id:number)=>void
   selectedPlaces: SelectedPlace[]
   setPolyline: (polyline: string) => void
   setRideField: <K extends keyof RideData>(key: K, value: RideData[K]) => void
@@ -69,12 +71,13 @@ export const useCreateRideStore = create<CreateRideStore>()(
     error: null,
     success: false,
     polyline: '',
+    ride_id:0,
     selectedPlaces: [],
 
     setPolyline: (polyline: string) => set({ polyline }),
 
     setSelectedPlaces: (places) => set({ selectedPlaces: places }),
-
+    setRideId:(ride_id)=>set(({ride_id})),
     setRideField: (key, value) =>
       set((state) => ({
         ride: { ...state.ride, [key]: value },

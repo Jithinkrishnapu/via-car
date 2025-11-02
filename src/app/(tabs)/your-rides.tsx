@@ -9,6 +9,7 @@ import {
   Modal,
   Pressable,
   RefreshControl,
+  TextInput,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -20,17 +21,18 @@ import { format } from 'date-fns';
 import { ChevronDown, ChevronRight } from 'lucide-react-native';
 
 import { useLoadFonts } from '@/hooks/use-load-fonts';
-import { useGetAllBooking, useGetAlRides, useUpdateBookingStatus, useUpdateRideStatus } from '@/service/ride-booking';
+import { useGetAllBooking, useGetAlRides, useUpdateBookingStatus, useUpdateRideStatus, useVerifyBooking } from '@/service/ride-booking';
 
 import RideStatusItem from '@/components/common/ride-status-item';
 import Text from '@/components/common/text';
 import { cn } from '@/lib/utils';
 import { RideCard } from '@/components/RideCard';
+import { Input } from '@/components/ui/input';
 
 /* ------------------------------------------------------------------ */
 /* TYPES / CONSTANTS                                                  */
 /* ------------------------------------------------------------------ */
-const TABS = ['Pending', 'Cancelled', 'Completed'] as const;
+const TABS = ['Pending',"In Progress",'Cancelled', 'Completed'] as const;
 const SIDES = ['Driver', 'User'] as const;
 type Tab = (typeof TABS)[number];
 type Side = (typeof SIDES)[number];
@@ -60,31 +62,67 @@ export default function RidesTabsScreen() {
   /* --------------------- STATE  --------------------- */
   const [activeTab, setActiveTab] = useState<Tab>('Pending');
   const [side, setSide] = useState<Side>('User');
+  const [ride_id, setRideId] = useState<number>();
+  const [pin, setPin] = useState<string>();
   const [modalVisible, setModalVisible] = useState(true);
   const [sideModalVisible, setSideModalVisible] = useState(false);
+  const [showModalVisible, setShowModalVisible] = useState(false);
   const [bookingList, setBookingList] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
- const handleCancelRide =async(item:any)=>{
-  const req ={
-   ride_id:item?.id,
-   status:5
+  const handleCancelRide = async (item: any) => {
+    const req = {
+      ride_id: item?.id,
+      status: 5
+    }
+    const response = await useUpdateRideStatus(req)
+    if (response) {
+      Alert.alert("Ride Cancelled")
+    }
   }
-  const response = await useUpdateRideStatus(req)
-  if(response){
-    Alert.alert("Order Cancelled")
+  const handleCancelBooking = async (item: any) => {
+    const req = {
+      booking_id: item?.id,
+      status: 5
+    }
+    const response = await useUpdateBookingStatus(req)
+    if (response) {
+      Alert.alert("Booking Cancelled")
+    }
   }
- }
- const handleCancelBooking =async(item:any)=>{
-  const req ={
-   booking_id:item?.id,
-   status:5
+
+  const handleStartBooking = async (item: any) => {
+    const req = {
+      ride_id: item?.id,
+      status: 3
+    }
+    const response = await useUpdateRideStatus(req)
+    if (response) {
+      Alert.alert("Ride Started")
+    }
   }
-  const response = await useUpdateBookingStatus(req)
-  if(response){
-    Alert.alert("Order Cancelled")
+
+  const handleEndBooking = async (item: any) => {
+    const req = {
+      ride_id: item?.id,
+      status: 4
+    }
+    const response = await useUpdateRideStatus(req)
+    if (response) {
+      Alert.alert("Booking Completed")
+    }
   }
- }
+
+  const handleVerifyBooking = async (ride_id: number, pin: string) => {
+    const req = {
+      "ride_id": ride_id,
+      "pin": pin
+    }
+    const response = await useVerifyBooking(req)
+    if (response) {
+      Alert.alert("Booking Verified")
+    }
+  }
 
   /* ------------------- ANIMATION -------------------- */
   const tabWidth = (width - 48 + 6) / TABS.length;
@@ -113,8 +151,8 @@ export default function RidesTabsScreen() {
             'booked',
             activeTab.toLowerCase() as 'pending' | 'completed' | 'cancelled'
           )
-          : await useGetAlRides();
-      console.log("side============", side, "===================",activeTab,"==============", res?.data)
+          : await useGetAlRides(activeTab?.toLowerCase() as 'pending' | 'completed' | 'cancelled');
+      console.log("side============", side, "===================", activeTab, "==============", res?.data)
       setBookingList(res?.data?.length ? res.data : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load data');
@@ -130,27 +168,33 @@ export default function RidesTabsScreen() {
 
   /* ------------------- RENDER ITEMS  ---------------- */
   const renderUserItem = ({ item, index }: any) => (
-    <RideStatusItem onCancel={()=>handleCancelBooking(item)} data={item} status={activeTab} key={`${activeTab}-${index}`} />
+    <RideStatusItem onCancel={() => handleCancelBooking(item)} data={item} status={activeTab} key={`${activeTab}-${index}`} />
   );
 
   const renderDriverItem = ({ item, index }: any) => (
-  item?.pickup_time ? <RideCard
-      onRideCancel={()=>handleCancelRide(item)}
+    item?.pickup_time ? <RideCard
+      activeTab={activeTab}
+      status={item?.status}
+      onRideCancel={() => handleCancelRide(item)}
       passengers={item?.passengers || ""}
       driverName={`${item?.driver?.first_name}` || ""}
       rating={4.5}
       date={item?.date?.split('T')[0] || ""}
-      startTime={item?.pickup_time || "" }
+      startTime={item?.pickup_time || ""}
       from={item?.pickup_address || ""}
       price={
-        item?.rideAmounts?.length ? `SR ${item.rideAmounts[2]?.amount}` : ''
+        item?.rideAmounts?.length ? `SR ${item.rideAmounts[0]?.amount}` : ''
       }
       duration="4h 40m"
       endTime={item?.drop_time || ""}
       to={item?.drop_address || ""}
       passengerStatus="confirmed"
-      onStartRide={() => console.log('start')}
-      onAddPassengers={() => console.log('add')}
+      onStartRide={() => handleStartBooking(item)}
+      onEndRide={() => handleEndBooking(item)}
+      onAddPassengers={() => {
+        setRideId(item?.id)
+        setShowModalVisible(true)
+      }}
       key={`${activeTab}-${index}`}
     /> : <></>
   );
@@ -232,7 +276,7 @@ export default function RidesTabsScreen() {
               <Text>No Bookings Found</Text>
             </View>
           }
-          ListFooterComponent={()=><View className='w-full h-[100px] my-5' ></View>}
+          ListFooterComponent={() => <View className='w-full h-[100px] my-5' ></View>}
           refreshControl={
             <RefreshControl refreshing={refreshing} onRefresh={() => fetchList(true)} />
           }
@@ -303,6 +347,36 @@ export default function RidesTabsScreen() {
                 )}
                 ItemSeparatorComponent={() => <DashedLine />}
               />
+            </View>
+          </View>
+        </Pressable>
+      </Modal>
+      <Modal visible={showModalVisible} transparent animationType="fade">
+        <Pressable
+          className="flex-1 bg-black/30"
+          onPress={() => setShowModalVisible(false)}
+        >
+          <View className="flex-1 justify-end bg-black/30">
+            <View className="bg-white px-12 rounded-t-3xl items-center">
+              <Text className="text-[25px] font-[Kanit-Regular] text-black text-center my-4">
+                Please Verify Your Passenger
+              </Text>
+
+              <TextInput onChangeText={(text) => setPin(text)} value={pin} placeholder='Enter PIN Number' placeholderClassName='font-[Kanin-Light]' className='w-full font-[Kanin-Bold] text-[18px] text-black h-[50px] pl-5 bg-slate-200 rounded-full' />
+
+              <View className="flex-row items-center gap-4 justify-center">
+                <TouchableOpacity
+                  className="bg-[#FF4848] rounded-full w-full h-[50px] mt-6 mb-12 items-center justify-center"
+                  activeOpacity={0.8}
+                  onPress={() => {
+                    handleVerifyBooking(ride_id!, pin!)
+                  }}
+                >
+                  <Text className="text-[18px] text-white text-center font-[Kanit-Medium]">
+                    Verify
+                  </Text>
+                </TouchableOpacity>
+              </View>
             </View>
           </View>
         </Pressable>

@@ -1,33 +1,87 @@
 import { API_URL } from "@/constants/constants";
-import { RideDetails, RoutesRequest, SearchRideRequest, SearchRideResponse } from "@/types/ride-types";
+import { RideDetails, RideEditDetails, RoutesRequest, SearchRideRequest, SearchRideResponse } from "@/types/ride-types";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useState } from "react";
+import { Alert } from "react-native";
 
 export const useCreateRide = async (postData: RideDetails) => {
   const userDetailsString = await useAsyncStorage('userDetails').getItem();
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token ?? '';
-  console.log(token)
+
+  /* ---- optional: log what we are about to send ------------------- */
+  console.log('TOKEN >>>', token);
+  console.log('POST-BODY >>>', JSON.stringify(postData, null, 2));
+  /* ---------------------------------------------------------------- */
+
   const res = await fetch(`${API_URL}/api/ride/create`, {
-    method: 'POST',
+    method : 'POST',
     headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
+      'Content-Type' : 'application/json',
+      Authorization  : `Bearer ${token}`,
     },
     body: JSON.stringify(postData),
   });
 
-  // ── read body once, here -------------------------------------------
-  let data;
-  try {
-    data = await res.json();          // may throw if body is not JSON
-  } catch {
-    data = { message: 'Server returned non-JSON response' };
+  /* 1️⃣  ALWAYS read the body once as TEXT first --------------------- */
+  const raw = await res.text();
+  console.log('RAW RESPONSE >>>', raw);
+
+  /* 2️⃣  Try to turn it into JSON; fall back to raw text ------------- */
+  let data: any;
+  try   { data = JSON.parse(raw); }
+  catch { data = { message: raw || 'Server returned non-JSON response' }; }
+
+  /* 3️⃣  Surface the error to the caller & UI ----------------------- */
+  if (!res.ok) {
+    Alert.alert(
+      `Ride creation failed (${res.status})`,
+      data.message || data.error || data.msg || 'Unknown server error'
+    );
   }
-  // -------------------------------------------------------------------
 
   return { ok: res.ok, status: res.status, data };
 };
+
+export const useEditRide = async (postData: RideEditDetails) => {
+  const userDetailsString = await useAsyncStorage('userDetails').getItem();
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+  const token = userDetails?.token ?? '';
+
+  /* ---- optional: log what we are about to send ------------------- */
+  console.log('TOKEN >>>', token);
+  console.log('POST-BODY >>>', JSON.stringify(postData, null, 2));
+  /* ---------------------------------------------------------------- */
+
+  const res = await fetch(`${API_URL}/api/ride/edit`, {
+    method : 'PUT',
+    headers: {
+      'Content-Type' : 'application/json',
+      Authorization  : `Bearer ${token}`,
+    },
+    body: JSON.stringify(postData),
+  });
+
+  /* 1️⃣  ALWAYS read the body once as TEXT first --------------------- */
+  const raw = await res.text();
+  // console.log('RAW RESPONSE >>>', raw);
+
+  /* 2️⃣  Try to turn it into JSON; fall back to raw text ------------- */
+  let data: any;
+  try   { data = JSON.parse(raw); }
+  catch { data = { message: raw || 'Server returned non-JSON response' }; }
+
+  /* 3️⃣  Surface the error to the caller & UI ----------------------- */
+  if (!res.ok) {
+    Alert.alert(
+      `Ride creation failed (${res.status})`,
+      data.message || data.error || data.msg || 'Unknown server error'
+    );
+  }
+
+  return { ok: res.ok, status: res.status, data };
+};
+
 
 export const useGetPopularPlaces = async (postData: any) => {
   console.log("request==========", postData)
@@ -62,6 +116,38 @@ export const useGetRideDetails = async (postData: {
   console.log(token)
   try {
     const res = await fetch(`${API_URL}/api/ride/detail`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(postData),
+    });
+
+    if (!res.ok) {
+      throw new Error(`${res.status} ${res.statusText}`);
+    }
+
+    const data = await res.json();   // ← read once
+    console.log('response ==========', data);
+    return data;                     // ← return it
+  } catch (error) {
+    console.error('api details error', error);
+    throw error;                     // re-throw so the component can catch it
+  }
+};
+
+export const useGetPublishedRideDetails = async (postData: {
+  ride_id: number;
+}) => {
+  console.log('request==========', postData);
+
+  const userDetailsString = await useAsyncStorage('userDetails').getItem();
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+  const token = userDetails?.token ?? '';
+  console.log(token)
+  try {
+    const res = await fetch(`${API_URL}/api/ride/driver-detail`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -182,11 +268,36 @@ export const useUpdateBookingStatus = async (postData: {
 
 }
 
-export const useGetAllBooking = async (booking_type: "booked" | "published", status_type: "pending" | "completed" | "cancelled") => {
+export const useVerifyBooking = async (postData: {
+  "ride_id": number,
+  "pin": string
+}) => {
+  console.log("request==========", postData)
+  const userDetailsString = await useAsyncStorage("userDetails").getItem()
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+  const token = userDetails ? userDetails?.token : ""
+  try {
+    const response = await fetch(`${API_URL}/api/booking/verify-pin`, {
+      body: JSON.stringify(postData),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+      }
+    });
+    return response.json()
+  } catch (error) {
+    console.log("api error", error)
+  }
+
+}
+
+export const useGetAllBooking = async (booking_type: "booked" | "published", status_type: "pending" | "completed" | "cancelled" |  "requested") => {
   console.log("request==========", booking_type, status_type)
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
+  console.log(token)
   try {
     const response = await fetch(`${API_URL}/api/booking/list?booking_type=${booking_type}&status_type=${status_type}&page=1`, {
       method: 'GET',
@@ -202,13 +313,14 @@ export const useGetAllBooking = async (booking_type: "booked" | "published", sta
 
 }
 
-export const useGetAlRides = async () => {
+export const useGetAlRides = async (status_type: "pending" | "completed" | "cancelled") => {
+  const status = status_type == 'pending' ? 1 : status_type == "completed" ? 4 : status_type == "cancelled" ? 5 : 2
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
-  console.log("token==================", token)
+  console.log("token==================", token,status)
   try {
-    const response = await fetch(`${API_URL}/api/ride/list`, {
+    const response = await fetch(`${API_URL}/api/ride/list?status=${status}&per_page=100`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',

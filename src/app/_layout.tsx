@@ -1,6 +1,6 @@
 import React from "react";
 import { Stack } from "expo-router";
-import { StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import "@/lib/i18n";
@@ -25,18 +25,18 @@ NavigationBar.setButtonStyleAsync("dark");
 function RootLayout() {
   const insets = useSafeAreaInsets();
   return (
-    <KeyboardAwareScrollView
+    <View
       style={[styles.container, { paddingBottom: insets.bottom }]}
-      contentContainerStyle={styles.content}
-      enableOnAndroid={true}
-      extraScrollHeight={0}
-      keyboardOpeningTime={0}
-      keyboardShouldPersistTaps="handled"
+      // contentContainerStyle={styles.content}
+      // enableOnAndroid={true}
+      // extraScrollHeight={0}
+      // keyboardOpeningTime={0}
+      // keyboardShouldPersistTaps="handled"
     >
       {/* <QueryClientProvider client={queryClient}> */}
       <Stack  screenOptions={{ headerShown: false, animation: "none" }} />
       {/* <MapComponent/> */}
-    </KeyboardAwareScrollView>
+    </View>
       // </QueryClientProvider>
   );
 }

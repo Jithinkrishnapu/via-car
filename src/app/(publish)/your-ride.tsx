@@ -13,7 +13,7 @@ import DirectionIcon from "../../../public/direction4.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useRoute } from "@react-navigation/native";
-import { useGetRideDetails } from "@/service/ride-booking";
+import { useGetPublishedRideDetails, useGetRideDetails } from "@/service/ride-booking";
 import { RideDetail } from "@/types/ride-types";
 
 export default function RidePlanScreen() {
@@ -31,11 +31,10 @@ export default function RidePlanScreen() {
 
   const handleGetRideDetails = async () => {
     const postData = {
-      ride_id: route?.params?.ride_id,
-      ride_amount_id: route?.params?.ride_amount_id
+      ride_id: route?.params?.ride_id
     }
     console.log("postData========", postData)
-    const response = await useGetRideDetails(postData)
+    const response = await useGetPublishedRideDetails(postData)
     if (response?.data) {
       // handleRoutes(response?.data)
       setRideDetail(response.data)
@@ -140,9 +139,11 @@ export default function RidePlanScreen() {
         <View className="flex-col max-w-[716px] w-full self-center divide-y divide-[#EBEBEB] divide-dashed">
           {/* View Publication */}
           <TouchableOpacity
-            onPress={() => router.push({pathname:"/(publish)/ride-details",params:{ride_id:rideDetail?.rideId?.id,
+            onPress={() => {
+              console.log("value==============",rideDetail)
+              router.push({pathname:"/(publish)/ride-details",params:{ride_id:rideDetail?.rideId?.id,
               ride_amount_id: rideDetail?.rideAmount?.id
-            }})}
+            }})}}
             activeOpacity={0.8}
             className="py-4 flex-row items-center"
           >
@@ -167,7 +168,9 @@ export default function RidePlanScreen() {
 
           {/* Edit Publication */}
           <TouchableOpacity
-            onPress={() => router.push("/(publish)/your-publication")}
+            onPress={() => router.push({pathname:"/(publish)/your-publication",params:{ride_id:rideDetail?.rideId?.id,
+              ride_amount_id: rideDetail?.rideAmount?.id
+            }})}
             activeOpacity={0.8}
             className="py-4 flex-row items-center"
           >

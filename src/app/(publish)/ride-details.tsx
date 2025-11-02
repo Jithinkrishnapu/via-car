@@ -23,16 +23,32 @@ import Chat from "../../../public/chat.svg";
 import Direction from "../../../public/direction4.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
-import { useGetRideDetails } from "@/service/ride-booking";
-import { useEffect, useState } from "react";
+import { useGetPublishedRideDetails, useGetRideDetails } from "@/service/ride-booking";
+import { useCallback, useEffect, useState } from "react";
 import { useRoute } from "@react-navigation/native";
 import { RideDetail } from "@/types/ride-types";
+import { useGetProfileDetails } from "@/service/auth";
+import ChatIcon from "@/components/icons/chat-icon";
 
 function RideDetails() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const [rideDetail, setRideDetail] = useState<RideDetail>()
+
+  const [userDetails, setUserDetails] = useState(null);
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      const res = await useGetProfileDetails();
+      if (res?.data) setUserDetails(res.data);
+    } catch {
+      /* optional toast / log */
+    }
+  }, []);
+
+  /* first load */
+  useEffect(() => { refreshProfile(); }, [refreshProfile]);
 
   if (!loaded) return null;
 
@@ -42,11 +58,10 @@ function RideDetails() {
 
   const handleGetRideDetails = async () => {
     const postData = {
-      ride_id: route?.params?.ride_id,
-      ride_amount_id: route?.params?.ride_amount_id
+      ride_id: route?.params?.ride_id
     }
     console.log("postData========", postData)
-    const response = await useGetRideDetails(postData)
+    const response = await useGetPublishedRideDetails(postData)
     if (response?.data) {
       // handleRoutes(response?.data)
       setRideDetail(response.data)
@@ -231,32 +246,19 @@ function RideDetails() {
                 >
                   {t("rideDetails.details")}
                 </Text>
-                <View className="flex-row flex-wrap gap-2 pb-1">
-                  <Text
-                    fontSize={13}
-                    className="flex-row items-center justify-center rounded-full border border-[#E1DFDF] px-[14px] py-[4px] h-max text-[13px] font-[Kanit-Light] w-max"
-                  >
-                    {t("rideDetails.rarelyCancelsRides")}
-                  </Text>
-                  <Text
-                    fontSize={13}
-                    className="flex-row items-center justify-center rounded-full border border-[#E1DFDF] px-[14px] py-[4px] h-max text-[13px] font-[Kanit-Light] w-max"
-                  >
-                    {t("rideDetails.instantBooking")}
-                  </Text>
-                  <Text
-                    fontSize={13}
-                    className="flex-row items-center justify-center rounded-full border border-[#E1DFDF] px-[14px] py-[4px] h-max text-[13px] font-[Kanit-Light] w-max"
-                  >
-                    {t("rideDetails.fineWithSmoking")}
-                  </Text>
-                  <Text
-                    fontSize={13}
-                    className="flex-row items-center justify-center rounded-full border border-[#E1DFDF] px-[14px] py-[4px] h-max text-[13px] font-[Kanit-Light] w-max"
-                  >
-                    {t("rideDetails.fineWithSmoking")}
-                  </Text>
-                </View>
+                <View className="flex-wrap flex-row gap-[15px]">
+                {userDetails?.travel_preferences?.[0]          // take the first (and only) string
+                  ?.split(',')                                 // break it into real tags
+                  .map((text: string) => (
+                    <View
+                      key={text}
+                      className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
+                    >
+                      <ChatIcon width={21} height={21} />
+                      <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
+                    </View>
+                  ))}
+              </View>
               </View>
             </View>
             <View className="px-8 py-4 gap-4 rounded-none bg-white">

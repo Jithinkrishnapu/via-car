@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   ScrollView,
   View,
@@ -9,6 +9,7 @@ import {
   Modal,
   TextInput,
   Alert,
+  FlatList,
 } from "react-native";
 import { Href, useRouter } from "expo-router";
 import {
@@ -47,8 +48,10 @@ import EmailModal from "@/components/modals/EmailModal";
 import PreferencesModal from "@/components/modals/PrefereceModal";
 import AboutModal from "@/components/modals/AboutModal";
 import { handleLogOut, useGetProfileDetails } from "@/service/auth";
+import { getVehicleList } from "@/service/vehicle";
+import ProfileModal from "@/components/modals/ProfileModal";
 
-type ModalTypes = "email" | "preferences" | "about"
+type ModalTypes = "email" | "preferences" | "about" | "profile"
 
 export default function ProfilePage() {
   const loaded = useLoadFonts();
@@ -63,6 +66,14 @@ export default function ProfilePage() {
   const tabWidth = (246 + 6) / tabKeys.length;
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalTtype] = useState<ModalTypes>()
+  const [vehicleList, setVehhicleList] = useState([])
+
+  const handleGetVehicles = async () => {
+    const response = await getVehicleList()
+    if (response.data) {
+      setVehhicleList(response.data.vehicles)
+    }
+  }
 
   const tabLabels = {
     about: t("About"),
@@ -70,6 +81,7 @@ export default function ProfilePage() {
   };
 
   useEffect(() => {
+    handleGetVehicles()
     const index = tabKeys.indexOf(activeTab);
     indicatorX.value = withSpring(index * tabWidth, {
       damping: 20,
@@ -83,49 +95,54 @@ export default function ProfilePage() {
   }));
 
   const handleLogout = () => {
-    handleLogOut().then((res)=>{
+    handleLogOut().then((res) => {
       AsyncStorage.removeItem("userDetails");
       router.replace("/login");
-    }).catch((err)=>{
-      console.log("error===========",err)
+    }).catch((err) => {
+      console.log("error===========", err)
       Alert.alert("Something went wrong")
     })
-    
+
   };
+
+  const [userDetails, setUserDetails] = useState(null);
+
+  const refreshProfile = useCallback(async () => {
+    try {
+      const res = await useGetProfileDetails();
+      console.log('userData============',res.data)
+      if (res?.data?.first_name !== "") {setUserDetails(res.data)}else{
+      router.replace("/login")
+      };
+    } catch {
+      /* optional toast / log */
+      router.replace("/login")
+    }
+  }, []);
+
+  /* first load */
+  useEffect(() => { refreshProfile(); }, [refreshProfile]);
 
   const renderModalContent = () => {
     const onClose = () => {
       setModalTtype(undefined);
       setModalVisible(false);
+      refreshProfile();          // ← always refresh when any modal closes
     };
-  
+
     switch (modalType) {
-      case "email":
-        return <EmailModal onClose={()=>onClose()} />;
-      case "preferences":
-        return <PreferencesModal onClose={()=>onClose()}/>;
-      case "about":
-        return <AboutModal onClose={()=>onClose()} />;
+      case 'email':
+        return <EmailModal onClose={onClose} />;
+      case 'preferences':
+        return <PreferencesModal onClose={onClose} />;
+      case 'about':
+        return <AboutModal onClose={onClose} />;
+      case 'profile':
+        return <ProfileModal onClose={onClose} />;
       default:
         return null;
     }
   };
-
-  const [userDetails, setUserDetails] = useState();
-
-
-  const handleProfileDetails=async()=>{
-    const response = await useGetProfileDetails()
-    console.log("response=====================",response?.data)
-    if(response?.data){
-      setUserDetails(response?.data)
-      // setUserId(response?.data?.id)
-    }
-    }
-  
-    useEffect(()=>{
-      handleProfileDetails()
-    },[])
 
   if (!loaded) return null;
 
@@ -147,7 +164,7 @@ export default function ProfilePage() {
             <View className="mt-6 flex-col flex-wrap justify-between">
               <View className="flex flex-row gap-[30px] items-center">
                 <Image
-                  source={require("../../../public/profile-img2.png")}
+                  source={userDetails?.profile_image_url ? {uri:userDetails?.profile_image_url} : require("../../../public/profile-img2.png")}
                   className="size-[80px] rounded-2xl"
                   resizeMode="cover"
                 />
@@ -157,10 +174,13 @@ export default function ProfilePage() {
                       fontSize={25}
                       className="text-[25px] text-white font-[Kanit-Regular]"
                     >
-                      {t("Abhimanyu")}
+                      {userDetails?.first_name}
                     </Text>
                     <TouchableOpacity
-                      onPress={() => router.push("/")}
+                      onPress={() =>{
+                        setModalTtype("profile")
+                      setModalVisible(true)
+                      }}
                       className="flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]"
                     >
                       <Pencil size={14} color="#FF4848" strokeWidth={1} />
@@ -190,12 +210,12 @@ export default function ProfilePage() {
               </View>
               <View className="w-full text-white py-6">
                 {[
-                  [t("Phone Number"), "+96763266563"],
-                  [t("Mail"), "abhimanyu123@gmail.com"],
-                  [t("Age"), "26"],
-                  [t("Gender"), t("Male")],
+                  [t("Phone Number"), userDetails?.mobile_number],
+                  [t("Mail"), userDetails?.email],
+                  [t("Age"), - + Number(userDetails?.calculated_age)],
+                  [t("Gender"), userDetails?.gender],
                 ].map(([label, value], idx) => (
-                  <View key={idx} className="flex-row py-1">
+                  value && <View key={idx} className="flex-row py-1">
                     <Text
                       fontSize={14}
                       className="flex-1 text-[14px] text-white font-[Kanit-Light]"
@@ -328,25 +348,17 @@ export default function ProfilePage() {
                 </TouchableOpacity>
               </View>
               <View className="flex-wrap flex-row gap-[15px]">
-                {[
-                  [ChatIcon, t("I'm chatty when I feel comfortable")],
-                  [CigaretteIcon, t("Cigarette breaks outside the car are ok")],
-                  [MusicIcon, t("I'll jam depending on the mood")],
-                  [PawIcon, t("I'll travel with pets depending on the animal")],
-                ].map(([IconComp, text], idx) => (
-                  <View
-                    key={idx}
-                    className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
-                  >
-                    <IconComp width={21} height={21} />
-                    <Text
-                      fontSize={14}
-                      className="ml-2 text-sm font-[Kanit-Light]"
+                {userDetails?.travel_preferences?.[0]          // take the first (and only) string
+                  ?.split(',')                                 // break it into real tags
+                  .map((text: string) => (
+                    <View
+                      key={text}
+                      className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
                     >
-                      {text as string}
-                    </Text>
-                  </View>
-                ))}
+                      <ChatIcon width={21} height={21} />
+                      <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
+                    </View>
+                  ))}
               </View>
             </View>
 
@@ -376,9 +388,7 @@ export default function ProfilePage() {
                 fontSize={14}
                 className="bg-gray-100 rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
               >
-                {t(
-                  "Dedicated to making travel more convenient and cost-effective, he prioritizes safety, punctuality, and passenger comfort. By providing a reliable and efficient service, he ensures that commuters enjoy a smooth and stress-free journey. His commitment to shared transportation allows passengers to save money while reducing environmental impact. Beyond just a ride, he fosters a sense of community among travelers, encouraging connections and a more enjoyable commuting experience. His dependable service transforms everyday travel into a seamless, shared experience."
-                )}
+                {userDetails?.about}
               </Text>
             </View>
 
@@ -390,26 +400,34 @@ export default function ProfilePage() {
               >
                 {t("Vehicles")}
               </Text>
-              <View className="flex-row justify-between items-center">
-                <View>
-                  <Text
-                    fontSize={16}
-                    className="text-[16px] font-[Kanit-Regular]"
-                  >
-                    BMW 530i
-                  </Text>
-                  <Text
-                    fontSize={12}
-                    className="text-[12px] text-gray-600 font-[Kanit-Light]"
-                  >
-                    {t("Sedan, Black")}
-                  </Text>
-                </View>
-                <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
-                  <Trash2 size={22} color="#666666" />
-                </TouchableOpacity>
-              </View>
-              <Separator className="border-gray-200 mt-4 mb-10" />
+
+
+              <FlatList
+                contentContainerClassName="gap-3"
+                ItemSeparatorComponent={()=><Separator className="border-gray-200 my-4 mb-10" />}
+                data={vehicleList}
+                renderItem={({ item, index }) => {
+                  return <View className="flex-row justify-between items-center">
+                    <View>
+                      <Text
+                        fontSize={16}
+                        className="text-[16px] font-[Kanit-Regular]"
+                      >
+                          {item?.model?.name}
+                      </Text>
+                      <Text
+                        fontSize={12}
+                        className="text-[12px] text-gray-600 font-[Kanit-Light]"
+                      >
+                       {t(`${item?.model?.category_name},${item?.brand?.name}`)}
+                      </Text>
+                    </View>
+                    {/* <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
+                      <Trash2 size={22} color="#666666" />
+                    </TouchableOpacity> */}
+                  </View>
+                }}
+              />
               <TouchableOpacity
                 onPress={() => router.push("/(profile)/add-vehicles")}
                 className="flex-row items-center justify-center h-14 rounded-full bg-red-500"
@@ -430,8 +448,8 @@ export default function ProfilePage() {
             {/* Language Switcher */}
             <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Bank Account"), "/(profile)/payment"],
-                [t("Transactions"), "/"],
+                [t("Bank Account"), "/(profile)/bank"],
+                [t("Transactions"), "/(profile)/transactions"],
                 [t("Payment & Refunds"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity

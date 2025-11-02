@@ -20,9 +20,12 @@ type Props = {
     to: string;
     passengerStatus: 'confirmed' | 'pending';
     onStartRide?: () => void;
+    onEndRide?: () => void;
     onAddPassengers?: () => void;
     passengers:[],
     onRideCancel?:()=>void
+    status:number,
+    activeTab?: 'Pending' | 'Cancelled' | 'Completed' | 'In Progress'
 };
 
 export const RideCard: React.FC<Props> = ({
@@ -37,9 +40,12 @@ export const RideCard: React.FC<Props> = ({
     to,
     passengerStatus,
     onStartRide,
+    onEndRide,
     onAddPassengers,
     passengers,
-    onRideCancel
+    onRideCancel,
+    status,
+    activeTab
 }) => {
     /* -------------------------------------------------
      * Helper – pretty print duration
@@ -53,9 +59,13 @@ export const RideCard: React.FC<Props> = ({
           d.getUTCMinutes()
         ).padStart(2, '0')}`;
       };
+    
 
-      const departure = format(parseISO(startTime), 'hh:mm a');
-      const arrival   = format(parseISO(endTime), 'hh:mm a');
+      console.log("startTime============",startTime)
+      console.log("endTime============",endTime)
+
+      const departure = fmtUTC(startTime);
+      const arrival   = fmtUTC(endTime);
     
 
 
@@ -78,10 +88,10 @@ export const RideCard: React.FC<Props> = ({
                     </View>
                 </View>
 
-                <TouchableOpacity onPress={onRideCancel} className='bg-[#FF1919] rounded-full p-2 flex-row gap-3 items-center' >
+               { status == 1 &&  <TouchableOpacity onPress={onRideCancel} className='bg-[#FF1919] rounded-full p-2 flex-row gap-3 items-center' >
                     <CloseIcon />
                     <Text className="text-sm text-white font-[Kanit-Light]">Ride Cancel</Text>
-                </TouchableOpacity>
+                </TouchableOpacity>}
             </View>
 
             {/* ----------  Date row  ---------- */}
@@ -126,8 +136,10 @@ export const RideCard: React.FC<Props> = ({
             </View>
 
             {/* ----------  Footer  ---------- */}
-           {passengers?.length &&  <View className="mt-4 px-4 pb-4">
-                <Text className='text-[16px] font-[Kanit-Medium] text-black' >Passengers Confirmed</Text>
+           <View className="mt-4 px-4 pb-4">
+           {passengers?.length &&  
+               <>
+               <Text className='text-[16px] font-[Kanit-Medium] text-black' >Passengers Confirmed</Text>
                 <FlatList 
                 contentContainerClassName='gap-2'
                 className={"flex-1 py-2"}
@@ -137,8 +149,10 @@ export const RideCard: React.FC<Props> = ({
                 })}
                 ItemSeparatorComponent={()=><DashedLine/>}
                 />
+               </>
+           }
                 
-                <View className="flex-row items-center gap-3 justify-between">
+                { (status == 1 || status == 2) && <View className="flex-row items-center gap-3 justify-between">
                     <TouchableOpacity
                         onPress={onAddPassengers}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
@@ -146,15 +160,20 @@ export const RideCard: React.FC<Props> = ({
                         <Text className="text-[14px] text-white font-[Kanit-Light]">Add Passengers</Text>
                     </TouchableOpacity>
 
-                    <TouchableOpacity
+                    { status == 2 ? <TouchableOpacity
+                        onPress={onEndRide}
+                        className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
+                    >
+                        <Text className="text-[14px] text-white font-[Kanit-Light]">End Ride</Text>
+                    </TouchableOpacity> : <TouchableOpacity
                         onPress={onStartRide}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#0E8D7E]"
                     >
                         <Text className="text-[14px] text-white font-[Kanit-Light]">Start Ride</Text>
-                    </TouchableOpacity>
+                    </TouchableOpacity>}
 
-                </View>
-            </View>}
+                </View>}
+            </View>
         </View>
     );
 };

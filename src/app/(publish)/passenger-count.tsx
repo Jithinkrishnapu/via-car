@@ -22,7 +22,7 @@ export default function Page() {
   const {setRideField} = useCreateRideStore()
 
   const adjustPassengers = (delta: number) => {
-    setPassengers((prev) => Math.max(1, Math.min(3, prev + delta)));
+    setPassengers((prev) => Math.max(1, Math.min(9, prev + delta)));
   };
 
   if (!loaded) return null;
@@ -70,7 +70,7 @@ export default function Page() {
           <TouchableOpacity
             onPress={() => adjustPassengers(1)}
             activeOpacity={0.8}
-            disabled={passengers === 3}
+            disabled={passengers === 9}
             className="w-[32px] h-[32px] rounded-full items-center justify-center"
           >
             <PlusLarge width={32} height={32} />

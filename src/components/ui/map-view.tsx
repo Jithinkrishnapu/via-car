@@ -21,7 +21,7 @@ type Props = {
   /* parent can give us EITHER markers OR a poly-line */
   markers?: { lat: number; lng: number, name: string }[];
   /* fired when user taps a marker (only when markers are shown) */
-  onMarkerPress?: (coord: Coordinate, index: number) => void;
+  onMarkerPress?: (coord: Coordinate, index: number,name:string) => void;
 };
 
 /* ------------------------------------------------------------------ */
@@ -33,6 +33,7 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 
   /* -------------- state -------------- */
   const [polyCoords, setPolyCoords] = useState<Coordinate[]>([]);
+  const [name,setName] = useState("")
 
   /* -------------- decode polyline -------------- */
   useEffect(() => {
@@ -81,6 +82,9 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
   /* -------------- render -------------- */
   return (
     <View style={styles.container}>
+       { name && <View className=' bg-green-100 self-center rounded-full border border-green-800 mb-3 w-3/4 justify-center items-center p-2' >
+     <Text className='text-[14px] capitalize font-[Kanin-Medium] text-black'>{name}</Text>
+     </View>}
       <MapView
         ref={mapRef}
         style={styles.map}
@@ -109,11 +113,13 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
             <Marker
               key={`${m.lat}-${m.lng}`}
               coordinate={{ latitude: m.lat, longitude: m.lng }}
-              onPress={() => onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx)}
+              onPress={() => {
+                setName(m.name)
+                onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx,m.name)}}
             >
               <Callout tooltip={false}>
-                <View style={styles.callout}>
-                  <Text style={styles.calloutText}>{m.name || `Point ${idx + 1}`}</Text>
+                <View>
+                  <Text>{m.name || `Point ${idx + 1}`}</Text>
                 </View>
               </Callout>
             </Marker>
@@ -129,20 +135,20 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
-  callout: {
-    backgroundColor: '#fff',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 6,
-    borderColor: '#ccc',
-    borderWidth: 1,
-  },
-  calloutText: {
-    fontSize: 14,
-    color: '#000',
-    width: 'auto',
-    height: 90
-  },
+  // callout: {
+  //   backgroundColor: '#fff',
+  //   paddingHorizontal: 12,
+  //   paddingVertical: 6,
+  //   borderRadius: 6,
+  //   borderColor: '#ccc',
+  //   borderWidth: 1,
+  // },
+  // calloutText: {
+  //   fontSize: 14,
+  //   color: '#000',
+  //   width: 'auto',
+  //   height: 90
+  // },
 });
 
 export default MapScreen;

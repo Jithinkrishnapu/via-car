@@ -15,7 +15,7 @@ export default function Page() {
   if (!loaded) return null;
   const route = useRoute()
 
-  const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
+  const { ride, setSelectedPlaces, selectedPlaces, setRideId } = useCreateRideStore();
 
   return (
     <View className="flex-1 bg-white">
@@ -62,7 +62,7 @@ export default function Page() {
           {/* Option: Later */}
           <TouchableOpacity
             onPress={() => {
-              setSelectedPlaces([])
+              setRideId(route?.params?.ride_id)
               router.push({pathname:"/(publish)/publish-ride",params:{ride_id:route?.params?.ride_id,ride_amount_id:route?.params?.ride_amount_id}}); 
               // router.push({pathname:"/(publish)/publish-ride"}); 
             }}

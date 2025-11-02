@@ -145,7 +145,11 @@ export default function LocationSearchSelected({ onContinue,initialRegion }: Pro
           /> */}
         {/* <MapComponent directions={realRoadRoute} markers={markersData} /> */}
         { whayExact ? 
-        <MapComponent markers={markers} /> :
+        <MapComponent onMarkerPress={(loc,i,name)=>setLocation({
+          latitude:loc.latitude,
+          longitude:loc.longitude,
+          address:name
+        })} markers={markers} /> :
         <LocationPickerComponent initialRegion={initialRegion} onLocationSelected={(location) => {
         setLocation(location)
           // Handle the selected location

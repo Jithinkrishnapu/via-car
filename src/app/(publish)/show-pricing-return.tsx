@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   Dimensions,
   Alert,
+  ActivityIndicator,
 } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
@@ -29,6 +30,7 @@ function ShowPricingReturn() {
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
+  const [isLoading,setIsLoading] = useState<boolean>(false)
 
   /* -------------------------------------------------
    * 1.  BUILD THE RETURN ROUTE  (reversed outbound)
@@ -150,33 +152,100 @@ function ShowPricingReturn() {
   /* -------------------------------------------------
    * 4.  PUBLISH
    * ------------------------------------------------- */
-  const handlePublishRide = async()=>{
-    const postData ={
-      "vehicle_id": ride.vehicle_id,
-      "pickup_lat": ride.pickup_lat,
-      "pickup_lng": ride.pickup_lng,
-      "pickup_address": ride.pickup_address,
-      "drop_lat": ride.destination_lat,
-      "drop_lng": ride.destination_lng,
-      "drop_address": ride.destination_address,
-      "date":ride.date,
-      "pickup_time": ride.time,
-      "drop_time": ride.time,
-      "passengers": ride.available_seats,
-      "ride_route": polyline,
-      "max_2_in_back": ride.max_2_in_back,
-      "stops": ride.stops,
-      "prices": ride.prices
-    } as RideDetails 
-    console.log("postdata=============",postData)
-    const { ok, data } = await useCreateRide(postData);
-    console.log(data,"response----------data")
-    if (ok && data?.data?.id ) {
+  // const handlePublishRide = async()=>{
+  //   const postData ={
+  //     "vehicle_id": ride.vehicle_id,
+  //     "pickup_lat": ride.pickup_lat,
+  //     "pickup_lng": ride.pickup_lng,
+  //     "pickup_address": ride.pickup_address,
+  //     "drop_lat": ride.destination_lat,
+  //     "drop_lng": ride.destination_lng,
+  //     "drop_address": ride.destination_address,
+  //     "date":ride.date,
+  //     "pickup_time": ride.time,
+  //     "drop_time": ride.time,
+  //     "passengers": ride.available_seats,
+  //     "ride_route": polyline,
+  //     "max_2_in_back": ride.max_2_in_back,
+  //     "stops": ride.stops,
+  //     "prices": ride.prices
+  //   } as RideDetails 
+  //   console.log("postdata=============",postData)
+  //   const { ok, data } = await useCreateRide(postData);
+  //   console.log(data,"response----------data")
+  //   if (ok && data?.data?.id ) {
+  //       router.push({pathname:"/(publish)/publish-ride",params:{ride_id:data?.data?.id,ride_amount_id:data?.data?.rideAmounts[0].pickup_id}});
+  //   } else {
+  //     Alert.alert('Failed to create ride');
+  //   }
+  // }
+
+  const handlePublishRide = async () => {
+    setIsLoading(true);
+    try {
+      /* ---- build stops --------------------------------------------- */
+      const stops = fullRoute.map((pt, i) => ({
+        address: pt.address,
+        lat    : pt.lat,
+        lng    : pt.lng,
+        order  : i + 1,
+      }));
+  
+      /* ---- build price matrix -------------------------------------- */
+      const n = fullRoute.length;
+      const prices: any[] = [];
+      if (n >= 2) {
+        const prefix = [0];
+        for (let i = 0; i < segmentPrices.length; i++) prefix.push(prefix[i] + segmentPrices[i]);
+  
+        for (let i = 0; i < n; i++)
+          for (let j = i + 1; j < n; j++)
+            prices.push({
+              pickup_order: i + 1,
+              drop_order  : j + 1,
+              amount      : prefix[j] - prefix[i],
+            });
+      }
+  
+      /* ---- assemble payload ---------------------------------------- */
+      const postData: RideDetails = {
+        vehicle_id   : ride.vehicle_id,
+        pickup_lat   : ride.pickup_lat,
+        pickup_lng   : ride.pickup_lng,
+        pickup_address: ride.pickup_address,
+        drop_lat     : ride.destination_lat,
+        drop_lng     : ride.destination_lng,
+        drop_address : ride.destination_address,
+        date         : ride.date,
+        pickup_time  : ride.time,
+        drop_time    : ride.time,
+        passengers   : ride.available_seats,
+        ride_route   : polyline,
+        max_2_in_back: ride.max_2_in_back,
+        stops,
+        prices,
+      };
+  
+      /* ---- hit the endpoint ---------------------------------------- */
+      const { ok, data } = await useCreateRide(postData);
+  
+      if (ok && data?.data?.id) {
+        // router.push({
+        //   pathname: '/(publish)/return',
+        //   params  : {
+        //     ride_id       : data.data.id,
+        //     ride_amount_id: data.data.rideAmounts?.[0]?.pickup_id,
+        //   },
+        // });
         router.push({pathname:"/(publish)/publish-ride",params:{ride_id:data?.data?.id,ride_amount_id:data?.data?.rideAmounts[0].pickup_id}});
-    } else {
-      Alert.alert('Failed to create ride');
+      }
+      /* ---- error already shown by useCreateRide -------------------- */
+    } catch (err: any) {
+      Alert.alert('Error', err?.message || 'Something went wrong');
+    } finally {
+      setIsLoading(false);
     }
-  }
+  };
 
   if (!loaded) return null;
 
@@ -345,8 +414,10 @@ function ShowPricingReturn() {
       <View className="absolute bottom-0 left-0 right-0 px-4 pb-4 md:px-6 md:pb-6">
         <TouchableOpacity
           onPress={handleContinue}
+          disabled={isLoading}
           className="rounded-full h-14 md:h-[55px] bg-[#FF4848] items-center justify-center shadow-lg"
         >
+          {isLoading && <ActivityIndicator size="small" color="#fff" />}
           <Text className="text-base md:text-xl text-white font-[Kanit-Medium]">
             {t("common.continue")}
           </Text>
