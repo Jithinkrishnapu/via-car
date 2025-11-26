@@ -92,7 +92,7 @@ export default function PassengerSelect({
               </Text>
 
               <FlatList
-                data={[1, 2, 3, 4]}
+                data={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
                 keyExtractor={(item) => String(item)}
                 renderItem={({ item }) => {
                   const value = String(item);
@@ -106,7 +106,7 @@ export default function PassengerSelect({
                         className={cn(
                           "border border-gray-400 rounded-full size-5",
                           selected &&
-                            "bg-[#FF4848] border-[#FF4848] rounded-full"
+                          "bg-[#FF4848] border-[#FF4848] rounded-full"
                         )}
                       />
                       <Text

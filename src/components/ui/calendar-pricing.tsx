@@ -51,12 +51,17 @@ const datePricing: Record<string, string> = generateDatePricing(
 
 interface CalendarProps {
   onChange: (newDate: string) => void;
+  date?:string
 }
 
-const Calendar = ({ onChange }: CalendarProps) => {
+const Calendar = ({ onChange,date }: CalendarProps) => {
+  console.log(date,"================parans==date")
   const [selectedDate, setSelectedDate] = React.useState<string>(
-    format(new Date(), "yyyy-MM-dd")
+    date && date !== "" ? date : format(new Date(), "yyyy-MM-dd")
   );
+
+  console.log(selectedDate,"================selected==date")
+
 
   const renderArrow = (direction: "left" | "right") => (
     <View className="py-2">

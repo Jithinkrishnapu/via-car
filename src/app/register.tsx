@@ -3,21 +3,18 @@ import {
   Alert,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
-import VerifyOtp from "@/components/login/verify-otp";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { InputComponent } from "@/components/inputs/common-input";
-import Dropdown from "@/components/common/dropdown-component";
-import { useState } from "react";
 import CustomPicker from "@/components/common/dropdown-component";
-import DatePicker from "@/components/common/date-picker";
-import DobCalendarPicker from "@/components/common/dob-calander";
 import DobPicker from "@/components/common/dob-calander";
+import { useState } from "react";
 import { getUserStatus, handleRegister } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useStore } from "@/store/useStore";
@@ -27,26 +24,24 @@ const { height } = Dimensions.get("window");
 
 function Register() {
   const { t } = useTranslation("index");
+  const { isPublish } = useStore();
   const [category, setCategory] = useState<string>('');
-  const {isPublish} = useStore()
-  const categories = [
-    { label: 'Male', value: '1' },
-    { label: 'Female', value: '2' },
-    { label: 'Other', value: '3' },
-  ];
-
   const [dob, setDob] = useState('');
   const [formattedDob, setFormattedDob] = useState('');
   const [error, setError] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
 
+  const categories = [
+    { label: 'Male', value: '1' },
+    { label: 'Female', value: '2' },
+    { label: 'Other', value: '3' },
+  ];
 
   const handleDateChange = (date: Date, formattedDate: string) => {
     setDob(date.toISOString().split('T')[0]);
     setFormattedDob(formattedDate);
 
-    // Optional: Validate again
     const age = new Date().getFullYear() - date.getFullYear();
     if (age < 18) {
       setError('You must be at least 18 years old.');
@@ -55,124 +50,130 @@ function Register() {
     }
   };
 
-  const submit = () => {
-    if (!dob) {
-      setError('Date of birth is required.');
-      return;
-    }
-    Alert.alert('Success', `DOB: ${formattedDob}`);
-  };
-
   async function enforceProfileCompleteness() {
     try {
       const json: UserStatusResp = await getUserStatus();
       const d = json.data;
-  
 
       if (!d.bank_details.has_bank_details) {
         router.replace('/bank-save');
         return;
       }
 
-      /* 1. Identity not done yet */
       if (!d.id_verification.completed) {
-        router.replace('/(publish)/upload-document'); // or your ID screen
+        router.replace('/(publish)/upload-document');
         return;
       }
-  
-      /* 3. No vehicles (for driver flow) */
+
       if (d.account.is_driver && !d.vehicles.has_vehicles) {
         router.replace('/add-vehicles');
         return;
       }
-  
-      /* 4. All good – send to home / dashboard */
+
       router.replace('/(tabs)/book');
     } catch (e) {
       console.log('Status check failed', e);
-      /* optionally send to login */
     }
   }
 
-  const handleRegistration =async()=>{
-    const otpId = await useAsyncStorage("otp_id").getItem()
-    const formdata = new FormData()
-    formdata.append("otp_id",otpId!)
-    formdata.append("device_type","1")
-    formdata.append("first_name",firstName)
-    formdata.append("last_name",lastName)
-    formdata.append("date_of_birth",dob)
-    formdata.append("gender",category)
-    formdata.append("fcm_token","test")
-    console.log("sheeet==========",formdata)
-   try {
-    const response = await handleRegister(formdata)
-    if(response){
-      console.log("response============",response)
-      if (response?.data?.type === "login") {
-        await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
-        if(isPublish){
-          // router.replace(`/bank-save`);
-          enforceProfileCompleteness()
-        }else{
-          router.replace(`/(tabs)/book`);
+  const handleRegistration = async () => {
+    const otpId = await useAsyncStorage("otp_id").getItem();
+    const formdata = new FormData();
+    formdata.append("otp_id", otpId!);
+    formdata.append("device_type", "1");
+    formdata.append("first_name", firstName);
+    formdata.append("last_name", lastName);
+    formdata.append("date_of_birth", dob);
+    formdata.append("gender", category);
+    formdata.append("fcm_token", "test");
+
+    try {
+      const response = await handleRegister(formdata);
+      if (response) {
+        if (response?.data?.type === "login") {
+          await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data));
+          if (isPublish) {
+            enforceProfileCompleteness();
+          } else {
+            router.replace(`/(tabs)/book`);
+          }
+        } else {
+          Alert.alert(response?.message);
         }
-      } else {
-        Alert.alert(response?.message)
       }
+    } catch (error) {
+      console.log("error===========", error);
     }
-   } catch (error) {
-    console.log("error===========",error)
-   }
-  }
+  };
 
   return (
-    <ScrollView className="grid grid-cols-[1fr_max-content] min-h-screen *:font-[Kanit-Regular] w-full">
-      <Image
-        style={{ height: height / 2 }}
-        className="object-cover w-full"
-        source={require(`../../public/login.png`)}
-        alt=""
-      />
-      <View className="flex flex-col items-center justify-start p-5 w-full overflow-y-auto rounded-t-2xl -mt-[60px] bg-white h-full">
-        <View className="max-w-[420px] w-full pt-4 lg:pt-20 pb-10">
-          <Text
-            fontSize={25}
-            className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
-          >
-            {t("verify_phone_number")}
-          </Text>
-
-          <InputComponent label="First Name" placeHolder="first name" onChangeText={(text) => {setFirstName(text) }} value={firstName} />
-          <InputComponent label="Last Name" placeHolder="first name" onChangeText={(text) => {setLastName(text) }} value={lastName} />
-          <DobPicker
-            onDateChange={handleDateChange}
-            errorMessage={error}
-            minimumAge={18}
-          />
-          <CustomPicker
-            label="Select Gender"
-            items={categories}
-            selectedValue={category}
-            onValueChange={(value) => setCategory(String(value))}
-            placeholder="Choose your gender"
-            style="w-full"
-          />
-            <TouchableOpacity
-        onPress={handleRegistration}
-        className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
-        activeOpacity={0.8}
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        className="flex-1 w-full"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
       >
-        <Text
-          fontSize={20}
-          className="my-auto text-[20px] text-white font-[Kanit-Regular]"
-        >
-          {t("Verify")}
-        </Text>
-      </TouchableOpacity>
+        <Image
+          style={{ height: height / 2 }}
+          className="object-cover w-full"
+          source={require(`../../public/login.png`)}
+          alt=""
+        />
+        <View className="flex flex-col items-center justify-start p-5 w-full overflow-y-auto rounded-t-2xl -mt-[60px] bg-white">
+          <View className="max-w-[420px] w-full pt-4 lg:pt-20 pb-10">
+            <Text
+              fontSize={25}
+              className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
+            >
+              {t("verify_phone_number")}
+            </Text>
+
+            <InputComponent
+              label="First Name"
+              placeHolder="first name"
+              onChangeText={(text) => setFirstName(text)}
+              value={firstName}
+            />
+            <InputComponent
+              label="Last Name"
+              placeHolder="last name"
+              onChangeText={(text) => setLastName(text)}
+              value={lastName}
+            />
+            <DobPicker
+              onDateChange={handleDateChange}
+              errorMessage={error}
+              minimumAge={18}
+            />
+            <CustomPicker
+              label="Select Gender"
+              items={categories}
+              selectedValue={category}
+              onValueChange={(value) => setCategory(String(value))}
+              placeholder="Choose your gender"
+              style="w-full"
+            />
+            <TouchableOpacity
+              onPress={handleRegistration}
+              className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
+              activeOpacity={0.8}
+            >
+              <Text
+                fontSize={20}
+                className="my-auto text-[20px] text-white font-[Kanit-Regular]"
+              >
+                {t("Verify")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

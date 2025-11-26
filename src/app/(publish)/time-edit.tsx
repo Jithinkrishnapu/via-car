@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   View,
   TextInput,
@@ -7,7 +7,7 @@ import {
   Platform,
 } from "react-native";
 import { ChevronLeft } from "lucide-react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
@@ -16,17 +16,30 @@ import { useCreateRideStore } from "@/store/useRideStore";
 import { RideEditDetails } from "@/types/ride-types";
 import { useEditRide } from "@/service/ride-booking";
 
-function Time() {
+export default function Time() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { isRTL, swap } = useDirection();
+  const { isRTL } = useDirection();
+  const { setRideField } = useCreateRideStore();
+  const { time: defaultTime } = useLocalSearchParams<{ time?: string }>(); // "HH:mm" 24h
+
+  /* ------------- local states ------------- */
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
-  const { setRideField,ride_id} = useCreateRideStore();
-
-  if (!loaded) return null;
-
   const [hour, setHour] = useState("07");
+  const [minute, setMinute] = useState("00");
 
+  /* ------------- initialise from params ------------- */
+  useEffect(() => {
+    if (!defaultTime) return;
+    const [h, m] = defaultTime.split(":").map(Number); // h:0-23  m:0-59
+    const p: "AM" | "PM" = h >= 12 ? "PM" : "AM";
+    const h12 = h === 0 ? 12 : h > 12 ? h - 12 : h;
+    setHour(h12.toString().padStart(2, "0"));
+    setMinute(m.toString().padStart(2, "0"));
+    setPeriod(p);
+  }, [defaultTime]);
+
+  /* ------------- input handlers ------------- */
   const onChangeHour = (text: string) => {
     if (!/^\d{0,2}$/.test(text)) return;
     setHour(text);
@@ -38,8 +51,6 @@ function Time() {
     if (h > 12) h = 12;
     setHour(h.toString().padStart(2, "0"));
   };
-
-  const [minute, setMinute] = useState("00");
 
   const onChangeMinute = (text: string) => {
     if (!/^\d{0,2}$/.test(text)) return;
@@ -53,32 +64,27 @@ function Time() {
     setMinute(m.toString().padStart(2, "0"));
   };
 
-  /* ---------- continue ---------- */
+  /* ------------- continue ------------- */
   const handleContinue = () => {
-    // ensure valid values even if user never blurred
     onBlurHour();
     onBlurMinute();
 
-    // 12-hour → 24-hour conversion
     let h24 = parseInt(hour, 10);
     if (period === "PM" && h24 !== 12) h24 += 12;
     if (period === "AM" && h24 === 12) h24 = 0;
 
-    const time24 = `${h24.toString().padStart(2, "0")}:${minute.padStart(
-      2,
-      "0"
-    )}`;
+    const time24 = `${h24.toString().padStart(2, "0")}:${minute}`;
     setRideField("time", time24);
-    handleEditDate(time24)
+    handleEditDate(time24);
   };
 
-  const handleEditDate =async(time:string)=>{
-    const req ={time} as RideEditDetails
-    const res = await useEditRide(req)
-    if(res.ok){
-      router.replace("..")
-    }
-  }
+  const handleEditDate = async (time: string) => {
+    const req = { time } as RideEditDetails;
+    const res = await useEditRide(req);
+    if (res.ok) router.replace("..");
+  };
+
+  if (!loaded) return null;
 
   return (
     <KeyboardAvoidingView
@@ -86,14 +92,14 @@ function Time() {
       className="flex-1 bg-white font-[Kanit-Regular]"
     >
       <View className="flex-1 px-6 pt-16 pb-12">
-        {/* Back + Title */}
+        {/* Header */}
         <View className="flex-row items-center gap-4 mb-6">
           <TouchableOpacity
             className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
             onPress={() => router.replace("..")}
             activeOpacity={0.8}
           >
-            <ChevronLeft size={16} />
+            <ChevronLeft size={16} color="#000" />
           </TouchableOpacity>
           <Text
             fontSize={25}
@@ -118,10 +124,7 @@ function Time() {
           </View>
 
           {/* Colon */}
-          <Text
-            fontSize={59}
-            className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E]"
-          >
+          <Text fontSize={59} className="text-[59px] text-[#3C3F4E]">
             :
           </Text>
 
@@ -177,10 +180,7 @@ function Time() {
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >
-          <Text
-            fontSize={20}
-            className="text-xl text-white font-[Kanit-Regular]"
-          >
+          <Text fontSize={20} className="text-xl text-white font-[Kanit-Regular]">
             {t("common.continue")}
           </Text>
         </TouchableOpacity>
@@ -188,5 +188,3 @@ function Time() {
     </KeyboardAvoidingView>
   );
 }
-
-export default Time;

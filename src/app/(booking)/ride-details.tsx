@@ -92,6 +92,7 @@ function RideDetails() {
 
 
   const handleRideBooking = async () => {
+    console.log("rideDetails============",rideDetail)
     const postData = {
       ride_id: rideDetail?.rideId?.id,
       passengers: Number(route?.params?.passengers),
@@ -112,6 +113,7 @@ function RideDetails() {
         err?.message ??
         err?.errors?.ride_id?.[0] ??
         'Something went wrong. Please try again.';
+        console.log("message================",msg)
       Alert.alert('Booking failed', msg);
     }
   };

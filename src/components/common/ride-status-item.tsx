@@ -38,7 +38,7 @@ export default function RideStatusItem({ status = 'Pending', data,onCancel}: Pro
       onPress={() =>
         router.push({
           pathname: '/(your-rides)/ride-details',
-          params:   { rideId: data?.rideId, ride_amount_id: data?.rideAmount?.id },
+          params:   { rideId: data?.rideId, ride_amount_id: data?.ride_amount_id },
         })
       }
     >

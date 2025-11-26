@@ -123,18 +123,21 @@ const UploadDocumentsScreen = () => {
         <Text className="text-2xl font-bold text-gray-900">Upload Documents</Text>
       </View>
 
-      {/* ---------- middle area: keyboard moves only this part ---------- */}
+      {/* ---------- keyboard avoiding wrapper ---------- */}
       <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        className="flex-1"
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ flex: 1 }}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
           contentContainerStyle={{
             paddingHorizontal: 24,
             paddingTop: 16,
             paddingBottom: 24,
+            flexGrow: 1,
           }}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {/* National ID */}
           <View className="mb-6">

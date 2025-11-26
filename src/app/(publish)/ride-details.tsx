@@ -36,6 +36,8 @@ function RideDetails() {
   const { isRTL, swap } = useDirection();
   const [rideDetail, setRideDetail] = useState<RideDetail>()
 
+  console.log("ridedetail===========",rideDetail)
+
   const [userDetails, setUserDetails] = useState(null);
 
   const refreshProfile = useCallback(async () => {

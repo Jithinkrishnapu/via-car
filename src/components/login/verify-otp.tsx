@@ -7,6 +7,11 @@ import {
   Dimensions,
   TextInput,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from "react-native";
 import OtpAnimation from "../animated/otp-animation";
 import { XIcon } from "lucide-react-native";
@@ -28,22 +33,19 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
 
   const handleChange = (text: string, idx: number) => {
     const newOtp = [...otp];
-    newOtp[idx] = text.slice(-1);                // keep only last char
+    newOtp[idx] = text.slice(-1);
     setOtp(newOtp);
 
-    // jump to next box if a digit was entered and we are not on the last box
     if (text && idx < 5) {
       refs.current[idx + 1]?.focus();
     }
   };
 
   const handleKeyPress = (e: any, idx: number) => {
-    // jump to previous box on back-space if current box is empty
     if (e.nativeEvent.key === 'Backspace' && !otp[idx] && idx > 0) {
       refs.current[idx - 1]?.focus();
     }
   };
-
 
   const handleLogin = async () => {
     const formdata = new FormData()
@@ -57,11 +59,10 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
       useAsyncStorage("otp_id").setItem(response?.data?.otpId)
       openSheet()
     } else {
-      // Alert.alert(response?.message)
       console.log("response============", response)
     }
-
   }
+
   const handleValidate = async () => {
     const formdata = new FormData()
     formdata.append("otp_id", otpId)
@@ -98,6 +99,7 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   };
 
   const closeSheet = () => {
+    Keyboard.dismiss();
     Animated.timing(translateY, {
       toValue: height,
       duration: 500,
@@ -121,89 +123,101 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
       </TouchableOpacity>
 
       <Modal transparent visible={visible} animationType="none">
-        <TouchableOpacity
-          activeOpacity={1}
-          onPress={closeSheet}
-          className="flex-1 bg-black/50 justify-end"
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
+          className="flex-1"
+          keyboardVerticalOffset={0}
         >
-          <Animated.View
-            style={{ transform: [{ translateY }] }}
-            className="bg-white rounded-t-3xl px-6 pt-6 pb-10"
-          >
-            <View className="flex flex-col items-center relative">
-              <TouchableOpacity
-                activeOpacity={0.8}
-                onPress={closeSheet}
-                className="absolute top-4 right-4"
-              >
-                <XIcon className="size-4" color="#666666" />
-              </TouchableOpacity>
-              <OtpAnimation />
-              <Text
-                fontSize={25}
-                className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
-              >
-                {t("Please Verify Your Number")}
-              </Text>
-              <Text
-                fontSize={14}
-                className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
-              >
-                {t(
-                  "Please enter the six-digit verification code that we have sent to your mobile number ending in"
-                )}
-                <Text fontSize={14} className="text-[#FF4848]">
-                  {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
-                </Text>
-              </Text>
-              <View className="flex-row justify-center">
-                {Array.from({ length: 6 }).map((_, i) => (
-                  <TextInput
-                    key={i}
-                    ref={(r) => { refs.current[i] = r!; }}
-                    value={otp[i]}
-                    onChangeText={(t) => handleChange(t, i)}
-                    onKeyPress={(e) => handleKeyPress(e, i)}
-                    maxLength={1}
-                    keyboardType="number-pad"
-                    className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
-                  />
-                ))}
-              </View>
-
-              <TouchableOpacity
-                onPress={handleValidate}
-                className="bg-[#FF4848] rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center"
-                activeOpacity={0.8}
-              >
-                <Text
-                  fontSize={20}
-                  className="text-white text-[20px] font-[Kanit-Regular]"
+          <TouchableWithoutFeedback onPress={closeSheet}>
+            <View className="flex-1 bg-black/50 justify-end">
+              <TouchableWithoutFeedback>
+                <Animated.View
+                  style={{ transform: [{ translateY }] }}
+                  className="bg-white rounded-t-3xl"
                 >
-                  {t("Verify")}
-                </Text>
-              </TouchableOpacity>
-
-              <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
-                <Text
-                  fontSize={14}
-                  className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
-                >
-                  {t(
-                    "If you haven't received the code, please check your messages or"
-                  )}
-                  <Text
-                    fontSize={14}
-                    className="text-[#FF4848] font-[Kanit-Regular]"
+                  <ScrollView
+                    contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={false}
                   >
-                    {" "}
-                    {t("request a new code.")}
-                  </Text>
-                </Text>
-              </View>
+                    <View className="flex flex-col items-center relative">
+                      <TouchableOpacity
+                        activeOpacity={0.8}
+                        onPress={closeSheet}
+                        className="absolute top-4 right-4 z-10"
+                      >
+                        <XIcon className="size-4" color="#666666" />
+                      </TouchableOpacity>
+                      <OtpAnimation />
+                      <Text
+                        fontSize={25}
+                        className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
+                      >
+                        {t("Please Verify Your Number")}
+                      </Text>
+                      <Text
+                        fontSize={14}
+                        className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
+                      >
+                        {t(
+                          "Please enter the six-digit verification code that we have sent to your mobile number ending in"
+                        )}
+                        <Text fontSize={14} className="text-[#FF4848]">
+                          {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
+                        </Text>
+                      </Text>
+                      <View className="flex-row justify-center">
+                        {Array.from({ length: 6 }).map((_, i) => (
+                          <TextInput
+                            key={i}
+                            ref={(r) => { refs.current[i] = r!; }}
+                            value={otp[i]}
+                            onChangeText={(t) => handleChange(t, i)}
+                            onKeyPress={(e) => handleKeyPress(e, i)}
+                            maxLength={1}
+                            keyboardType="number-pad"
+                            className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
+                          />
+                        ))}
+                      </View>
+
+                      <TouchableOpacity
+                        onPress={handleValidate}
+                        className="bg-[#FF4848] rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center"
+                        activeOpacity={0.8}
+                      >
+                        <Text
+                          fontSize={20}
+                          className="text-white text-[20px] font-[Kanit-Regular]"
+                        >
+                          {t("Verify")}
+                        </Text>
+                      </TouchableOpacity>
+
+                      <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
+                        <Text
+                          fontSize={14}
+                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
+                        >
+                          {t(
+                            "If you haven't received the code, please check your messages or"
+                          )}
+                          <Text
+                            fontSize={14}
+                            className="text-[#FF4848] font-[Kanit-Regular]"
+                          >
+                            {" "}
+                            {t("request a new code.")}
+                          </Text>
+                        </Text>
+                      </View>
+                    </View>
+                  </ScrollView>
+                </Animated.View>
+              </TouchableWithoutFeedback>
             </View>
-          </Animated.View>
-        </TouchableOpacity>
+          </TouchableWithoutFeedback>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
   );

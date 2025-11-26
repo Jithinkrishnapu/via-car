@@ -73,7 +73,9 @@ function Route() {
 
     const response = await placeRoutes(request);
     console.log(response?.data?.routes, "Routes Response");
-
+   if(response?.data?.routes?.[0]?.polyline){
+    setPolyline(response?.data?.routes?.[0]?.polyline)
+   }
     setRoutes(response?.data?.routes || []);
   };
 

@@ -9,21 +9,39 @@ import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useEditRide } from "@/service/ride-booking";
 import { RideEditDetails } from "@/types/ride-types";
+import { useRoute } from "@react-navigation/native";
+import { useEffect, useState } from "react";
+import { format } from "date-fns";
 
 function Date() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const {setRideField,ride,ride_id} = useCreateRideStore()
+  const { setRideField, ride, ride_id } = useCreateRideStore()
+  const [date,setDate] =useState<string>()
   if (!loaded) return null;
+  const route = useRoute()
 
-  const handleEditDate =async(date:string)=>{
-    const req ={date} as RideEditDetails
+  useEffect(() => {
+    const defaultDate = route?.params?.date
+    setDate(defaultDate)
+  }, [route])
+
+  const handleEditDate = async (date: string) => {
+    const defaultDate = route?.params?.date
+    console.log("defaultDate========", defaultDate)
+    const req = { date, ride_id } as RideEditDetails
+    console.log("request========", req)
+
     const res = await useEditRide(req)
-    if(res.ok){
+    if (res.ok) {
+      setRideField("date",date)
       router.replace("..")
     }
   }
+
+
+  console.log(date,"================date===")
 
   return (
     <View className="w-full font-[Kanit-Regular] bg-white flex-1 relative">
@@ -43,11 +61,11 @@ function Date() {
             {t("date.title")}
           </Text>
         </View>
-        <Calendar onChange={(date) => {setRideField("date",date)}} />
+        <Calendar  date={route?.params?.date ? route?.params?.date :date} onChange={(date) => { setDate(date) }} />
       </View>
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => handleEditDate(ride.date)}
+          onPress={() => handleEditDate(date!)}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

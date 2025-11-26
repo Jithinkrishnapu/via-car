@@ -1,15 +1,17 @@
 import { useDirection } from "@/hooks/useDirection";
 import { useGetAllBooking } from "@/service/ride-booking";
+import { useCreateRideStore } from "@/store/useRideStore";
 import { router } from "expo-router";
 import { t } from "i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Image, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function BookingRequest() {
     const [bookingList, setBookingList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
     const { isRTL, swap } = useDirection();
+    const { polyline: EncodedPolyline ,setPolyline} = useCreateRideStore();
   
     const fetchList = useCallback(async () => {
       setLoading(true);
@@ -70,7 +72,14 @@ export default function BookingRequest() {
             bookingList.map((item) => {
               const passenger = item.passengers?.[0] ?? {};
               return (
-                <View
+                <Pressable
+                onPress={()=>{
+                    setPolyline(item.rideRoute)
+                    console.log("rideRoute==================",item)
+                    setTimeout(()=>{
+                        router.push({pathname:'/(booking)/booking-approval',params:{item:JSON.stringify(item)}})
+                    },100)
+                    }}
                   key={item.id}
                   style={styles.cardWrapper}
                 >
@@ -80,7 +89,7 @@ export default function BookingRequest() {
                   />
                   <View style={styles.card}>
                     <Text style={styles.name}>
-                      {passenger.firstName || '—'} {passenger.lastName || ''}
+                      {passenger.name || '—'} {passenger.lastName || ''}
                     </Text>
                     <Text style={styles.route}>
                       {item.pickupAddress} → {item.dropAddress}
@@ -91,7 +100,7 @@ export default function BookingRequest() {
                     </View>
                   </View>
                   <ChevronRight color="#000" />
-                </View>
+                </Pressable>
               );
             })
           )}

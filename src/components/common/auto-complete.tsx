@@ -1,4 +1,4 @@
-import React, { useState, useRef, useMemo } from "react";
+import React, { useState, useRef, useMemo, useEffect } from "react";
 import {
   View,
   Modal,
@@ -7,6 +7,8 @@ import {
   FlatList,
   Animated,
   Dimensions,
+  Keyboard,
+  Platform,
 } from "react-native";
 import { Check, Search } from "lucide-react-native";
 import Text from "../common/text";
@@ -42,6 +44,7 @@ export function AutoComplete<T extends string>({
 }: Props<T>) {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const translateY = useRef(new Animated.Value(height)).current;
 
   const labels = useMemo(
@@ -53,6 +56,33 @@ export function AutoComplete<T extends string>({
     [items]
   );
 
+  useEffect(() => {
+    const keyboardWillShow = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
+      (e) => {
+        setKeyboardHeight(e.endCoordinates.height);
+        // Animate the sheet to sit above keyboard
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: Platform.OS === "ios" ? 250 : 200,
+          useNativeDriver: true,
+        }).start();
+      }
+    );
+
+    const keyboardWillHide = Keyboard.addListener(
+      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
+      () => {
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShow.remove();
+      keyboardWillHide.remove();
+    };
+  }, [translateY]);
+
   const openSheet = () => {
     setVisible(true);
     Animated.timing(translateY, {
@@ -63,11 +93,15 @@ export function AutoComplete<T extends string>({
   };
 
   const closeSheet = () => {
+    Keyboard.dismiss();
     Animated.timing(translateY, {
       toValue: height,
       duration: 300,
       useNativeDriver: true,
-    }).start(() => setVisible(false));
+    }).start(() => {
+      setVisible(false);
+      setKeyboardHeight(0);
+    });
   };
 
   const reset = () => {
@@ -84,6 +118,9 @@ export function AutoComplete<T extends string>({
     }
     closeSheet();
   };
+
+  // Calculate max height: total height minus keyboard height minus some padding
+  const maxSheetHeight = height - keyboardHeight - 40;
 
   return (
     <View>
@@ -116,8 +153,12 @@ export function AutoComplete<T extends string>({
             className="flex-1 bg-black/50 justify-end"
           >
             <Animated.View
-              style={{ transform: [{ translateY }] }}
-              className="bg-white rounded-t-3xl p-6 max-h-[75%]"
+              style={{
+                transform: [{ translateY }],
+                marginBottom: keyboardHeight,
+                maxHeight: maxSheetHeight,
+              }}
+              className="bg-white rounded-t-3xl p-6"
             >
               <View className="relative mb-4">
                 <TextInput
@@ -132,12 +173,15 @@ export function AutoComplete<T extends string>({
 
               <FlatList
                 data={items}
-                keyExtractor={(item,i) => i.toString()}
+                keyExtractor={(item, i) => i.toString()}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={true}
                 renderItem={({ item }) => (
                   <TouchableOpacity
                     onPress={() => {
-                      handleItemSelect(item)
-                      handleSelect(item.value)}}
+                      handleItemSelect?.(item);
+                      handleSelect(item.value);
+                    }}
                     className="flex-row items-start py-3 border-b border-gray-200"
                   >
                     <Check

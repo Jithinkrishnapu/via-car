@@ -17,7 +17,7 @@ function Pricing() {
   const [amount, setAmount] = useState(10);
   const { setRideField } = useCreateRideStore();
 
-  const clamp = (val: number) => Math.max(10, Math.min(14000, val));
+  const clamp = (val: number) => Math.max(0, Math.min(14000, val));
 
   const adjustAmount = (delta: number) => {
     setAmount((prev) => clamp(prev + delta));

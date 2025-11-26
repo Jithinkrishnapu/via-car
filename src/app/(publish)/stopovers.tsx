@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
-import { View, TouchableOpacity } from "react-native";
+import {
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
 import { ChevronLeft, Plus } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -14,15 +18,16 @@ import { useRoute } from "@react-navigation/native";
 
 function Stopovers() {
   const loaded = useLoadFonts();
-  const { t, i18n } = useTranslation("components");
+  const { t } = useTranslation("components");
   const { isRTL } = useDirection();
   const [places, setPlaces] = useState<any[]>([]);
-  const { ride, setSelectedPlaces, selectedPlaces, polyline } = useCreateRideStore();
-  const route = useRoute()
-
-  console.log(places)
+  const [loading, setLoading] = useState(true);
+  const { ride, setSelectedPlaces, selectedPlaces, polyline } =
+    useCreateRideStore();
+  const route = useRoute();
 
   const handleStopOvers = async () => {
+    setLoading(true);
     const request = {
       pickup_lat: ride.pickup_lat,
       pickup_lng: ride.pickup_lng,
@@ -35,19 +40,19 @@ function Stopovers() {
     try {
       const response = await useGetPopularPlaces(request);
       const newPlaces = response?.data?.places ?? [];
-    
-      setPlaces(curr => {
+
+      setPlaces((curr) => {
         const merged = [...curr, ...newPlaces];
-    
         if (route?.params?.location) {
-          // route.params.location is a JSON-stringified array
-          const loc = JSON.parse(route.params.location); // => [{…}]
-          merged.push(...loc);                           // add the objects, not the string
+          const loc = JSON.parse(route.params.location);
+          merged.push(...loc);
         }
         return merged;
       });
     } catch (err) {
-      console.error('Error fetching stopovers:', err);
+      console.error("Error fetching stopovers:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -58,10 +63,8 @@ function Stopovers() {
   const toggleStopover = (loc: any) => {
     const exists = selectedPlaces.some((p) => p.lat === loc.lat);
     if (exists) {
-      // Remove place
       setSelectedPlaces(selectedPlaces.filter((p) => p.lat !== loc.lat));
     } else {
-      // Add place
       setSelectedPlaces([
         ...selectedPlaces,
         { lat: loc.lat, lng: loc.lng, address: loc.mainText },
@@ -69,7 +72,15 @@ function Stopovers() {
     }
   };
 
-  if (!loaded) return null;
+  /* ----------  loading state  ---------- */
+  if (!loaded || loading) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#FF4848" />
+      </View>
+    );
+  }
+  /* ------------------------------------ */
 
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
@@ -99,10 +110,11 @@ function Stopovers() {
               <TouchableOpacity
                 key={loc.lat}
                 onPress={() => toggleStopover(loc)}
-                className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${isChecked
+                className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${
+                  isChecked
                     ? "border-[#69D2A5] bg-[#F1FFF9]"
                     : "border-[#EBEBEB] bg-white"
-                  }`}
+                }`}
                 activeOpacity={0.8}
               >
                 <View className="flex-row w-[95%] items-center gap-2">
@@ -129,7 +141,15 @@ function Stopovers() {
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center border border-[#EBEBEB] rounded-full h-[55px] gap-[4px]"
-          onPress={() => router.push({pathname:"/(publish)/add-city",params:{place:route?.params?.location,path:'/(publish)/stopovers'}})}
+          onPress={() =>
+            router.push({
+              pathname: "/(publish)/add-city",
+              params: {
+                place: route?.params?.location,
+                path: "/(publish)/stopovers",
+              },
+            })
+          }
           activeOpacity={0.8}
         >
           <Plus size={20} className="mr-2" />

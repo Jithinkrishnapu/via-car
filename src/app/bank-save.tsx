@@ -3,6 +3,8 @@ import {
   Alert,
   Dimensions,
   Image,
+  KeyboardAvoidingView,
+  Platform,
   ScrollView,
   TouchableOpacity,
   View,
@@ -30,16 +32,15 @@ const swiftRegex = /^[A-Z0-9]{8}([A-Z0-9]{3})?$/i;
 /* ---------------------------------- */
 export default function BankSave() {
   const { t } = useTranslation('index');
-  /* ---------- form fields ---------- */
   const route = useRoute();
 
   /* ---------- safe route-data reader ---------- */
   const routeData = React.useMemo(() => {
     try {
-      const raw = (route.params as any)?.data;   // may be undefined
+      const raw = (route.params as any)?.data;
       return raw ? JSON.parse(raw) : {};
     } catch {
-      return {};                                 // fallback to empty object
+      return {};
     }
   }, [route.params]);
 
@@ -55,8 +56,6 @@ export default function BankSave() {
   const [swiftCode, setSwiftCode] = useState(routeData?.swift_code ?? '');
   const [branch, setBranch] = useState(routeData?.bank_branch ?? '');
 
-  console.log(route,"========================")
-
   /* ---------- validation ---------- */
   type Errors = {
     accountHolderName?: string;
@@ -68,7 +67,6 @@ export default function BankSave() {
   };
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
-
 
   const validate = (): boolean => {
     const e: Errors = {};
@@ -93,8 +91,8 @@ export default function BankSave() {
 
   /* ---------- submit ---------- */
   const handleSaveBank = async () => {
-    if (!validate()) return; // stop early
-    let handleSave = handleBankSave
+    if (!validate()) return;
+    let handleSave = handleBankSave;
 
     setSubmitting(true);
     const payload = {
@@ -106,9 +104,9 @@ export default function BankSave() {
       swift_code: swiftCode.trim().toUpperCase(),
     };
 
-    if(routeData.id){
-      payload.id = routeData?.id
-      handleSave = handleBankUpdate
+    if (routeData.id) {
+      payload.id = routeData?.id;
+      handleSave = handleBankUpdate;
     }
 
     try {
@@ -116,12 +114,11 @@ export default function BankSave() {
       const body = await res.json();
 
       if (res.ok) {
-       if(routes?.params?.path == "bank-list"){
-        router.replace('..')
-       }else{
-        enforceProfileCompleteness();
-       }
-        // your existing redirect logic
+        if (route?.params?.path == "bank-list") {
+          router.replace('..');
+        } else {
+          enforceProfileCompleteness();
+        }
       } else {
         Alert.alert('Error', body.message || 'Unable to save bank details');
       }
@@ -155,106 +152,117 @@ export default function BankSave() {
 
   /* ---------- UI ---------- */
   return (
-    <ScrollView className="min-h-screen w-full bg-white">
-      <Image
-        style={{ height: height / 4 }}
-        className="w-full"
-        source={require('../../public/login.png')}
-      />
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={{ flex: 1 }}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <ScrollView
+        className="flex-1 w-full bg-white"
+        contentContainerStyle={{ flexGrow: 1 }}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+      >
+        <Image
+          style={{ height: height / 4 }}
+          className="w-full"
+          source={require('../../public/login.png')}
+        />
 
-      <View className="-mt-14 rounded-t-2xl bg-white px-5 pt-4">
-        <View className="mx-auto w-full max-w-[420px] pt-4 pb-10">
-          <Text fontSize={25} className="mb-6 text-start">
-            Add your bank details
-          </Text>
+        <View className="-mt-14 rounded-t-2xl bg-white px-5 pt-4">
+          <View className="mx-auto w-full max-w-[420px] pt-4 pb-10">
+            <Text fontSize={25} className="mb-6 text-start">
+              Add your bank details
+            </Text>
 
-          {/* ----- fields ----- */}
-          <InputComponent
-            label="Account Holder Name"
-            placeHolder="Enter here"
-            value={accountHolderName}
-            onChangeText={(t) => {
-              setAccountHolderName(t);
-              setErrors((x) => ({ ...x, accountHolderName: undefined }));
-            }}
-            error={errors.accountHolderName}
-          />
+            {/* ----- fields ----- */}
+            <InputComponent
+              label="Account Holder Name"
+              placeHolder="Enter here"
+              value={accountHolderName}
+              onChangeText={(t) => {
+                setAccountHolderName(t);
+                setErrors((x) => ({ ...x, accountHolderName: undefined }));
+              }}
+              error={errors.accountHolderName}
+            />
 
-          <InputComponent
-            label="Bank Name"
-            placeHolder="Enter here"
-            value={bankName}
-            onChangeText={(t) => {
-              setBankName(t);
-              setErrors((x) => ({ ...x, bankName: undefined }));
-            }}
-            error={errors.bankName}
-          />
+            <InputComponent
+              label="Bank Name"
+              placeHolder="Enter here"
+              value={bankName}
+              onChangeText={(t) => {
+                setBankName(t);
+                setErrors((x) => ({ ...x, bankName: undefined }));
+              }}
+              error={errors.bankName}
+            />
 
-          <InputComponent
-            label="Account Number"
-            placeHolder="Enter here"
-            keyboardType="number-pad"
-            value={accountNumber}
-            onChangeText={(t) => {
-              setAccountNumber(t);
-              setErrors((x) => ({ ...x, accountNumber: undefined }));
-            }}
-            error={errors.accountNumber}
-          />
+            <InputComponent
+              label="Account Number"
+              placeHolder="Enter here"
+              keyboardType="number-pad"
+              value={accountNumber}
+              onChangeText={(t) => {
+                setAccountNumber(t);
+                setErrors((x) => ({ ...x, accountNumber: undefined }));
+              }}
+              error={errors.accountNumber}
+            />
 
-          <InputComponent
-            label="IBAN"
-            placeHolder="Enter here"
-            autoCapitalize="characters"
-            value={iban}
-            onChangeText={(t) => {
-              setIban(t);
-              setErrors((x) => ({ ...x, iban: undefined }));
-            }}
-            error={errors.iban}
-          />
+            <InputComponent
+              label="IBAN"
+              placeHolder="Enter here"
+              autoCapitalize="characters"
+              value={iban}
+              onChangeText={(t) => {
+                setIban(t);
+                setErrors((x) => ({ ...x, iban: undefined }));
+              }}
+              error={errors.iban}
+            />
 
-          <InputComponent
-            label="SWIFT Code"
-            placeHolder="Enter here"
-            autoCapitalize="characters"
-            value={swiftCode}
-            onChangeText={(t) => {
-              setSwiftCode(t);
-              setErrors((x) => ({ ...x, swiftCode: undefined }));
-            }}
-            error={errors.swiftCode}
-          />
+            <InputComponent
+              label="SWIFT Code"
+              placeHolder="Enter here"
+              autoCapitalize="characters"
+              value={swiftCode}
+              onChangeText={(t) => {
+                setSwiftCode(t);
+                setErrors((x) => ({ ...x, swiftCode: undefined }));
+              }}
+              error={errors.swiftCode}
+            />
 
-          <InputComponent
-            label="Branch"
-            placeHolder="Enter here"
-            value={branch}
-            onChangeText={(t) => {
-              setBranch(t);
-              setErrors((x) => ({ ...x, branch: undefined }));
-            }}
-            error={errors.branch}
-          />
+            <InputComponent
+              label="Branch"
+              placeHolder="Enter here"
+              value={branch}
+              onChangeText={(t) => {
+                setBranch(t);
+                setErrors((x) => ({ ...x, branch: undefined }));
+              }}
+              error={errors.branch}
+            />
 
-          {/* ----- button ----- */}
-          <TouchableOpacity
-            onPress={handleSaveBank}
-            disabled={submitting}
-            className="bg-[#FF4848] rounded-full w-full h-[54px] items-center justify-center mt-4"
-            activeOpacity={0.8}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#fff" />
-            ) : (
-              <Text fontSize={20} className="text-white">
-                {routeData?.id ? t('Update') : t("Save")}
-              </Text>
-            )}
-          </TouchableOpacity>
+            {/* ----- button ----- */}
+            <TouchableOpacity
+              onPress={handleSaveBank}
+              disabled={submitting}
+              className="bg-[#FF4848] rounded-full w-full h-[54px] items-center justify-center mt-4"
+              activeOpacity={0.8}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text fontSize={20} className="text-white">
+                  {routeData?.id ? t('Update') : t("Save")}
+                </Text>
+              )}
+            </TouchableOpacity>
+          </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }

@@ -64,8 +64,8 @@ export const RideCard: React.FC<Props> = ({
       console.log("startTime============",startTime)
       console.log("endTime============",endTime)
 
-      const departure = fmtUTC(startTime);
-      const arrival   = fmtUTC(endTime);
+      const departure = startTime;
+      const arrival   = endTime;
     
 
 

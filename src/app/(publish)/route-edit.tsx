@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { View, TouchableOpacity, Image } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
 import { ChevronLeft, ChevronRight, Circle } from "lucide-react-native";
 import Text from "@/components/common/text";
@@ -14,91 +14,64 @@ import { placeRoutes, useEditRide } from "@/service/ride-booking";
 import { RideEditDetails } from "@/types/ride-types";
 
 function Route() {
-  // -------------------- Hooks --------------------
+  /* -------------------- Hooks -------------------- */
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
-  const { ride,setPolyline,polyline } = useCreateRideStore();
+  const { ride, polyline, setPolyline,ride_id } = useCreateRideStore();
 
-  // -------------------- States --------------------
+  /* -------------------- States -------------------- */
   const [routes, setRoutes] = useState([]);
-  const [selectedRoute, setSelectedRoute] = useState("1");
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
   const [selectedRoutes, setSelectedRoutes] = useState(null);
 
-
-  // -------------------- Map Data --------------------
-  const markersData = [
-    {
-      id: "1",
-      coordinate: { latitude: 37.78825, longitude: -122.4324 },
-      title: "Location 1",
-      description: "First marker",
-      pinColor: "green",
-    },
-    {
-      id: "2",
-      coordinate: { latitude: 37.79025, longitude: -122.4344 },
-      title: "Location 2",
-      description: "Second marker",
-      pinColor: "yellow",
-    },
-  ];
-
-  const realRoadRoute = [
-    {
-      coordinates: [
-        { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
-        { latitude: 24.8247, longitude: 46.7975 },
-        { latitude: 25.0619, longitude: 47.1429 },
-        { latitude: 25.2847, longitude: 47.4823 },
-        { latitude: 25.3619, longitude: 48.1429 },
-        { latitude: 25.4247, longitude: 48.5823 },
-        { latitude: 26.0619, longitude: 49.4429 },
-        { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
-      ],
-      strokeColor: "#FF0000",
-      strokeWidth: 6,
-    },
-  ];
-
-  // -------------------- Handlers --------------------
+  /* -------------------- Handlers -------------------- */
   const handleRoutes = async () => {
-    const request = {
-      pickup_lat: ride.pickup_lat,
-      pickup_lng: ride.pickup_lng,
-      dropoff_lat: ride.destination_lat,
-      dropoff_lng: ride.destination_lng,
-    };
+    try {
+      const response = await placeRoutes({
+        pickup_lat: ride.pickup_lat,
+        pickup_lng: ride.pickup_lng,
+        dropoff_lat: ride.destination_lat,
+        dropoff_lng: ride.destination_lng,
+      });
 
-    console.log(request, "Request Payload");
+      const list = response?.data?.routes ?? [];
+      setRoutes(list);
 
-    const response = await placeRoutes(request);
-    console.log(response?.data?.routes, "Routes Response");
-
-    setRoutes(response?.data?.routes || []);
+      // Auto-select the route whose polyline matches the stored one
+      const defaultRoute = list.find((r) => r.polyline === polyline);
+      if (defaultRoute) {
+        setSelectedRoute(defaultRoute.route_index);
+        setSelectedRoutes(defaultRoute);
+      } else if (list.length) {
+        // Fallback: select first route and sync store
+        setSelectedRoute(list[0].route_index);
+        setSelectedRoutes(list[0]);
+        setPolyline(list[0].polyline);
+      }
+    } catch (err) {
+      console.error(err);
+    }
   };
 
-  // -------------------- Effects --------------------
+  const handleEditRoute = async () => {
+    const req = { ride_route: polyline,ride_id } as RideEditDetails;
+    const res = await useEditRide(req);
+    if (res.ok) router.replace("..");
+  };
+
+  /* -------------------- Effects -------------------- */
   useEffect(() => {
     handleRoutes();
   }, []);
 
-  const handleEditRoute =async()=>{
-    const req ={ride_route:polyline} as RideEditDetails
-    const res = await useEditRide(req)
-    if(res.ok){
-      router.replace("..")
-    }
-  }
-
-  // -------------------- Render --------------------
+  /* -------------------- Render -------------------- */
   if (!loaded) return null;
 
   return (
     <View className="flex-1 bg-white">
-      {/* -------------------- Map Section -------------------- */}
+      {/* --------------- Map Section --------------- */}
       <View className="flex-1 relative">
-        {/* Back Button */}
         <TouchableOpacity
           className={swap(
             "absolute top-12 left-6 z-10 bg-white rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center",
@@ -110,12 +83,10 @@ function Route() {
           {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
         </TouchableOpacity>
 
-        {/* Map Component */}
-        <MapComponent
-        />
+        <MapComponent />
       </View>
 
-      {/* -------------------- Route Selection -------------------- */}
+      {/* --------------- Route Selection --------------- */}
       <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
         <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] mb-6">
           {t("route.title")}
@@ -123,13 +94,12 @@ function Route() {
 
         {routes.map((loc) => {
           const isSelected = selectedRoute === loc.route_index;
-
           return (
             <TouchableOpacity
               key={loc.route_index}
               onPress={() => {
-                setPolyline(loc?.polyline)
-                setSelectedRoutes(loc)
+                setPolyline(loc.polyline);
+                setSelectedRoutes(loc);
                 setSelectedRoute(loc.route_index);
               }}
               activeOpacity={0.8}
@@ -140,16 +110,10 @@ function Route() {
               }`}
             >
               <View className="flex-1">
-                <Text
-                  fontSize={14}
-                  className="text-[14px] font-[Kanit-Regular] text-black"
-                >
+                <Text fontSize={14} className="text-[14px] font-[Kanit-Regular] text-black">
                   {loc.duration_text}
                 </Text>
-                <Text
-                  fontSize={12}
-                  className="text-[12px] font-[Kanit-Regular] text-[#999999]"
-                >
+                <Text fontSize={12} className="text-[12px] font-[Kanit-Regular] text-[#999999]">
                   {loc.route_description}
                 </Text>
               </View>
@@ -157,29 +121,20 @@ function Route() {
               {isSelected ? (
                 <CheckGreen width={25} height={25} />
               ) : (
-                <Circle
-                  color="#BBBBBB"
-                  width={25}
-                  height={25}
-                  strokeWidth={1}
-                  className="size-[25px]"
-                />
+                <Circle color="#BBBBBB" width={25} height={25} strokeWidth={1} className="size-[25px]" />
               )}
             </TouchableOpacity>
           );
         })}
 
-        {/* Continue Button */}
+        {/* --------------- Continue Button --------------- */}
         <View className="py-5">
           <TouchableOpacity
             className="bg-[#FF4848] rounded-full h-[55px] flex-row items-center justify-center"
-            onPress={() => handleEditRoute()}
+            onPress={handleEditRoute}
             activeOpacity={0.8}
           >
-            <Text
-              fontSize={20}
-              className="text-xl text-white font-[Kanit-Regular]"
-            >
+            <Text fontSize={20} className="text-xl text-white font-[Kanit-Regular]">
               {t("common.continue")}
             </Text>
           </TouchableOpacity>

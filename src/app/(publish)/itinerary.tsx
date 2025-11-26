@@ -125,7 +125,7 @@ export default function ItineraryDetailsScreen() {
         <View className="flex-col divide-y divide-[#EBEBEB] divide-dashed">
           {/* Date */}
           <TouchableOpacity
-            onPress={() => router.push("/(publish)/date-edit")}
+            onPress={() => router.push({pathname:"/(publish)/date-edit",params:{date:ride.date}})}
             className="py-4 flex-row items-center"
           >
             <View className="flex-1">
@@ -141,7 +141,7 @@ export default function ItineraryDetailsScreen() {
 
           {/* Time */}
           <TouchableOpacity
-            onPress={() => router.push("/(publish)/time-edit")}
+            onPress={() => router.push({pathname:"/(publish)/time-edit",params:{time:ride?.time}})}
             className="py-4 flex-row items-center"
           >
             <View className="flex-1">

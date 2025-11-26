@@ -17,11 +17,12 @@ import { useEditRide } from "@/service/ride-booking";
 export default function Page() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const {setRideField,ride} = useCreateRideStore()
   const { isRTL, swap } = useDirection();
-  const [passengers, setPassengers] = useState(3);
-  const [comfortMode, setComfortMode] = useState(false);
+  console.log("seatoptions=============",ride.available_seats)
+  const [passengers, setPassengers] = useState(ride.available_seats);
+  const [comfortMode, setComfortMode] = useState(ride?.max_2_in_back);
 
-  const {setRideField} = useCreateRideStore()
 
   const adjustPassengers = (delta: number) => {
     setPassengers((prev) => Math.max(1, Math.min(9, prev + delta)));
@@ -32,6 +33,8 @@ export default function Page() {
     const req ={passengers:passenger,max_2_in_back:comfortMode} as RideEditDetails
     const res = await useEditRide(req)
     if(res.ok){
+      setRideField("available_seats",passenger)
+      setRideField("max_2_in_back",comfortMode)
       router.replace("..")
     }
   }

@@ -89,7 +89,7 @@ function Payment() {
     },
   ];
   const [selectedId, setSelectedId] = useState<string>("1");
-  const [cardsData, setCardsData] = useState(cards);
+  const [cardsData, setCardsData] = useState();
   const [status, setStatus] = useState<Status>("idle");
 
   if (!loaded) return null;

@@ -17,9 +17,13 @@ import {
     KeyboardAvoidingView,
     Platform,
     Alert,
-    Modal,
+    Modal,FlatList
 } from 'react-native';
 import { WebView } from 'react-native-webview';
+import Visa from '../../../public/visa.svg';
+import Mastercard from '../../../public/Mastercard.svg';
+import Amex from '../../../public/amex.svg';
+import Mada from '../../../public/mada.svg';
 
 type CardType = 'visa' | 'mastercard' | 'amex' | 'mada';
 
@@ -38,6 +42,21 @@ interface CardData {
 }
 
 type Status = "idle" | "waiting" | "approved";
+
+const returnIcon =(cardType:CardType) =>{
+    switch (cardType) {
+        case "visa":
+            return <Visa className='mr-2' />
+        case "mada":
+            return <Mada className='mr-2' />
+        case "amex":
+            return <Amex className='mr-2' />
+        case "mastercard":
+            return <Mastercard className='mr-2' />
+        default:
+            break;
+    }
+}
 
 const AddNewCard: React.FC = () => {
     const [selectedCard, setSelectedCard] = useState<CardType>('visa');
@@ -60,6 +79,13 @@ const AddNewCard: React.FC = () => {
     const [authUrl, setAuthUrl] = useState('');
     const [authParams, setAuthParams] = useState<any[]>([]);
     const route = useRoute()
+
+    const CARD_TYPES = [
+        { id: 'visa', label: 'VISA', image: Visa },
+        { id: 'mastercard', label: 'Mastercard', image: Mastercard },
+        { id: 'amex', label: 'AMEX', image: Amex },
+        { id: 'mada', label: 'mada', image: Mada },
+    ];
 
     const handleInputChange = (field: keyof CardData, value: string) => {
         setFormData((prev) => {
@@ -257,7 +283,7 @@ var wpwlOptions = {
         `;
     };
 
-    const CardTypeButton = ({ type, label }: { type: CardType; label: string }) => (
+    const CardTypeButton = ({ type, label, Icon }: { type: CardType; label: string, Icon: any }) => (
         <TouchableOpacity
             onPress={() => {
                 setSelectedCard(type);
@@ -267,12 +293,7 @@ var wpwlOptions = {
                 }`}
             disabled={loading}
         >
-            <Text
-                className={`font-semibold ${selectedCard === type ? 'text-blue-600' : 'text-gray-600'
-                    }`}
-            >
-                {label}
-            </Text>
+            <Icon />
         </TouchableOpacity>
     );
 
@@ -338,12 +359,19 @@ var wpwlOptions = {
                             <Text className="text-gray-800 font-semibold mb-3">
                                 Select Type of Card
                             </Text>
-                            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                                <CardTypeButton type="visa" label="VISA" />
-                                <CardTypeButton type="mastercard" label="Mastercard" />
-                                <CardTypeButton type="amex" label="AMEX" />
-                                <CardTypeButton type="mada" label="mada" />
-                            </ScrollView>
+                            <FlatList
+                                data={CARD_TYPES}
+                                keyExtractor={(item: any) => item.id}
+                                horizontal
+                                showsHorizontalScrollIndicator={false}
+                                renderItem={({ item }: { item: any }) => (
+                                    <CardTypeButton
+                                        type={item.id}
+                                        label={item.label}
+                                        Icon={item.image}
+                                    />
+                                )}
+                            />
                         </View>
 
                         {/* Card Holder Name */}
@@ -363,10 +391,11 @@ var wpwlOptions = {
                         {/* Card Number */}
                         <View className="mb-5">
                             <Text className="text-gray-800 font-semibold mb-2">Card Number</Text>
-                            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex-row items-center">
-                                <Text className="text-blue-600 font-bold mr-3">
+                            <View className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 flex-row gap-1 items-center">
+                                {/* <Text className="text-blue-600 font-bold mr-3">
                                     {selectedCard.toUpperCase()}
-                                </Text>
+                                </Text> */}
+                                {returnIcon(selectedCard)}
                                 <TextInput
                                     value={formData.cardNumber}
                                     onChangeText={(text) => {

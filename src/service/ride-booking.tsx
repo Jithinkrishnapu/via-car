@@ -173,7 +173,7 @@ export const useCreateBooking = async (postData: any) => {
   const userDetailsString = await useAsyncStorage('userDetails').getItem();
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token ?? '';
-
+console.log("postData================",postData)
   const res = await fetch(`${API_URL}/api/booking/create`, {
     method: 'POST',
     headers: {
@@ -190,7 +190,8 @@ export const useCreateBooking = async (postData: any) => {
   let data;
   try {
     data = JSON.parse(text);              // ← try to turn it into JSON
-  } catch {
+  } catch(err) {
+    console.log("error================",err)
     // whatever came back is not JSON – treat it as a server crash
     throw { message: 'Already booked for the same ride' };
   }
@@ -278,6 +279,31 @@ export const useVerifyBooking = async (postData: {
   const token = userDetails ? userDetails?.token : ""
   try {
     const response = await fetch(`${API_URL}/api/booking/verify-pin`, {
+      body: JSON.stringify(postData),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+      }
+    });
+    return response.json()
+  } catch (error) {
+    console.log("api error", error)
+  }
+
+}
+
+export const useBookingApproval = async (postData: {
+  "booking_id": number,
+  "type": number
+}) => {
+  console.log("request==========", postData)
+  const userDetailsString = await useAsyncStorage("userDetails").getItem()
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+  const token = userDetails ? userDetails?.token : ""
+  console.log("token==================", token)
+  try {
+    const response = await fetch(`${API_URL}/api/booking/approval`, {
       body: JSON.stringify(postData),
       method: 'POST',
       headers: {
