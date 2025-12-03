@@ -9,7 +9,8 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { LocationData, UserStatusResp } from "@/types/ride-types";
 import { getUserStatus } from "@/service/auth";
-import { useEffect } from "react";
+import { useFocusEffect } from "expo-router";
+import { useCallback } from "react";
 
 function Pickup() {
   const loaded = useLoadFonts();
@@ -57,9 +58,11 @@ function Pickup() {
     }
   }
 
-  useEffect(() => {
-    enforceProfileCompleteness()
-  }, [])
+  useFocusEffect(
+    useCallback(() => {
+      enforceProfileCompleteness()
+    }, [])
+  )
 
 
   const handleBookNow = async () => {

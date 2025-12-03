@@ -1,55 +1,53 @@
-import React from "react";
-import { Stack } from "expo-router";
-import { StyleSheet, View } from "react-native";
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import "@/lib/i18n";
+import { useEffect } from 'react';
+import { Stack } from 'expo-router';
+import { useNotifications } from '@/hooks/useNotifications';
+import { router } from 'expo-router';
 
-import * as NavigationBar from "expo-navigation-bar";
-import { ChatProvider } from "@/store/ChatContext";
+export default function RootLayout() {
+  // Handle notification received while app is in foreground
+  const handleNotificationReceived = (notification: any) => {
+    console.log('Notification received in foreground:', notification);
+    // You can show a custom in-app notification here
+    // or update your app state
+  };
 
-NavigationBar.setButtonStyleAsync("dark");
+  // Handle notification tap (when user taps on notification)
+  const handleNotificationOpened = (notification: any) => {
+    console.log('Notification opened:', notification);
+    
+    // Navigate based on notification data
+    const data = notification.data || notification.request?.content?.data;
+    
+    if (data?.screen) {
+      // Navigate to specific screen based on notification data
+      router.push(data.screen);
+    } else if (data?.rideId) {
+      // Example: Navigate to ride details
+      router.push(`/(booking)/ride?id=${data.rideId}`);
+    }
+  };
 
-// const firebaseConfig = {
-//   apiKey: "your-api-key-here",
-//   authDomain: "your-project.firebaseapp.com",
-//   projectId: "your-project-id",
-//   storageBucket: "your-project.appspot.com",
-//   messagingSenderId: "123456789",
-//   appId: "your-app-id"
-// };
+  // Initialize notifications
+  const { fcmToken, permissionGranted } = useNotifications(
+    handleNotificationReceived,
+    handleNotificationOpened
+  );
 
-// export const db = getFirestore()
+  useEffect(() => {
+    if (fcmToken) {
+      console.log('FCM Token ready:', fcmToken);
+      // TODO: Send this token to your backend to store it
+      // This allows your backend to send push notifications to this device
+      // Example: await sendTokenToBackend(fcmToken);
+    }
+  }, [fcmToken]);
 
-
-function RootLayout() {
-  const insets = useSafeAreaInsets();
   return (
-    <View
-      style={[styles.container, { paddingBottom: insets.bottom }]}
-      // contentContainerStyle={styles.content}
-      // enableOnAndroid={true}
-      // extraScrollHeight={0}
-      // keyboardOpeningTime={0}
-      // keyboardShouldPersistTaps="handled"
-    >
-      {/* <QueryClientProvider client={queryClient}> */}
-      <Stack  screenOptions={{ headerShown: false, animation: "none" }} />
-      {/* <MapComponent/> */}
-    </View>
-      // </QueryClientProvider>
+    <Stack>
+      <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+      <Stack.Screen name="(booking)" options={{ headerShown: false }} />
+      <Stack.Screen name="(publish)" options={{ headerShown: false }} />
+      <Stack.Screen name="(profile)" options={{ headerShown: false }} />
+    </Stack>
   );
 }
-
-export default RootLayout;
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-  },
-  content: {
-    flexGrow: 1,
-    justifyContent: "space-between",
-  },
-});

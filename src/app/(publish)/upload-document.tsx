@@ -12,6 +12,8 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Modal,
+  Pressable,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -27,41 +29,93 @@ const UploadDocumentsScreen = () => {
   const [carSequenceNumber, setCarSequenceNumber] = useState('');
   const [nationalIdnum, setNationalIdnum] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showBottomSheet, setShowBottomSheet] = useState(false);
+  const [currentDocumentType, setCurrentDocumentType] = useState<string>('');
 
-  const requestPermissions = async () => {
-    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (status !== 'granted') {
-      Alert.alert('Permission Required', 'Please grant camera roll permissions to upload documents.');
-      return false;
+  const requestPermissions = async (type: 'camera' | 'gallery') => {
+    if (type === 'camera') {
+      const { status } = await ImagePicker.requestCameraPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant camera permissions to take photos.');
+        return false;
+      }
+    } else {
+      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (status !== 'granted') {
+        Alert.alert('Permission Required', 'Please grant gallery permissions to upload documents.');
+        return false;
+      }
     }
     return true;
   };
 
-  const handleDocumentUpload = async (documentType: string) => {
-    const hasPermission = await requestPermissions();
-    if (!hasPermission) return;
+  const openBottomSheet = (documentType: string) => {
+    setCurrentDocumentType(documentType);
+    setShowBottomSheet(true);
+  };
+
+  const handleCamera = async () => {
+    setShowBottomSheet(false);
+    
+    // Small delay to ensure modal is closed before camera opens
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const hasPermission = await requestPermissions('camera');
+    if (!hasPermission) {
+      return;
+    }
 
     try {
-      if (documentType === 'nationalId') {
-        const result = await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ImagePicker.MediaTypeOptions.Images,
-          allowsEditing: false,
-          aspect: [4, 3],
-          quality: 1,
-        });
-        if (!result.canceled) setNationalId(result.assets[0]);
-      } else {
-        const result = await DocumentPicker.getDocumentAsync({
-          type: ['image/*', 'application/pdf'],
-          copyToCacheDirectory: true,
-        });
-        if (result.canceled) return;
-        if (documentType === 'drivingLicense') setDrivingLicense(result.assets[0]);
-        else if (documentType === 'vehicleRegistration') setVehicleRegistration(result.assets[0]);
+      const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        if (currentDocumentType === 'nationalId') setNationalId(asset);
+        else if (currentDocumentType === 'drivingLicense') setDrivingLicense(asset as any);
+        else if (currentDocumentType === 'vehicleRegistration') setVehicleRegistration(asset as any);
       }
-    } catch (error) {
-      Alert.alert('Error', 'Failed to upload document. Please try again.');
-      console.error(error);
+    } catch (error: any) {
+      console.error('Camera error:', error);
+      Alert.alert(
+        'Camera Error', 
+        Platform.OS === 'android' 
+          ? 'Camera not available. If using an emulator, please use "Choose from Gallery" instead.'
+          : 'Failed to open camera. Please try again.'
+      );
+    }
+  };
+
+  const handleGallery = async () => {
+    setShowBottomSheet(false);
+    
+    // Small delay to ensure modal is closed before gallery opens
+    await new Promise(resolve => setTimeout(resolve, 300));
+
+    const hasPermission = await requestPermissions('gallery');
+    if (!hasPermission) {
+      return;
+    }
+
+    try {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled) {
+        const asset = result.assets[0];
+        if (currentDocumentType === 'nationalId') setNationalId(asset);
+        else if (currentDocumentType === 'drivingLicense') setDrivingLicense(asset as any);
+        else if (currentDocumentType === 'vehicleRegistration') setVehicleRegistration(asset as any);
+      }
+    } catch (error: any) {
+      console.error('Gallery error:', error);
+      Alert.alert('Error', 'Failed to open gallery. Please try again.');
     }
   };
 
@@ -87,14 +141,14 @@ const UploadDocumentsScreen = () => {
 
       formdata.append('driving_license', {
         uri: drivingLicense.uri,
-        name: drivingLicense.name || 'driving_license.pdf',
-        type: drivingLicense.mimeType || 'application/pdf',
+        name: drivingLicense.name || 'driving_license.jpg',
+        type: drivingLicense.mimeType || 'image/jpeg',
       } as any);
 
       formdata.append('vehicle_registration', {
         uri: vehicleRegistration.uri,
-        name: vehicleRegistration.name || 'vehicle_registration.pdf',
-        type: vehicleRegistration.mimeType || 'application/pdf',
+        name: vehicleRegistration.name || 'vehicle_registration.jpg',
+        type: vehicleRegistration.mimeType || 'image/jpeg',
       } as any);
 
       const response = await handleVerifyId(formdata);
@@ -158,7 +212,7 @@ const UploadDocumentsScreen = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={() => handleDocumentUpload('nationalId')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
+              <TouchableOpacity onPress={() => openBottomSheet('nationalId')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
                 <Ionicons name="camera-outline" size={48} color="#9ca3af" />
                 <Text className="text-gray-500 mt-2">Tap to upload</Text>
               </TouchableOpacity>
@@ -192,39 +246,37 @@ const UploadDocumentsScreen = () => {
           {/* Driving License */}
           <View className="mb-6">
             <Text className="text-base font-semibold text-gray-900 mb-3">Upload Driving License</Text>
-            <TouchableOpacity onPress={() => handleDocumentUpload('drivingLicense')} className="border-2 border-dashed border-gray-300 rounded-lg p-12 items-center">
-              {drivingLicense ? (
-                <View className="items-center">
-                  <Ionicons name="document-text" size={48} color="#10b981" />
-                  <Text className="text-green-600 mt-2 text-center">{drivingLicense.name || 'Document uploaded'}</Text>
-                  <Text className="text-gray-500 text-xs mt-1">Tap to change</Text>
-                </View>
-              ) : (
-                <>
-                  <Ionicons name="camera-outline" size={48} color="#9ca3af" />
-                  <Text className="text-gray-500 mt-2">Tap to upload</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {drivingLicense ? (
+              <View className="relative">
+                <Image source={{ uri: drivingLicense.uri }} className="w-full h-48 rounded-lg" resizeMode="cover" />
+                <TouchableOpacity onPress={() => setDrivingLicense(null)} className="absolute top-2 right-2 bg-white rounded-full p-1">
+                  <Ionicons name="close-circle" size={24} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => openBottomSheet('drivingLicense')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
+                <Ionicons name="camera-outline" size={48} color="#9ca3af" />
+                <Text className="text-gray-500 mt-2">Tap to upload</Text>
+              </TouchableOpacity>
+            )}
           </View>
 
           {/* Vehicle Registration */}
           <View className="mb-8">
             <Text className="text-base font-semibold text-gray-900 mb-3">Upload Vehicle Registration</Text>
-            <TouchableOpacity onPress={() => handleDocumentUpload('vehicleRegistration')} className="border-2 border-dashed border-gray-300 rounded-lg p-12 items-center">
-              {vehicleRegistration ? (
-                <View className="items-center">
-                  <Ionicons name="document-text" size={48} color="#10b981" />
-                  <Text className="text-green-600 mt-2 text-center">{vehicleRegistration.name || 'Document uploaded'}</Text>
-                  <Text className="text-gray-500 text-xs mt-1">Tap to change</Text>
-                </View>
-              ) : (
-                <>
-                  <Ionicons name="camera-outline" size={48} color="#9ca3af" />
-                  <Text className="text-gray-500 mt-2">Tap to upload</Text>
-                </>
-              )}
-            </TouchableOpacity>
+            {vehicleRegistration ? (
+              <View className="relative">
+                <Image source={{ uri: vehicleRegistration.uri }} className="w-full h-48 rounded-lg" resizeMode="cover" />
+                <TouchableOpacity onPress={() => setVehicleRegistration(null)} className="absolute top-2 right-2 bg-white rounded-full p-1">
+                  <Ionicons name="close-circle" size={24} color="#ef4444" />
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity onPress={() => openBottomSheet('vehicleRegistration')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
+                <Ionicons name="camera-outline" size={48} color="#9ca3af" />
+                <Text className="text-gray-500 mt-2">Tap to upload</Text>
+              </TouchableOpacity>
+            )}
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -243,6 +295,56 @@ const UploadDocumentsScreen = () => {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* ---------- bottom sheet modal ---------- */}
+      <Modal
+        visible={showBottomSheet}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowBottomSheet(false)}
+      >
+        <Pressable
+          className="flex-1 bg-black/50"
+          onPress={() => setShowBottomSheet(false)}
+        >
+          <View className="flex-1 justify-end">
+            <Pressable onPress={(e) => e.stopPropagation()}>
+              <View className="bg-white rounded-t-3xl px-6 py-6">
+                <View className="w-12 h-1 bg-gray-300 rounded-full self-center mb-6" />
+                
+                <Text className="text-xl font-bold text-gray-900 mb-4">Upload Document</Text>
+                
+                <TouchableOpacity
+                  onPress={handleCamera}
+                  className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3"
+                >
+                  <View className="bg-red-100 rounded-full p-3 mr-4">
+                    <Ionicons name="camera" size={24} color="#ef4444" />
+                  </View>
+                  <Text className="text-base font-semibold text-gray-900">Take Photo</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={handleGallery}
+                  className="flex-row items-center bg-gray-50 rounded-xl p-4 mb-3"
+                >
+                  <View className="bg-red-100 rounded-full p-3 mr-4">
+                    <Ionicons name="images" size={24} color="#ef4444" />
+                  </View>
+                  <Text className="text-base font-semibold text-gray-900">Choose from Gallery</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  onPress={() => setShowBottomSheet(false)}
+                  className="bg-gray-200 rounded-xl p-4 mt-2"
+                >
+                  <Text className="text-base font-semibold text-gray-700 text-center">Cancel</Text>
+                </TouchableOpacity>
+              </View>
+            </Pressable>
+          </View>
+        </Pressable>
+      </Modal>
     </SafeAreaView>
   );
 };

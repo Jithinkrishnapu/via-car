@@ -23,6 +23,8 @@ export default function SelectCategoryPage() {
   const [selected, setSelected] = useState("1");
   const {setVehicle,vehicle} = useStore()
 
+  
+
   if (!loaded) return null;
 
   return (
