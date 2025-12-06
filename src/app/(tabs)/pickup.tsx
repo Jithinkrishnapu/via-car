@@ -27,7 +27,7 @@ function Pickup() {
       const userDetails = stored ? JSON.parse(stored) : null
       if (userDetails?.type === "login") {
         if (!d?.bank_details?.has_bank_details) {
-          router.replace('/bank-save');
+          router.push('/bank-save');
           return;
         }
         /* 1. Identity not done yet */

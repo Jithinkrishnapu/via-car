@@ -7,12 +7,11 @@ import {
   Dimensions,
   TextInput,
   Alert,
-  KeyboardAvoidingView,
   Platform,
-  ScrollView,
   Keyboard,
   TouchableWithoutFeedback,
 } from "react-native";
+import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import OtpAnimation from "../animated/otp-animation";
 import { XIcon } from "lucide-react-native";
 import { router } from "expo-router";
@@ -123,23 +122,23 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
       </TouchableOpacity>
 
       <Modal transparent visible={visible} animationType="none">
-        <KeyboardAvoidingView
-          behavior={Platform.OS === "ios" ? "padding" : "height"}
-          className="flex-1"
-          keyboardVerticalOffset={0}
-        >
-          <TouchableWithoutFeedback onPress={closeSheet}>
-            <View className="flex-1 bg-black/50 justify-end">
-              <TouchableWithoutFeedback>
-                <Animated.View
-                  style={{ transform: [{ translateY }] }}
-                  className="bg-white rounded-t-3xl"
+        <TouchableWithoutFeedback onPress={closeSheet}>
+          <View className="flex-1 bg-black/50 justify-end">
+            <TouchableWithoutFeedback>
+              <Animated.View
+                style={{ transform: [{ translateY }] }}
+                className="bg-white rounded-t-3xl max-h-[90%]"
+              >
+                <KeyboardAwareScrollView
+                  contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+                  keyboardShouldPersistTaps="handled"
+                  showsVerticalScrollIndicator={false}
+                  enableOnAndroid={true}
+                  enableAutomaticScroll={true}
+                  // extraScrollHeight={Platform.OS === "ios" ? 80 : 100}
+                  // extraHeight={Platform.OS === "ios" ? 180 : 200}
+                  bounces={false}
                 >
-                  <ScrollView
-                    contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
-                    keyboardShouldPersistTaps="handled"
-                    showsVerticalScrollIndicator={false}
-                  >
                     <View className="flex flex-col items-center relative">
                       <TouchableOpacity
                         activeOpacity={0.8}
@@ -211,13 +210,12 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
                           </Text>
                         </Text>
                       </View>
-                    </View>
-                  </ScrollView>
-                </Animated.View>
-              </TouchableWithoutFeedback>
-            </View>
-          </TouchableWithoutFeedback>
-        </KeyboardAvoidingView>
+                  </View>
+                </KeyboardAwareScrollView>
+              </Animated.View>
+            </TouchableWithoutFeedback>
+          </View>
+        </TouchableWithoutFeedback>
       </Modal>
     </View>
   );

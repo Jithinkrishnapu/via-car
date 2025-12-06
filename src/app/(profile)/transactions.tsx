@@ -112,23 +112,30 @@ const TransactionTableScreen: React.FC = () => {
     fetchPage(next);
   };
 
+  const screenHeight = Dimensions.get('window').height;
+  const tableHeight = screenHeight - 200; // Adjust based on header height
+
   return (
     <View style={styles.container}>
       {/* header */}
-      <View className="flex-row items-center my-8 gap-3">
+      <View className="flex-row items-center px-6 pt-16 pb-4 gap-3 bg-white">
         <TouchableOpacity
           className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
-          onPress={() => router.replace('..')}
+          onPress={() => router.back()}
           activeOpacity={0.8}
         >
-          {swap(<ChevronLeft />, <ChevronRight />)}
+          {swap(<ChevronLeft size={24} />, <ChevronRight size={24} />)}
         </TouchableOpacity>
         <Text className="text-2xl font-[Kanit-SemiBold] text-gray-800">Transaction History</Text>
       </View>
 
       {/* table */}
-      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-        <View>
+      <ScrollView 
+        horizontal 
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 20 }}
+      >
+        <View style={{ minWidth: Dimensions.get('window').width - 32 }}>
           {/* sticky header */}
           <View style={styles.headerRow}>
             <Cell text="Driver" isHeader />
@@ -140,16 +147,20 @@ const TransactionTableScreen: React.FC = () => {
           </View>
 
           {/* rows */}
-          <ScrollView style={{ maxHeight: Dimensions.get('window').height - 180 }}>
+          <ScrollView 
+            style={{ maxHeight: tableHeight }}
+            showsVerticalScrollIndicator={false}
+          >
             {loading && (
               <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <ActivityIndicator />
+                <ActivityIndicator size="large" color="#FF4848" />
+                <Text className="mt-2 text-gray-600 font-[Kanit-Light]">Loading transactions...</Text>
               </View>
             )}
 
             {!loading && list.length === 0 && (
-              <View style={{ paddingVertical: 40, alignItems: 'center' }}>
-                <Text>No transactions found</Text>
+              <View style={{ paddingVertical: 60, alignItems: 'center' }}>
+                <Text className="text-gray-400 font-[Kanit-Light]">No transactions found</Text>
               </View>
             )}
 
@@ -157,9 +168,14 @@ const TransactionTableScreen: React.FC = () => {
 
             {/* load more */}
             {!loading && list.length >= perPage && (
-              <TouchableOpacity style={styles.loadMore} onPress={loadMore} disabled={loadingMore}>
+              <TouchableOpacity 
+                style={styles.loadMore} 
+                onPress={loadMore} 
+                disabled={loadingMore}
+                activeOpacity={0.7}
+              >
                 {loadingMore ? (
-                  <ActivityIndicator size="small" />
+                  <ActivityIndicator size="small" color="#FF4848" />
                 ) : (
                   <Text style={styles.loadMoreTxt}>Load more</Text>
                 )}
@@ -176,18 +192,68 @@ const TransactionTableScreen: React.FC = () => {
 /*                                    styles                                  */
 /* -------------------------------------------------------------------------- */
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f9fafb', paddingTop: 48, paddingLeft: 12 },
-  headerRow: { flexDirection: 'row', backgroundColor: '#F5F5F5', borderTopLeftRadius: 8, borderTopRightRadius: 8 },
-  dataRow: { flexDirection: 'row', backgroundColor: '#fff', borderBottomWidth: 1, borderColor: '#e5e7eb' },
-  cell: { width: COL_WIDTH, paddingHorizontal: 12, paddingVertical: 14, justifyContent: 'center' },
-  headerCell: { paddingVertical: 12 },
-  cellText: { fontSize: 14, color: '#111827' },
-  headerText: { color: '#000', fontWeight: '600' },
-  badge: { backgroundColor: '#d1fae5', borderRadius: 12, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' },
-  badgeGreen: { backgroundColor: '#d1fae5' },
-  badgeText: { fontSize: 12, color: '#065f46', fontWeight: '600' },
-  loadMore: { paddingVertical: 16, alignItems: 'center' },
-  loadMoreTxt: { color: '#0ea5e9', fontWeight: '600' },
+  container: { 
+    flex: 1, 
+    backgroundColor: '#f9fafb',
+  },
+  headerRow: { 
+    flexDirection: 'row', 
+    backgroundColor: '#F5F5F5', 
+    borderTopLeftRadius: 8, 
+    borderTopRightRadius: 8,
+    marginTop: 16,
+  },
+  dataRow: { 
+    flexDirection: 'row', 
+    backgroundColor: '#fff', 
+    borderBottomWidth: 1, 
+    borderColor: '#e5e7eb',
+  },
+  cell: { 
+    width: COL_WIDTH, 
+    paddingHorizontal: 12, 
+    paddingVertical: 14, 
+    justifyContent: 'center',
+  },
+  headerCell: { 
+    paddingVertical: 12,
+  },
+  cellText: { 
+    fontSize: 14, 
+    color: '#111827',
+    fontFamily: 'Kanit-Light',
+  },
+  headerText: { 
+    color: '#000', 
+    fontWeight: '600',
+    fontFamily: 'Kanit-Medium',
+  },
+  badge: { 
+    backgroundColor: '#d1fae5', 
+    borderRadius: 12, 
+    paddingHorizontal: 8, 
+    paddingVertical: 4, 
+    alignSelf: 'flex-start',
+  },
+  badgeGreen: { 
+    backgroundColor: '#d1fae5',
+  },
+  badgeText: { 
+    fontSize: 12, 
+    color: '#065f46', 
+    fontWeight: '600',
+    fontFamily: 'Kanit-Regular',
+  },
+  loadMore: { 
+    paddingVertical: 16, 
+    alignItems: 'center',
+    backgroundColor: '#fff',
+  },
+  loadMoreTxt: { 
+    color: '#FF4848', 
+    fontWeight: '600',
+    fontFamily: 'Kanit-Regular',
+  },
 });
 
 export default TransactionTableScreen;

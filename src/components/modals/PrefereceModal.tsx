@@ -49,13 +49,57 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
 
   console.log("travelPref======================",userDetails)
 
+  /* Remove preference */
+  const handleRemovePreference = async (tagToRemove: string) => {
+    // Get current tags and filter out the one to remove
+    const updatedTags = tags.filter((t: string) => t !== tagToRemove);
+    
+    console.log("Removing:", tagToRemove);
+    console.log("Current tags:", tags);
+    console.log("Updated tags:", updatedTags);
+    
+    // Update local state with comma-separated string
+    setUserDetails((prev: any) => ({ 
+      ...prev, 
+      travel_preferences: updatedTags.length > 0 ? [updatedTags.join(',')] : [] 
+    }));
+
+    // Send to backend
+    const form = new FormData();
+    
+    // Always send as array, but send empty array item when clearing
+    updatedTags.forEach(tag => {
+      form.append("travel_preferences[]", tag);
+    });
+    
+    // If no tags, append one empty item to signal clearing
+    if (updatedTags.length === 0) {
+      form.append("travel_preferences[]", "");
+    }
+    
+    console.log("Sending to backend, count:", updatedTags.length);
+    const result = await useUpdateProfileDetails(form);
+    console.log("Remove result:", result);
+  };
+
   /* 2️⃣  row renderer */
-  const renderTag = ({ item }: { item: string }) => (
-    <View className="border border-gray-200 rounded-full flex-row items-center px-4 py-2">
-      <ChatIcon width={21} height={21} />
-      <Text className="ml-2 text-sm font-[Kanit-Light]">{item}</Text>
-    </View>
-  );
+  const renderTag = ({ item }: { item: string }) => {
+    if (!item || !item.trim()) return null; // Don't render empty items
+    
+    return (
+      <View className="border border-gray-200 rounded-full flex-row items-center px-4 py-2">
+        <ChatIcon width={21} height={21} />
+        <Text className="ml-2 text-sm font-[Kanit-Light]">{item}</Text>
+        <TouchableOpacity
+          onPress={() => handleRemovePreference(item)}
+          className="ml-2 -mr-1"
+          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+        >
+          <X size={16} color="#666666" />
+        </TouchableOpacity>
+      </View>
+    );
+  };
 
   return (
     <View className="bg-white h-[60%] px-12 lg:px-24 pt-12 lg:pt-24 rounded-t-3xl items-center">
@@ -90,16 +134,24 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
           </TouchableOpacity>
         </View>
 
-        <FlatList
-          data={userDetails?.travel_preferences?.toString()?.split(",")}
-          renderItem={renderTag}
-          keyExtractor={(item) => item}
-          horizontal={false}          // vertical flow
-          numColumns={1000}           // wrap behaviour (flex-wrap)
-          columnWrapperClassName="flex-wrap gap-[15px]"
-          showsVerticalScrollIndicator={false}
-          className="w-full"
-        />
+        {tags.length > 0 ? (
+          <FlatList
+            data={tags}
+            renderItem={renderTag}
+            keyExtractor={(item, index) => `${item}-${index}`}
+            horizontal={false}
+            numColumns={1000}
+            columnWrapperClassName="flex-wrap gap-[15px]"
+            showsVerticalScrollIndicator={false}
+            className="w-full"
+          />
+        ) : (
+          <View className="items-center justify-center py-8">
+            <Text className="text-gray-400 text-sm font-[Kanit-Light]">
+              {t("No preferences added yet")}
+            </Text>
+          </View>
+        )}
       </View>
 
       <TouchableOpacity

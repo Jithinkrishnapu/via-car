@@ -119,5 +119,64 @@ export const addVehicle = async (postData: FormData) => {
     } catch (error) {
         console.log("api error", error)
     }
+}
 
+export const updateVehicle = async (payload: { vehicle_id: number; model_id: number; year: number; color: string }) => {
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
+    try {
+        const response = await fetch(`${API_URL}/api/vehicle/update`, {
+            body: JSON.stringify(payload),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            }
+        });
+        
+        const body = await response.json().catch(() => ({}));
+        
+        if (!response.ok) {
+            const err: any = new Error(body.message || response.statusText);
+            err.status = response.status;
+            err.body = body;
+            throw err;
+        }
+        
+        return { res: response, body };
+    } catch (error) {
+        console.log("api error", error)
+        throw error;
+    }
+}
+
+export const deleteVehicle = async (vehicleId: number) => {
+    const userDetailsString = await useAsyncStorage("userDetails").getItem()
+    const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+    const token = userDetails ? userDetails?.token : ""
+    try {
+        const response = await fetch(`${API_URL}/api/vehicle/delete`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify({ id: vehicleId })
+        });
+        
+        const body = await response.json().catch(() => ({}));
+        
+        if (!response.ok) {
+            const err: any = new Error(body.message || response.statusText);
+            err.status = response.status;
+            err.body = body;
+            throw err;
+        }
+        
+        return { res: response, body };
+    } catch (error) {
+        console.log("api error", error)
+        throw error;
+    }
 }

@@ -10,6 +10,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
+import { ArrowLeft } from 'lucide-react-native';
 import Text from '@/components/common/text';
 import { InputComponent } from '@/components/inputs/common-input';
 import { router } from 'expo-router';
@@ -76,7 +77,7 @@ export default function BankSave() {
     if (isEmpty(accountNumber)) e.accountNumber = 'Required';
     else if (!/^\d+$/.test(accountNumber))
       e.accountNumber = 'Only digits allowed';
-
+    console.log("iban===============",iban)
     if (isEmpty(iban)) e.iban = 'Required';
     else if (!ibanRegex.test(iban)) e.iban = 'Invalid IBAN format';
 
@@ -90,45 +91,127 @@ export default function BankSave() {
   };
 
   /* ---------- submit ---------- */
+  // const handleSaveBank = async () => {
+  //   if (!validate()) return;
+  //   let handleSave = handleBankSave;
+
+  //   setSubmitting(true);
+  //   const payload = {
+  //     account_holder_name: accountHolderName.trim(),
+  //     bank_name: bankName.trim(),
+  //     bank_branch: branch.trim(),
+  //     account_number: accountNumber.trim(),
+  //     iban: iban.trim().toUpperCase(),
+  //     swift_code: swiftCode.trim().toUpperCase(),
+  //   };
+
+  //   if (routeData.id) {
+  //     payload.id = routeData?.id;
+  //     handleSave = handleBankUpdate;
+  //   }
+
+  //   try {
+  //     const res = await handleSave(payload);
+      
+  //     // Parse response body
+  //     let body;
+  //     try {
+  //       body = await res.json();
+  //     } catch (parseError) {
+  //       console.error('Failed to parse response:', parseError);
+  //       body = { message: 'Invalid response from server' };
+  //     }
+
+  //     if (res.ok) {
+  //       // Success - show success message if available
+  //       if (body?.message) {
+  //         Alert.alert('Success', body.message);
+  //       }
+        
+  //       if (route?.params?.path == "bank-list") {
+  //         router.replace('..');
+  //       } else {
+  //         enforceProfileCompleteness();
+  //       }
+  //     } else {
+  //       // Handle different error response formats
+  //       let errorMessage = 'Unable to save bank details';
+        
+  //       if (body?.message) {
+  //         errorMessage = body.message;
+  //       } else if (body?.error) {
+  //         errorMessage = body.error;
+  //       } else if (body?.errors) {
+  //         // Handle validation errors object
+  //         if (typeof body.errors === 'object') {
+  //           const errorMessages = Object.values(body.errors).flat();
+  //           errorMessage = errorMessages.join('\n');
+  //         } else {
+  //           errorMessage = body.errors;
+  //         }
+  //       } else if (typeof body === 'string') {
+  //         errorMessage = body;
+  //       }
+        
+  //       Alert.alert('Error', errorMessage);
+  //     }
+  //   } catch (err: any) {
+  //     console.error('Bank save error:', err);
+      
+  //     // Handle network errors
+  //     let errorMessage = 'Network error – please try again';
+      
+  //     if (err?.message) {
+  //       errorMessage = err.message;
+  //     } else if (err?.response?.data?.message) {
+  //       errorMessage = err.response.data.message;
+  //     }
+      
+  //     Alert.alert('Error', errorMessage);
+  //   } finally {
+  //     setSubmitting(false);
+  //   }
+  // };
+
   const handleSaveBank = async () => {
-    if (!validate()) return;
-    let handleSave = handleBankSave;
+  if (!validate()) return;
 
-    setSubmitting(true);
-    const payload = {
-      account_holder_name: accountHolderName.trim(),
-      bank_name: bankName.trim(),
-      bank_branch: branch.trim(),
-      account_number: accountNumber.trim(),
-      iban: iban.trim().toUpperCase(),
-      swift_code: swiftCode.trim().toUpperCase(),
-    };
+  let handleSave = handleBankSave;
 
-    if (routeData.id) {
-      payload.id = routeData?.id;
-      handleSave = handleBankUpdate;
-    }
-
-    try {
-      const res = await handleSave(payload);
-      const body = await res.json();
-
-      if (res.ok) {
-        if (route?.params?.path == "bank-list") {
-          router.replace('..');
-        } else {
-          enforceProfileCompleteness();
-        }
-      } else {
-        Alert.alert('Error', body.message || 'Unable to save bank details');
-      }
-    } catch (err: any) {
-      console.log(err);
-      Alert.alert('Error', 'Network error – please try again');
-    } finally {
-      setSubmitting(false);
-    }
+  setSubmitting(true);
+  const payload = {
+    account_holder_name: accountHolderName.trim(),
+    bank_name: bankName.trim(),
+    bank_branch: branch.trim(),
+    account_number: accountNumber.trim(),
+    iban: iban.trim().toUpperCase(),
+    swift_code: swiftCode.trim().toUpperCase(),
   };
+
+  if (routeData.id) {
+    payload.id = routeData.id;
+    handleSave = handleBankUpdate; // make sure this one returns {res, body} too
+  }
+
+  try {
+    const { res, body } = await handleSave(payload);
+
+    // ---------- SUCCESS ----------
+    if (body?.message) Alert.alert('Success', body.message);
+
+    if (route?.params?.path === 'bank-list') {
+      router.replace('..');
+    } else {
+      enforceProfileCompleteness();
+    }
+  } catch (err: any) {
+    // ---------- ERROR ----------
+    const msg = err?.body?.message || err.message || 'Network error – please try again';
+    Alert.alert('Error', msg);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   /* ---------- existing redirect helper ---------- */
   async function enforceProfileCompleteness() {
@@ -171,9 +254,18 @@ export default function BankSave() {
 
         <View className="-mt-14 rounded-t-2xl bg-white px-5 pt-4">
           <View className="mx-auto w-full max-w-[420px] pt-4 pb-10">
-            <Text fontSize={25} className="mb-6 text-start">
-              Add your bank details
-            </Text>
+            <View className="flex-row items-center mb-6">
+              <TouchableOpacity
+                onPress={() => router.replace('../')}
+                className="mr-3 p-2 -ml-2"
+                activeOpacity={0.7}
+              >
+                <ArrowLeft size={24} color="#0A2033" />
+              </TouchableOpacity>
+              <Text fontSize={25} className="flex-1 font-[Kanit-Medium] text-start">
+                Add your bank details
+              </Text>
+            </View>
 
             {/* ----- fields ----- */}
             <InputComponent

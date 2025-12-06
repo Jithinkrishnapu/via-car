@@ -172,8 +172,8 @@ const UploadDocumentsScreen = () => {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
 
-      {/* ---------- fixed header ---------- */}
-      <View className="px-6 py-4 bg-white border-b border-gray-200">
+      {/* ---------- keyboard avoiding wrapper ---------- */}
+      <View className="px-6 mt-5 py-4 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-900">Upload Documents</Text>
       </View>
 

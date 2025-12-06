@@ -8,12 +8,12 @@ import React, {
 } from 'react';
 import {
   Keyboard,
-  KeyboardAvoidingView,
   Platform,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
+import { KeyboardAwareScrollView } from 'react-native-keyboard-aware-scroll-view';
 import { X } from 'lucide-react-native';
 import { useTranslation } from 'react-i18next';
 import { useGetProfileDetails } from '@/service/auth';
@@ -101,60 +101,70 @@ const AboutModal = ({ onClose, isClosable = true }: Props) => {
   );
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-      className="bg-white h-[40%] px-12 lg:px-24 pt-12 lg:pt-24 rounded-t-3xl items-center"
-    >
+    <View className="bg-white h-[50%] rounded-t-3xl">
       {/* Close icon --------------------------------------------------- */}
       {isClosable && (
         <TouchableOpacity
           onPress={onClose}
           activeOpacity={0.8}
-          className="rounded-full absolute right-8 top-8 items-center justify-center"
+          className="rounded-full absolute right-8 top-8 items-center justify-center z-10"
         >
           <X color="#000" />
         </TouchableOpacity>
       )}
 
-      {/* Title -------------------------------------------------------- */}
-      <View className="flex-1 w-full">
-        <Text className="text-base font-KanitMedium text-center mb-5">
+      <KeyboardAwareScrollView
+        contentContainerStyle={{
+          paddingHorizontal: 48,
+          paddingTop: 48,
+          paddingBottom: 24,
+        }}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        enableOnAndroid={true}
+        enableAutomaticScroll={true}
+        extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
+        extraHeight={150}
+      >
+        {/* Title -------------------------------------------------------- */}
+        <Text className="text-base font-[Kanit-Medium] text-center mb-5">
           {t('profile.aboutMe', 'About Me')}
         </Text>
 
         {/* Input ------------------------------------------------------ */}
-        <View className="bg-neutral-100 w-full h-[120px] rounded-lg px-4 py-3">
+        <View className="bg-neutral-100 w-full min-h-[120px] rounded-lg px-4 py-3 mb-4">
           <TextInput
             multiline
             numberOfLines={5}
             value={input}
             onChangeText={setInput}
             placeholder={t('profile.aboutPlaceholder', 'Enter about yourself')}
-            placeholderClassName="text-sm font-KanitLight text-neutral-500"
-            className="flex-1 text-sm font-KanitLight"
+            placeholderTextColor="#9ca3af"
+            className="flex-1 text-sm font-[Kanit-Light]"
+            textAlignVertical="top"
           />
         </View>
 
         {/* Error hint */}
         {error && (
-          <Text className="text-red-500 text-xs mt-2">{error}</Text>
+          <Text className="text-red-500 text-xs mb-4">{error}</Text>
         )}
-      </View>
 
-      {/* CTA ---------------------------------------------------------- */}
-      <TouchableOpacity
-        onPress={handleSave}
-        disabled={isLoading}
-        activeOpacity={0.8}
-        className={`rounded-full w-full h-[50px] items-center justify-center ${
-          isLoading ? 'bg-neutral-400' : 'bg-[#FF4848]'
-        }`}
-      >
-        <Text className="text-white text-sm font-KanitRegular text-center">
-          {isLoading ? t('common.saving', 'Saving…') : buttonLabel}
-        </Text>
-      </TouchableOpacity>
-    </KeyboardAvoidingView>
+        {/* CTA ---------------------------------------------------------- */}
+        <TouchableOpacity
+          onPress={handleSave}
+          disabled={isLoading}
+          activeOpacity={0.8}
+          className={`rounded-full w-full h-[50px] items-center justify-center mt-2 ${
+            isLoading ? 'bg-neutral-400' : 'bg-[#FF4848]'
+          }`}
+        >
+          <Text className="text-white text-sm font-[Kanit-Regular] text-center">
+            {isLoading ? t('common.saving', 'Saving…') : buttonLabel}
+          </Text>
+        </TouchableOpacity>
+      </KeyboardAwareScrollView>
+    </View>
   );
 };
 

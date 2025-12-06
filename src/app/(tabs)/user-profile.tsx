@@ -75,6 +75,30 @@ export default function ProfilePage() {
     }
   }
 
+  const handleDeleteVehicle = (vehicleId: number) => {
+    Alert.alert(
+      t("Delete Vehicle"),
+      t("Are you sure you want to delete this vehicle?"),
+      [
+        { text: t("Cancel"), style: "cancel" },
+        {
+          text: t("Delete"),
+          style: "destructive",
+          onPress: async () => {
+            try {
+              const { deleteVehicle } = await import("@/service/vehicle");
+              await deleteVehicle(vehicleId);
+              Alert.alert(t("Success"), t("Vehicle deleted successfully"));
+              handleGetVehicles(); // Refresh list
+            } catch (error: any) {
+              Alert.alert(t("Error"), error?.body?.message || t("Failed to delete vehicle"));
+            }
+          },
+        },
+      ]
+    );
+  };
+
   const tabLabels = {
     about: t("About"),
     account: t("Account"),
@@ -213,7 +237,7 @@ export default function ProfilePage() {
                   [t("Phone Number"), userDetails?.mobile_number],
                   [t("Mail"), userDetails?.email],
                   [t("Age"), - + Number(userDetails?.calculated_age)],
-                  [t("Gender"), userDetails?.gender],
+                  [t("Gender"), userDetails?.gender_name],
                 ].map(([label, value], idx) => (
                   value && <View key={idx} className="flex-row py-1">
                     <Text
@@ -278,21 +302,28 @@ export default function ProfilePage() {
             {/* Verification Section */}
             <View className="pb-6 px-6 border-b-[11px] border-[#F7F7F7]">
               <View className="mt-4 rounded-lg">
-                <TouchableOpacity
-                  className="flex-row items-center px-4 py-2"
-                  onPress={() => { }}
-                  activeOpacity={0.8}
-                >
-                  <CheckGreen width={18} height={18} />
-                  <Text
-                    fontSize={14}
-                    className="ml-4 text-[14px] font-[Kanit-Light]"
-                  >
-                    {t("ID verified")}
-                  </Text>
-                </TouchableOpacity>
-                <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
-                <TouchableOpacity
+                {/* ID Verification - only show if verified */}
+                {userDetails?.is_verified && (
+                  <>
+                    <TouchableOpacity
+                      className="flex-row items-center px-4 py-2"
+                      onPress={() => { }}
+                      activeOpacity={0.8}
+                    >
+                      <CheckGreen width={18} height={18} />
+                      <Text
+                        fontSize={14}
+                        className="ml-4 text-[14px] font-[Kanit-Light]"
+                      >
+                        {t("ID verified")}
+                      </Text>
+                    </TouchableOpacity>
+                    <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
+                  </>
+                )}
+                
+                {/* Email Verification */}
+                {/* <TouchableOpacity
                   onPress={() => {
                     setModalTtype("email")
                     setModalVisible(true)
@@ -301,18 +332,27 @@ export default function ProfilePage() {
                   activeOpacity={0.8}
                 >
                   <View className="flex-row items-center">
-                    <VerifyIcon width={22} height={22} />
+                    {userDetails?.email_verified ? (
+                      <CheckGreen width={18} height={18} />
+                    ) : (
+                      <VerifyIcon width={22} height={22} />
+                    )}
                     <Text
                       fontSize={14}
                       className="ml-4 text-[14px] font-[Kanit-Light]"
                     >
-                      {t("Confirm your email")}
+                      {userDetails?.email_verified 
+                        ? t("Email confirmed") 
+                        : t("Confirm your email")}
                     </Text>
                   </View>
-                  {swap(<ChevronRight size={24} />, <ChevronLeft size={24} />)}
-                </TouchableOpacity>
-                <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" />
-                <TouchableOpacity
+                  {!userDetails?.email_verified && swap(<ChevronRight size={24} />, <ChevronLeft size={24} />)}
+                </TouchableOpacity> */}
+                
+                {/* <Separator className="my-[6px] border-t !border-dashed !border-[#CDCDCD] bg-transparent" /> */}
+                
+                {/* Phone Verification - always confirmed if user is logged in */}
+                {/* <TouchableOpacity
                   className="flex-row items-center px-4 py-2"
                   onPress={() => { }}
                   activeOpacity={0.8}
@@ -324,7 +364,7 @@ export default function ProfilePage() {
                   >
                     {t("Confirmed phone number")}
                   </Text>
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             </View>
 
@@ -384,53 +424,95 @@ export default function ProfilePage() {
                   </Text>
                 </TouchableOpacity>
               </View>
-              <Text
+              { userDetails?.about ?  <Text
                 fontSize={14}
-                className="bg-gray-100 rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
+                className="bg-gray-100 text-black rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
               >
                 {userDetails?.about}
-              </Text>
+              </Text> :
+              <Text
+                fontSize={14}
+                className="bg-gray-100 text-grey-500 rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
+              >
+                Add about you here
+              </Text>}
             </View>
 
             {/* Vehicles */}
-            <View className="px-6">
+            <View className="px-6 pb-8">
               <Text
                 fontSize={16}
-                className="text-[16px] font-[Kanit-Regular] mb-[20px]"
+                className="text-[16px] font-[Kanit-Regular] mb-6"
               >
                 {t("Vehicles")}
               </Text>
 
+              {vehicleList.length > 0 ? (
+                <View className="mb-6">
+                  <FlatList
+                    data={vehicleList}
+                    ItemSeparatorComponent={() => (
+                      <Separator className="border-gray-200 my-5" />
+                    )}
+                    renderItem={({ item }) => (
+                      <View className="flex-row justify-between items-center py-2">
+                        <View className="flex-1 mr-4">
+                          <Text
+                            fontSize={16}
+                            className="text-[16px] font-[Kanit-Medium] mb-1"
+                          >
+                            {item?.model?.name}
+                          </Text>
+                          <Text
+                            fontSize={12}
+                            className="text-[12px] text-gray-600 font-[Kanit-Light]"
+                          >
+                            {item?.model?.category_name}, {item?.brand?.name}
+                          </Text>
+                          <Text
+                            fontSize={11}
+                            className="text-[11px] text-gray-500 font-[Kanit-Light] mt-1"
+                          >
+                            {item?.year}
+                          </Text>
+                        </View>
+                        <View className="flex-row gap-4">
+                          <TouchableOpacity
+                            onPress={() =>
+                              router.push({
+                                pathname: "/(profile)/edit-vehicle",
+                                params: { vehicleData: JSON.stringify(item) },
+                              })
+                            }
+                            className="p-2 bg-red-50 rounded-full"
+                            activeOpacity={0.7}
+                          >
+                            <Pencil size={18} color="#FF4848" />
+                          </TouchableOpacity>
+                          <TouchableOpacity
+                            onPress={() => handleDeleteVehicle(item?.id)}
+                            className="p-2 bg-gray-100 rounded-full"
+                            activeOpacity={0.7}
+                          >
+                            <Trash2 size={18} color="#666666" />
+                          </TouchableOpacity>
+                        </View>
+                      </View>
+                    )}
+                    keyExtractor={(item) => item?.id?.toString()}
+                  />
+                </View>
+              ) : (
+                <View className="items-center py-8 mb-4">
+                  <Text className="text-gray-400 text-sm font-[Kanit-Light]">
+                    {t("No vehicles added yet")}
+                  </Text>
+                </View>
+              )}
 
-              <FlatList
-                contentContainerClassName="gap-3"
-                ItemSeparatorComponent={()=><Separator className="border-gray-200 my-4 mb-10" />}
-                data={vehicleList}
-                renderItem={({ item, index }) => {
-                  return <View className="flex-row justify-between items-center">
-                    <View>
-                      <Text
-                        fontSize={16}
-                        className="text-[16px] font-[Kanit-Regular]"
-                      >
-                          {item?.model?.name}
-                      </Text>
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-gray-600 font-[Kanit-Light]"
-                      >
-                       {t(`${item?.model?.category_name},${item?.brand?.name}`)}
-                      </Text>
-                    </View>
-                    {/* <TouchableOpacity onPress={() => { }} activeOpacity={0.8}>
-                      <Trash2 size={22} color="#666666" />
-                    </TouchableOpacity> */}
-                  </View>
-                }}
-              />
               <TouchableOpacity
                 onPress={() => router.push("/(profile)/add-vehicles")}
-                className="flex-row items-center justify-center h-14 rounded-full bg-red-500"
+                className="flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2"
                 activeOpacity={0.8}
               >
                 <CirclePlus size={20} color="#fff" strokeWidth={1} />
@@ -450,7 +532,7 @@ export default function ProfilePage() {
               {[
                 [t("Bank Account"), "/(profile)/bank"],
                 [t("Transactions"), "/(profile)/transactions"],
-                [t("Payment & Refunds"), "/"],
+                // [t("Payment & Refunds"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -479,7 +561,7 @@ export default function ProfilePage() {
 
             <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Terms & Conditions"), "/(profile)/payment"],
+                [t("Terms & Conditions"), "/"],
                 [t("Privacy Policy"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity

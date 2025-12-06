@@ -40,28 +40,56 @@ export const handleRegister = async (postData: FormData) => {
 
 }
 
+// export const handleBankSave = async (payload: Record<string, unknown>) => {
+//   const userDetailsString = await useAsyncStorage('userDetails').getItem();
+//   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
+//   const token = userDetails?.token ?? '';
+//   console.log("token==============", payload)
+
+//   try {
+//     const res = await fetch(`${API_URL}/api/bank/add`, {
+//       method: 'POST',
+//       headers: {
+//         'Content-Type': 'application/json',
+//         Authorization: `Bearer ${token}`,
+//       },
+//       body: JSON.stringify(payload),
+//     });
+
+//     if (!res.ok) throw new Error(res.statusText);
+//     return res;
+//   } catch (error) {
+//     console.log('api error', error);
+//     throw error; // propagate so caller can catch it
+//   }
+// };
+
 export const handleBankSave = async (payload: Record<string, unknown>) => {
   const userDetailsString = await useAsyncStorage('userDetails').getItem();
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token ?? '';
-  console.log("token==============", payload)
 
-  try {
-    const res = await fetch(`${API_URL}/api/bank/add`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  const res = await fetch(`${API_URL}/api/bank/add`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (!res.ok) throw new Error(res.statusText);
-    return res;
-  } catch (error) {
-    console.log('api error', error);
-    throw error; // propagate so caller can catch it
+  // --- always read the body ---
+  const body = await res.json().catch(() => ({})); // ignore parse errors
+
+  if (!res.ok) {
+    // create an error that carries the server message
+    const err: any = new Error(body.message || res.statusText);
+    err.status = res.status;
+    err.body = body;               // full payload available if you need it
+    throw err;
   }
+
+  return { res, body };            // return both so caller can use them
 };
 
 export const handleBankUpdate = async (payload: Record<string, unknown>) => {
@@ -70,22 +98,27 @@ export const handleBankUpdate = async (payload: Record<string, unknown>) => {
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token ?? '';
 
-  try {
-    const res = await fetch(`${API_URL}/api/bank/update`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify(payload),
-    });
+  const res = await fetch(`${API_URL}/api/bank/update`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
 
-    if (!res.ok) throw new Error(res.statusText);
-    return res;
-  } catch (error) {
-    console.log('api error', error);
-    throw error; // propagate so caller can catch it
+  // --- always read the body ---
+  const body = await res.json().catch(() => ({})); // ignore parse errors
+
+  if (!res.ok) {
+    // create an error that carries the server message
+    const err: any = new Error(body.message || res.statusText);
+    err.status = res.status;
+    err.body = body;               // full payload available if you need it
+    throw err;
   }
+
+  return { res, body };            // return both so caller can use them
 };
 
 export const handleBankDelete = async (payload: Record<string, unknown>) => {

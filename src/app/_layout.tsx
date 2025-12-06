@@ -44,6 +44,11 @@ export default function RootLayout() {
 
   return (
     <Stack>
+      <Stack.Screen name="login" options={{ headerShown: false }} />
+      <Stack.Screen name="register" options={{ headerShown: false }} />
+      <Stack.Screen name="bank-save" options={{ headerShown: false }} />
+      <Stack.Screen name="add-vehicles" options={{ headerShown: false }} />
+      <Stack.Screen name="pending-verification" options={{ headerShown: false }} />
       <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
       <Stack.Screen name="(booking)" options={{ headerShown: false }} />
       <Stack.Screen name="(publish)" options={{ headerShown: false }} />

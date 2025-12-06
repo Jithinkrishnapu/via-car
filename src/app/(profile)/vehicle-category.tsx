@@ -1,5 +1,5 @@
-import React, { useState } from "react";
-import { ScrollView, View, TouchableOpacity, Image } from "react-native";
+import React, { useState, useEffect } from "react";
+import { ScrollView, View, TouchableOpacity, Image, ActivityIndicator } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -8,22 +8,46 @@ import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useStore } from "@/store/useStore";
+import { getVehicleCategoryList } from "@/service/vehicle";
 
-const routesData = [
-  { id: "1", title: "Sedan", img: require("../../../public/sedan.png") },
-  { id: "2", title: "Luxury", img: require("../../../public/luxury.png") },
-  { id: "3", title: "SUV", img: require("../../../public/suv-category.png") },
-];
+// Fallback images for categories
+const categoryImages: Record<string, any> = {
+  sedan: require("../../../public/sedan.png"),
+  luxury: require("../../../public/luxury.png"),
+  suv: require("../../../public/suv-category.png"),
+};
 
 export default function SelectCategoryPage() {
   const loaded = useLoadFonts();
   const router = useRouter();
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
-  const [selected, setSelected] = useState("1");
-  const {setVehicle,vehicle} = useStore()
+  const [selected, setSelected] = useState("");
+  const { setVehicle, vehicle } = useStore();
+  const [categories, setCategories] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  
+  useEffect(() => {
+    fetchCategories();
+  }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await getVehicleCategoryList();
+      if (response?.data) {
+        setCategories(response.data);
+        // Set first category as default if none selected
+        if (response.data.length > 0 && !selected) {
+          setSelected(response.data[0].id.toString());
+        }
+      }
+    } catch (error) {
+      console.error("Failed to fetch categories:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   if (!loaded) return null;
 
@@ -51,49 +75,66 @@ export default function SelectCategoryPage() {
         </Text>
       </View>
 
-      <View className="flex-wrap justify-between px-6 mt-6">
-        {routesData.map(({ id, title, img }) => {
-          const isSelected = selected === id;
-          return (
-            <TouchableOpacity
-              key={id}
-              activeOpacity={0.8}
-              onPress={() => {
-                setVehicle(vehicle.brand_id,id)
-                setSelected(id)}}
-              className={`border ${
-                isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
-              } rounded-2xl mb-4`}
-              style={{
-                width: "100%",
-                height: 217,
-                paddingVertical: 16,
-                paddingHorizontal: 12,
-                justifyContent: "space-between",
-                alignItems: "center",
-              }}
-            >
-              <Image
-                source={img}
-                className="h-24 w-full object-contain"
-                resizeMode="contain"
-              />
-              <View className="flex-row items-center justify-between w-full">
-                <Text fontSize={18} className="text-lg font-[Kanit-Medium]">
-                  {t(`profile.${title.toLowerCase()}`)}
-                </Text>
-                <View
-                  className={`w-8 h-8 rounded-full border ${
-                    isSelected ? "border-transparent" : "border-gray-300"
-                  } items-center justify-center`}
-                >
-                  {isSelected && <CheckGreen width={24} height={24} />}
+      {loading ? (
+        <View className="flex-1 items-center justify-center py-20">
+          <ActivityIndicator size="large" color="#FF4848" />
+          <Text className="mt-4 text-gray-600 font-[Kanit-Light]">
+            {t("Loading categories...")}
+          </Text>
+        </View>
+      ) : (
+        <View className="flex-wrap justify-between px-6 mt-6">
+          {categories.map((category) => {
+            const isSelected = selected === category.id.toString();
+            const categorySlug = category.slug?.toLowerCase() || "";
+            
+            // Use API image if available, otherwise fallback to local
+            const imageSource = category.image
+              ? { uri: category.image }
+              : categoryImages[categorySlug] || categoryImages.sedan;
+
+            return (
+              <TouchableOpacity
+                key={category.id}
+                activeOpacity={0.8}
+                onPress={() => {
+                  setVehicle(vehicle.brand_id, category.id.toString());
+                  setSelected(category.id.toString());
+                }}
+                className={`border ${
+                  isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
+                } rounded-2xl mb-4`}
+                style={{
+                  width: "100%",
+                  height: 217,
+                  paddingVertical: 16,
+                  paddingHorizontal: 12,
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                }}
+              >
+                <Image
+                  source={imageSource}
+                  className="h-24 w-full object-contain"
+                  resizeMode="contain"
+                />
+                <View className="flex-row items-center justify-between w-full">
+                  <Text fontSize={18} className="text-lg font-[Kanit-Medium]">
+                    {category.name}
+                  </Text>
+                  <View
+                    className={`w-8 h-8 rounded-full border ${
+                      isSelected ? "border-transparent" : "border-gray-300"
+                    } items-center justify-center`}
+                  >
+                    {isSelected && <CheckGreen width={24} height={24} />}
+                  </View>
                 </View>
-              </View>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+              </TouchableOpacity>
+            );
+          })}
+        </View>
+      )}
 
       <View className="px-6 mt-8 mb-12">
         <TouchableOpacity

@@ -1,16 +1,17 @@
 import {
-    FlatList,
     TextInput,
     TouchableOpacity,
     View,
-    Image,              // <-- NEW
+    Image,
     Alert,
+    Platform,
   } from "react-native";
+  import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
   import Text from "../common/text";
   import { X } from "lucide-react-native";
   import { useTranslation } from "react-i18next";
   import { useCallback, useState } from "react";
-  import * as ImagePicker from "expo-image-picker"; // <-- NEW
+  import * as ImagePicker from "expo-image-picker";
   import { useUpdateProfileDetails } from "@/service/profile";
   import { useGetProfileDetails } from "@/service/auth";
   import DobPicker from "../common/dob-calander";
@@ -135,15 +136,27 @@ import {
   
     /* -------------- render -------------- */
     return (
-      <View className="bg-white h-[80%] px-12 lg:px-24 pt-12 lg:pt-24 rounded-t-3xl items-center">
+      <View className="bg-white h-[80%] rounded-t-3xl">
         <TouchableOpacity
-          className="rounded-full absolute right-8 top-8 items-center justify-center"
+          className="rounded-full absolute right-8 top-8 items-center justify-center z-10"
           onPress={onClose}
         >
           <X color="#000" />
         </TouchableOpacity>
   
-        <View className="flex-1 w-full">
+        <KeyboardAwareScrollView
+          contentContainerStyle={{
+            paddingHorizontal: 48,
+            paddingTop: 48,
+            paddingBottom: 24,
+          }}
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+          enableOnAndroid={true}
+          enableAutomaticScroll={true}
+          extraScrollHeight={Platform.OS === 'ios' ? 20 : 40}
+          extraHeight={150}
+        >
           <Text className="text-[16px] font-[Kanit-Medium] text-center mb-5">
             Profile
           </Text>
@@ -224,17 +237,17 @@ import {
               style="w-full"
             />
           </View>
-        </View>
-  
-        {/* ---------- save button ---------- */}
-        <TouchableOpacity
-          className="bg-[#FF4848] rounded-full w-full h-[50px] items-center justify-center mt-auto mb-4"
-          onPress={handleAddPreference}
-        >
-          <Text className="text-white text-[14px] font-[Kanit-Regular]">
-            {t("profile.save")}
-          </Text>
-        </TouchableOpacity>
+
+          {/* ---------- save button ---------- */}
+          <TouchableOpacity
+            className="bg-[#FF4848] rounded-full w-full h-[50px] items-center justify-center mt-6"
+            onPress={handleAddPreference}
+          >
+            <Text className="text-white text-[14px] font-[Kanit-Regular]">
+              {t("profile.save")}
+            </Text>
+          </TouchableOpacity>
+        </KeyboardAwareScrollView>
       </View>
     );
   };
