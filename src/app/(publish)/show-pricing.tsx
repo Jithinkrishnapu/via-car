@@ -9,7 +9,7 @@ import {
   Alert,
   ActivityIndicator,
 } from "react-native";
-import { ChevronLeft, ChevronRight } from "lucide-react-native";
+
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -29,7 +29,7 @@ const { width: SCREEN_WIDTH } = Dimensions.get("window");
 function ShowPricing() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { isRTL, swap } = useDirection();
+
   const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
 
   const [userDetails, setUserDetails] = useState<any>();
@@ -92,8 +92,16 @@ function ShowPricing() {
       const n = fullRoute.length;
       const prices: any[] = [];
       if (n >= 2) {
+        // Build prefix sum array, but use price_per_seat for first segment
         const prefix = [0];
-        for (let i = 0; i < segmentPrices.length; i++) prefix.push(prefix[i] + segmentPrices[i]);
+        for (let i = 0; i < segmentPrices.length; i++) {
+          if (i === 0) {
+            // First segment uses price_per_seat from pricing screen
+            prefix.push(prefix[i] + (ride.price_per_seat || 10));
+          } else {
+            prefix.push(prefix[i] + segmentPrices[i]);
+          }
+        }
   
         for (let i = 0; i < n; i++)
           for (let j = i + 1; j < n; j++)
@@ -175,19 +183,6 @@ function ShowPricing() {
         <View style={{ height: heroHeight }}>
           <ImageBackground source={require("../../../public/hero.png")} className="flex-1 w-full" resizeMode="cover">
             <View className="flex-1 max-w-screen-lg w-full mx-auto px-4 pt-10 md:px-6 md:pt-12">
-              <View className="flex-row items-center gap-3 md:gap-4 mb-5 md:mb-6">
-                <TouchableOpacity
-                  onPress={() => router.replace("..")}
-                  activeOpacity={0.8}
-                  className="rounded-full w-10 h-10 md:w-11 md:h-11 bg-white/20 items-center justify-center"
-                >
-                  {swap(<ChevronLeft color="#ffffff" size={20} />, <ChevronRight color="#ffffff" size={20} />)}
-                </TouchableOpacity>
-                <Text className="text-lg md:text-xl lg:text-2xl text-white font-[Kanit-Medium]">
-                  {t("showPricing.rideDetails")}
-                </Text>
-              </View>
-
               <View className="flex-row items-start gap-3 md:gap-4">
                 <Direction4 width={32} height={32} className="mt-1" />
                 <View className="flex-1">
@@ -226,9 +221,11 @@ function ShowPricing() {
         <View className="px-4 pt-6 md:px-6">
           {fullRoute.slice(0, -1).map((from, idx) => {
             const to = fullRoute[idx + 1];
-            const price = segmentPrices[idx] ?? 10;
+            // First segment uses price_per_seat, others use segmentPrices
+            const price = idx === 0 ? currentSeatPrice : (segmentPrices[idx] ?? 10);
             const fromLabel = idx === 0 ? t("showPricing.pickup") : t("showPricing.stopover");
             const toLabel = idx === fullRoute.length - 2 ? t("showPricing.drop") : t("showPricing.stopover");
+            const isFirstSegment = idx === 0;
 
             return (
               <View key={idx} className="flex-row items-start gap-3 md:gap-4 py-4 border-b border-gray-100">
@@ -239,23 +236,31 @@ function ShowPricing() {
                   <Text className="text-[10px] md:text-xs text-gray-500 font-[Kanit-Light] uppercase tracking-wider">{toLabel}</Text>
                   <Text className="text-xs md:text-sm text-black font-[Kanit-Regular]">{to.address}</Text>
                 </View>
-                <View className="flex-row items-center gap-2 md:gap-3">
-                  <TouchableOpacity
-                    onPress={() => updateSegmentPrice(idx, -10)}
-                    disabled={price <= 10}
-                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price <= 10 ? "opacity-50" : "bg-gray-100"}`}
-                  >
-                    <MinusRed width={16} height={16} />
-                  </TouchableOpacity>
-                  <Text className="text-xs md:text-sm text-black font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
-                  <TouchableOpacity
-                    onPress={() => updateSegmentPrice(idx, 10)}
-                    disabled={price >= 4000}
-                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price >= 4000 ? "opacity-50" : "bg-gray-100"}`}
-                  >
-                    <PlusRed width={16} height={16} />
-                  </TouchableOpacity>
-                </View>
+                {isFirstSegment ? (
+                  // First segment shows price_per_seat (controlled at top)
+                  <View className="flex-row items-center gap-2 md:gap-3">
+                    <Text className="text-xs md:text-sm text-[#14B968] font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
+                  </View>
+                ) : (
+                  // Other segments are adjustable
+                  <View className="flex-row items-center gap-2 md:gap-3">
+                    <TouchableOpacity
+                      onPress={() => updateSegmentPrice(idx, -10)}
+                      disabled={price <= 10}
+                      className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price <= 10 ? "opacity-50" : "bg-gray-100"}`}
+                    >
+                      <MinusRed width={16} height={16} />
+                    </TouchableOpacity>
+                    <Text className="text-xs md:text-sm text-black font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
+                    <TouchableOpacity
+                      onPress={() => updateSegmentPrice(idx, 10)}
+                      disabled={price >= 4000}
+                      className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price >= 4000 ? "opacity-50" : "bg-gray-100"}`}
+                    >
+                      <PlusRed width={16} height={16} />
+                    </TouchableOpacity>
+                  </View>
+                )}
               </View>
             );
           })}

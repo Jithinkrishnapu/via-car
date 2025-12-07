@@ -1,7 +1,8 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { LocateFixed, Search, Check } from "lucide-react-native";
-import { ScrollView, TextInput, TouchableOpacity, View } from "react-native";
+import { ScrollView, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import * as Location from 'expo-location';
 import Text from "./text";
 import LocationPin from "../../../public/location-pin.svg";
 import { cn } from "@/lib/utils";
@@ -22,6 +23,7 @@ export default function LocationSearch({ onSelect }: Props) {
   const [searchValue, setSearchValue] = useState(defaultValue);
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
+  const [loadingLocation, setLoadingLocation] = useState(false);
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -71,6 +73,75 @@ export default function LocationSearch({ onSelect }: Props) {
     onSelect?.(loc);
   };
 
+  const getCurrentLocation = async () => {
+    try {
+      setLoadingLocation(true);
+      
+      // Request permission
+      const { status } = await Location.requestForegroundPermissionsAsync();
+      
+      if (status !== 'granted') {
+        Alert.alert(
+          t('Permission Required'),
+          t('Please grant location permission to use this feature')
+        );
+        return;
+      }
+
+      // Get current position
+      const location = await Location.getCurrentPositionAsync({
+        accuracy: Location.Accuracy.High,
+      });
+
+      const { latitude, longitude } = location.coords;
+
+      // Reverse geocode to get address
+      const addresses = await Location.reverseGeocodeAsync({
+        latitude,
+        longitude,
+      });
+
+      if (addresses && addresses.length > 0) {
+        const address = addresses[0];
+        
+        // Format address similar to API response
+        const mainText = [address.street, address.name].filter(Boolean).join(', ') || 
+                        [address.city, address.region].filter(Boolean).join(', ') ||
+                        'Current Location';
+        
+        const fullText = [
+          address.street,
+          address.name,
+          address.city,
+          address.region,
+          address.country,
+        ].filter(Boolean).join(', ');
+
+        const locationData: LocationData = {
+          placeId: `current_${Date.now()}`,
+          mainText,
+          text: fullText,
+          lat: latitude,
+          lng: longitude,
+        };
+
+        // Set as selected location
+        setSelectedLocation(locationData);
+        setSearchValue(mainText);
+        setShowDropdown(false);
+        onSelect?.(locationData);
+      }
+    } catch (error) {
+      console.error('Error getting current location:', error);
+      Alert.alert(
+        t('Error'),
+        t('Failed to get current location. Please try again.')
+      );
+    } finally {
+      setLoadingLocation(false);
+    }
+  };
+
   return (
     <View className="relative w-full font-[Kanit-Regular]">
 
@@ -94,8 +165,14 @@ export default function LocationSearch({ onSelect }: Props) {
         <TouchableOpacity
           className="rounded-full bg-[#F1F1F5] size-[57px] items-center justify-center"
           activeOpacity={0.8}
+          onPress={getCurrentLocation}
+          disabled={loadingLocation}
         >
-          <LocateFixed className="size-[30px]" strokeWidth={1} />
+          {loadingLocation ? (
+            <ActivityIndicator size="small" color="#FF4848" />
+          ) : (
+            <LocateFixed className="size-[30px]" strokeWidth={1} color={selectedLocation ? "#FF4848" : "#000"} />
+          )}
         </TouchableOpacity>
       </View>
 

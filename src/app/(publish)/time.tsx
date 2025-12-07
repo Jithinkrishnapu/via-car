@@ -6,18 +6,15 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
-import { ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
-import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 
 function Time() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { isRTL, swap } = useDirection();
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
   const { setRideField } = useCreateRideStore();
 
@@ -76,23 +73,6 @@ function Time() {
       className="flex-1 bg-white font-[Kanit-Regular]"
     >
       <View className="flex-1 px-6 pt-16 pb-12">
-        {/* Back + Title */}
-        <View className="flex-row items-center gap-4 mb-6">
-          <TouchableOpacity
-            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.replace("..")}
-            activeOpacity={0.8}
-          >
-            <ChevronLeft size={16} />
-          </TouchableOpacity>
-          <Text
-            fontSize={25}
-            className="text-[25px] text-black font-[Kanit-Medium] leading-tight flex-1"
-          >
-            {t("time.title")}
-          </Text>
-        </View>
-
         {/* Time Inputs */}
         <View className="flex-row items-center justify-center gap-2 mt-10">
           {/* Hour */}

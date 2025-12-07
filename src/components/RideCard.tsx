@@ -152,7 +152,7 @@ export const RideCard: React.FC<Props> = ({
                </>
            }
                 
-                { (status == 1 || status == 2) && <View className="flex-row items-center gap-3 justify-between">
+                { (status == 2 || status == 3) && <View className="flex-row items-center gap-3 justify-between">
                     <TouchableOpacity
                         onPress={onAddPassengers}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
@@ -160,7 +160,7 @@ export const RideCard: React.FC<Props> = ({
                         <Text className="text-[14px] text-white font-[Kanit-Light]">Add Passengers</Text>
                     </TouchableOpacity>
 
-                    { status == 2 ? <TouchableOpacity
+                    { status == 3 ? <TouchableOpacity
                         onPress={onEndRide}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
                     >

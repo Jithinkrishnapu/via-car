@@ -4,7 +4,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { ChevronLeft, Plus } from "lucide-react-native";
+import { Plus } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -85,23 +85,6 @@ function Stopovers() {
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="px-6 pt-16 pb-10 flex flex-col gap-4">
-        {/* Header */}
-        <View className="flex-row items-center gap-4">
-          <TouchableOpacity
-            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.replace("..")}
-            activeOpacity={0.8}
-          >
-            <ChevronLeft size={16} />
-          </TouchableOpacity>
-          <Text
-            fontSize={25}
-            className="text-[25px] font-[Kanit-Medium] flex-1 leading-tight"
-          >
-            {t("stopovers.title")}
-          </Text>
-        </View>
-
         {/* Stopover List */}
         <View className="flex-col gap-[14px] max-w-lg w-full self-center">
           {places?.map((loc) => {

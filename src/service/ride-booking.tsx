@@ -1,7 +1,6 @@
 import { API_URL } from "@/constants/constants";
-import { RideDetails, RideEditDetails, RoutesRequest, SearchRideRequest, SearchRideResponse } from "@/types/ride-types";
+import { RideDetails, RideEditDetails, RoutesRequest, SearchRideRequest } from "@/types/ride-types";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
-import { useState } from "react";
 import { Alert } from "react-native";
 
 export const useCreateRide = async (postData: RideDetails) => {
@@ -182,7 +181,6 @@ console.log("postData================",postData)
     },
     body: JSON.stringify(postData),
   });
-  const err = res.body
 
   console.log(res)
 
@@ -340,7 +338,7 @@ export const useGetAllBooking = async (booking_type: "booked" | "published", sta
 }
 
 export const useGetAlRides = async (status_type: "pending" | "completed" | "cancelled") => {
-  const status = status_type == 'pending' ? 1 : status_type == "completed" ? 4 : status_type == "cancelled" ? 5 : 2
+  const status = status_type == 'pending' ? 2 : status_type == "completed" ? 4 : status_type == "cancelled" ? 5 : 3
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
@@ -519,3 +517,31 @@ export const rideAlert = async (
 //         success: data?.message?.includes('found') || false,
 //     };
 // };
+
+export const getRecommendedPrice = async (polyline: string): Promise<any> => {
+  const userDetailsString = await useAsyncStorage("userDetails").getItem()
+  const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
+  const token = userDetails ? userDetails?.token : ""
+  
+  try {
+    const response = await fetch(`${API_URL}/api/places/recommended-price`, {
+      body: JSON.stringify({ polyline }),
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Recommended price error:", errorText);
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error("API error:", error);
+    throw error;
+  }
+};

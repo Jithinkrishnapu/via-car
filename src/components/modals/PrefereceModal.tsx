@@ -111,7 +111,7 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
       </TouchableOpacity>
 
       <View className="flex-1 w-full">
-        <Text className="text-[16px] font-[Kanit-Medium] text-center mb-5">
+        <Text className="text-[16px] text-black font-[Kanit-Medium] text-center mb-5">
           Preferences
         </Text>
 
@@ -119,6 +119,7 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
           <TextInput
             className="w-[70%] h-[50px]"
             placeholder="Enter travel preferences"
+            placeholderTextColor={"black"}
             value={input}
             onChangeText={setInput}
             returnKeyType="done"

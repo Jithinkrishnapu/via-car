@@ -3,8 +3,6 @@ import { Link, router } from "expo-router";
 import {
   ArrowRight,
   ArrowLeft,
-  ChevronLeft,
-  ChevronRight,
   Star,
 } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -146,24 +144,6 @@ function RideDetails() {
           className="flex-col h-[260px]"
         >
           <View className="z-10 w-full h-max mx-auto px-6 pt-[60px] flex-col">
-            <View className="flex-row items-center gap-6 mb-8">
-              <TouchableOpacity
-                className="bg-white/20 rounded-full size-[45px] border-0 flex items-center justify-center"
-                activeOpacity={0.8}
-                onPress={() => router.replace("..")}
-              >
-                {swap(
-                  <ChevronLeft color="#ffffff" />,
-                  <ChevronRight color="#ffffff" />
-                )}
-              </TouchableOpacity>
-              <Text
-                fontSize={22}
-                className="text-[22px] text-white font-[Kanit-Medium]"
-              >
-                {t("rideDetails.rideDetails")}
-              </Text>
-            </View>
             <View className="flex-row items-center gap-4 mb-5">
               <Direction />
               <View className="flex flex-col">
@@ -374,12 +354,7 @@ function RideDetails() {
                         </View>
                       </View>
                     </View>
-                    <View>
-                      {swap(
-                        <ChevronRight color="#A69A9A" className="size-[24px]" />,
-                        <ChevronLeft color="#A69A9A" className="size-[24px]" />
-                      )}
-                    </View>
+
                   </TouchableOpacity>
                 }}
                 ListEmptyComponent={()=><View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}

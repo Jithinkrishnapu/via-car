@@ -192,7 +192,7 @@ function RideDetails() {
                 </View>
               </View>
             </View>
-            <View className="px-8 py-6 rounded-none bg-white">
+            {/* <View className="px-8 py-6 rounded-none bg-white">
               <View className="flex-row items-center justify-between">
                 <Link href={`/profile`} className="flex-row items-start gap-4">
                   <View className="w-[60px]">
@@ -239,7 +239,7 @@ function RideDetails() {
                   </TouchableOpacity>
                 </View>
               </View>
-            </View>
+            </View> */}
             <View className="px-8 py-4 rounded-none bg-white">
               <View className="flex flex-col">
                 <Text

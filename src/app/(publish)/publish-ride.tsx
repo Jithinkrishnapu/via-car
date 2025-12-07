@@ -40,15 +40,15 @@ export default function RideConfirmationScreen() {
 
       {/* Verification Steps */}
       <View className="max-w-[716px] w-full self-center px-6 pt-6 pb-24 flex-col gap-4">
-        <Text
+        {/* <Text
           fontSize={20}
           className="text-[20px] leading-tight font-[Kanit-Regular]"
         >
           {t("publishRide.verifyProfile")}
-        </Text>
+        </Text> */}
 
         {/* Options */}
-        <View className="flex-col">
+        {/* <View className="flex-col">
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
             activeOpacity={0.8}
@@ -74,7 +74,7 @@ export default function RideConfirmationScreen() {
               </Text>
             </View>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* See My Ride */}
       </View>

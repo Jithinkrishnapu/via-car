@@ -144,7 +144,7 @@ const Calendar = ({ onChange,date }: CalendarProps) => {
               >
                 {date?.day}
               </Text>
-              {price && (
+              {/* {price && (
                 <Text
                   fontSize={8}
                   className={`absolute -bottom-4 text-[8px] text-center ${
@@ -156,7 +156,7 @@ const Calendar = ({ onChange,date }: CalendarProps) => {
                 >
                   {price}
                 </Text>
-              )}
+              )} */}
             </TouchableOpacity>
           );
         }}

@@ -1,12 +1,12 @@
 import { router } from "expo-router";
-import { Check, ChevronLeft, Circle, CirclePlus, Radio } from "lucide-react-native";
+import { Check, Circle, CirclePlus, Radio } from "lucide-react-native";
 import LocationSearchSelected from "@/components/common/location-search-selected";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { FlatList, Modal, Pressable, TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Separator } from "@/components/ui/separator";
 import { getVehicleList } from "@/service/vehicle";
 import { useStore } from "@/store/useStore";
@@ -17,35 +17,34 @@ function DropoffSelected() {
   const [isModalVisible, setModalVisible] = useState(false)
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   const [vehicleList, setVehhicleList] = useState([])
-  const [selectedVehicle, setVehhicleSelected] = useState([])
+  const [selectedVehicle, setVehhicleSelected] = useState<number | null>(null)
   const {setPath} = useStore()
+
+  // Set default vehicle if ride already has vehicle_id
+  useEffect(() => {
+    if (ride.vehicle_id && !selectedVehicle) {
+      setVehhicleSelected(ride.vehicle_id);
+    }
+  }, [ride.vehicle_id]);
 
 
   const handleGetVehicles = async () => {
     const response = await getVehicleList()
-    if (response.data) {
-      setVehhicleList(response.data.vehicles)
+    if (response.data && response.data.vehicles.length > 0) {
+      const vehicles = response.data.vehicles;
+      setVehhicleList(vehicles);
+      
+      // Auto-select first vehicle if none selected
+      if (!selectedVehicle && vehicles[0]) {
+        setVehhicleSelected(vehicles[0].id);
+        setRideField("vehicle_id", vehicles[0].id);
+      }
     }
   }
 
   if (!loaded) return null;
   return (
     <View className="flex-auto h-full pt-16 bg-white">
-      <View className="flex-row items-center gap-4 mb-6 px-6">
-        <TouchableOpacity
-          className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-          onPress={() => router.replace("..")}
-          activeOpacity={0.8}
-        >
-          <ChevronLeft size={16} />
-        </TouchableOpacity>
-        <Text
-          fontSize={25}
-          className="text-[25px] text-black font-[Kanit-Medium] flex-1"
-        >
-          {t("dropoff.selectedTitle")}
-        </Text>
-      </View>
       <LocationSearchSelected
         initialRegion={{
           latitude: ride.destination_lat,
@@ -72,48 +71,104 @@ function DropoffSelected() {
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white h-fit px-4 py-2 rounded-t-3xl overflow-hidden">
             <Text className="text-[16px] font-[Kanit-Medium] my-4" >Select Vehicle</Text>
-            <FlatList
-              contentContainerClassName="gap-3"
-              data={vehicleList}
-              renderItem={({ item, index }) => {
-                const isSelected = selectedVehicle == item?.id
-                return <Pressable onPress={()=>{
-                  setRideField("vehicle_id",item.id)
-                  setVehhicleSelected(item?.id)
+            {vehicleList.length > 0 ? (
+              <FlatList
+                contentContainerClassName="gap-3 mb-4"
+                data={vehicleList}
+                renderItem={({ item, index }) => {
+                  const isSelected = selectedVehicle === item?.id
+                  return (
+                    <Pressable 
+                      onPress={() => {
+                        setRideField("vehicle_id", item.id)
+                        setVehhicleSelected(item?.id)
+                      }}  
+                      key={index} 
+                      className={`flex-row p-3 rounded-lg justify-between items-center ${
+                        isSelected ? 'border-2 border-[#FF4848] bg-red-50' : 'border border-gray-300'
+                      }`}
+                    >
+                      <View className="flex-1">
+                        <Text
+                          fontSize={16}
+                          className="text-[16px] font-[Kanit-Medium]"
+                        >
+                          {item?.model?.name}
+                        </Text>
+                        <Text
+                          fontSize={12}
+                          className="text-[12px] text-gray-600 font-[Kanit-Light]"
+                        >
+                          {item?.model?.category_name}, {item?.brand?.name}
+                        </Text>
+                        <Text
+                          fontSize={11}
+                          className="text-[11px] text-gray-500 font-[Kanit-Light] mt-1"
+                        >
+                          {item?.year}
+                        </Text>
+                      </View>
+                      <View className={`rounded-full p-1 ${isSelected ? 'bg-[#FF4848]' : ''}`}>
+                        {isSelected ? (
+                          <Check size={20} color="#fff" strokeWidth={3} />
+                        ) : (
+                          <Circle size={20} color="#666666" />
+                        )}
+                      </View>
+                    </Pressable>
+                  )
+                }}
+                keyExtractor={(item) => item.id.toString()}
+              />
+            ) : (
+              <View className="py-8 items-center">
+                <Text className="text-gray-400 font-[Kanit-Light] mb-4">
+                  {t("No vehicles available")}
+                </Text>
+              </View>
+            )}
+            
+            <Separator className="border-gray-200 my-4" />
+            
+            {/* Continue Button - shown when vehicle is selected */}
+            {selectedVehicle ? (
+              <TouchableOpacity
+                onPress={() => {
                   router.push("/(publish)/route");
-                  }}  key={index} className="flex-row border border-gray-400 p-2 rounded-lg justify-between items-center">
-                  <View>
-                    <Text
-                      fontSize={16}
-                      className="text-[16px] font-[Kanit-Regular]"
-                    >
-                      {item?.model?.name}
-                    </Text>
-                    <Text
-                      fontSize={12}
-                      className="text-[12px] text-gray-600 font-[Kanit-Light]"
-                    >
-                      {t(`${item?.model?.category_name},${item?.brand?.name}`)}
-                    </Text>
-                  </View>
-                  <View >
-                    {isSelected ? <Check size={22} color="#666666" /> : <Circle  size={22} color="#666666" />}
-                  </View>
-                </Pressable>
-              }}
-            />
-            <Separator className="border-gray-200 mt-4 mb-10" />
+                }}
+                className="flex-row items-center justify-center h-14 rounded-full bg-[#FF4848] mb-3"
+                activeOpacity={0.8}
+              >
+                <Text
+                  fontSize={18}
+                  className="text-lg text-white font-[Kanit-Regular]"
+                >
+                  {t("Continue")}
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+            
+            {/* Add Vehicle Button */}
             <TouchableOpacity
               onPress={() => {
                 setPath("/(publish)/dropoff-selected")
-                router.push("/(profile)/add-vehicles")}}
-              className="flex-row items-center justify-center h-14 rounded-full bg-red-500"
+                router.push("/(profile)/add-vehicles")
+              }}
+              className={`flex-row items-center justify-center h-14 rounded-full ${
+                selectedVehicle ? 'bg-white border-2 border-[#FF4848]' : 'bg-[#FF4848]'
+              }`}
               activeOpacity={0.8}
             >
-              <CirclePlus size={20} color="#fff" strokeWidth={1} />
+              <CirclePlus 
+                size={20} 
+                color={selectedVehicle ? "#FF4848" : "#fff"} 
+                strokeWidth={1} 
+              />
               <Text
                 fontSize={18}
-                className="ml-2 text-lg text-white font-[Kanit-Regular]"
+                className={`ml-2 text-lg font-[Kanit-Regular] ${
+                  selectedVehicle ? 'text-[#FF4848]' : 'text-white'
+                }`}
               >
                 {t("Add vehicle")}
               </Text>

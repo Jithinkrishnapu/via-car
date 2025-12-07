@@ -1,7 +1,5 @@
 import {
   Check,
-  ChevronLeft,
-  ChevronRight,
   SlidersHorizontal,
   XIcon,
 } from "lucide-react-native";
@@ -30,7 +28,7 @@ import { useSearchRideStore } from "@/store/useSearchRideStore";
 function Ride() {
   const loaded = useLoadFonts();
   const { t } = useTranslation();
-  const { isRTL, swap } = useDirection();
+
   const [modalVisible, setModalVisible] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
   const [filter, setFilter] = useState<{
@@ -112,17 +110,9 @@ function Ride() {
         }}
         ListHeaderComponent={
           <>
-            {/* Header */}
-            <View className="flex-row items-center justify-between">
-              <TouchableOpacity
-                className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
-                onPress={() => router.replace("..")}
-                activeOpacity={0.8}
-              >
-                {swap(<ChevronLeft />, <ChevronRight />)}
-              </TouchableOpacity>
-
-              <View className="flex-1 mx-4">
+            {/* Filter Button */}
+            <View className="flex-row items-center justify-between mb-4">
+              <View className="flex-1">
                 <Text
                   fontSize={16}
                   className="text-[#263238] font-[Kanit-Bold] truncate"

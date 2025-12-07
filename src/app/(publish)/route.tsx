@@ -1,14 +1,13 @@
 import { useEffect, useState } from "react";
-import { View, TouchableOpacity, Image } from "react-native";
+import { View, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { ChevronLeft, ChevronRight, Circle } from "lucide-react-native";
+import { Circle } from "lucide-react-native";
 import Text from "@/components/common/text";
 import MapComponent from "@/components/ui/map-view";
 import CheckGreen from "../../../public/check-green.svg";
 
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { useTranslation } from "react-i18next";
-import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { placeRoutes } from "@/service/ride-booking";
 
@@ -16,13 +15,12 @@ function Route() {
   // -------------------- Hooks --------------------
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { isRTL, swap } = useDirection();
   const { ride,setPolyline } = useCreateRideStore();
 
   // -------------------- States --------------------
-  const [routes, setRoutes] = useState([]);
-  const [selectedRoute, setSelectedRoute] = useState("1");
-  const [selectedRoutes, setSelectedRoutes] = useState(null);
+  const [routes, setRoutes] = useState<any[]>([]);
+  const [selectedRoute, setSelectedRoute] = useState<string | null>(null);
+  const [selectedRoutes, setSelectedRoutes] = useState<any>(null);
 
 
   // -------------------- Map Data --------------------
@@ -73,10 +71,29 @@ function Route() {
 
     const response = await placeRoutes(request);
     console.log(response?.data?.routes, "Routes Response");
-   if(response?.data?.routes?.[0]?.polyline){
-    setPolyline(response?.data?.routes?.[0]?.polyline)
-   }
-    setRoutes(response?.data?.routes || []);
+    
+    const fetchedRoutes = response?.data?.routes || [];
+    setRoutes(fetchedRoutes);
+    
+    // Auto-select first route if available
+    if (fetchedRoutes.length > 0) {
+      const firstRoute = fetchedRoutes[0];
+      console.log("Auto-selecting first route:", firstRoute);
+      console.log("First route polyline:", firstRoute.polyline);
+      
+      setSelectedRoute(firstRoute.route_index);
+      setSelectedRoutes(firstRoute);
+      
+      // Set polyline to store
+      if (firstRoute.polyline) {
+        console.log("Setting polyline to store:", firstRoute.polyline);
+        setPolyline(firstRoute.polyline);
+      } else {
+        console.warn("No polyline found in first route");
+      }
+    } else {
+      console.warn("No routes available");
+    }
   };
 
   // -------------------- Effects --------------------
@@ -91,18 +108,6 @@ function Route() {
     <View className="flex-1 bg-white">
       {/* -------------------- Map Section -------------------- */}
       <View className="flex-1 relative">
-        {/* Back Button */}
-        <TouchableOpacity
-          className={swap(
-            "absolute top-12 left-6 z-10 bg-white rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center",
-            "absolute top-12 right-6 z-10 bg-white rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-          )}
-          onPress={() => router.replace("..")}
-          activeOpacity={0.8}
-        >
-          {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
-        </TouchableOpacity>
-
         {/* Map Component */}
         <MapComponent
         />

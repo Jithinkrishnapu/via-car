@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, TouchableOpacity } from "react-native";
-import { ChevronRight, Circle } from "lucide-react-native";
+import { ChevronLeft, ChevronRight, Circle } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -11,19 +11,33 @@ import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
+import { RideEditDetails } from "@/types/ride-types";
+import { useEditRide } from "@/service/ride-booking";
 
 export default function Page() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const {setRideField,ride} = useCreateRideStore()
   const { isRTL, swap } = useDirection();
-  const [passengers, setPassengers] = useState(3);
-  const [comfortMode, setComfortMode] = useState(false);
+  console.log("seatoptions=============",ride.available_seats)
+  const [passengers, setPassengers] = useState(ride.available_seats);
+  const [comfortMode, setComfortMode] = useState(ride?.max_2_in_back);
 
-  const {setRideField} = useCreateRideStore()
 
   const adjustPassengers = (delta: number) => {
     setPassengers((prev) => Math.max(1, Math.min(9, prev + delta)));
   };
+
+
+  const handleEditPassenger =async(passenger:number)=>{
+    const req ={passengers:passenger,max_2_in_back:comfortMode} as RideEditDetails
+    const res = await useEditRide(req)
+    if(res.ok){
+      setRideField("available_seats",passenger)
+      setRideField("max_2_in_back",comfortMode)
+      router.replace("..")
+    }
+  }
 
   if (!loaded) return null;
 
@@ -123,9 +137,7 @@ export default function Page() {
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
           onPress={() => {
-            setRideField("available_seats",passengers)
-            setRideField("max_2_in_back",comfortMode)
-            router.push("/(publish)/pricing-return")}}
+            handleEditPassenger(passengers)}}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

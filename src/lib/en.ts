@@ -354,7 +354,7 @@ const en = {
     },
     pricing: {
       title: "Set your price per seat",
-      recommended: "Recommended Price: SR2000 - SR3000",
+      recommended: "Recommended Price:",
       hint: "Perfect price for this ride! You'll get passengers in no time.",
       showPrices: "Show Prices",
     },
