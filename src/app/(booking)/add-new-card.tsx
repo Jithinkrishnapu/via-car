@@ -177,7 +177,7 @@ const AddNewCard: React.FC = () => {
             billing_post_code: formData.billingPostCode.trim(),
             billing_country: formData.billingCountry.trim(),
             given_name: formData.cardHolderName.trim().split(' ')[0] || '',
-            sur_name: formData.cardHolderName.trim().split(' ').slice(1).join(' ') || '',
+            sur_name: formData.cardHolderName.trim().split(' ')[0] || '',
         };
 
         try {

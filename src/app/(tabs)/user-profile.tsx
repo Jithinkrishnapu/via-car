@@ -50,6 +50,7 @@ import AboutModal from "@/components/modals/AboutModal";
 import { handleLogOut, useGetProfileDetails } from "@/service/auth";
 import { getVehicleList } from "@/service/vehicle";
 import ProfileModal from "@/components/modals/ProfileModal";
+import { changeLanguage, getCurrentLanguageName, getOppositeLanguageName } from "@/lib/languageUtils";
 
 type ModalTypes = "email" | "preferences" | "about" | "profile"
 
@@ -77,21 +78,21 @@ export default function ProfilePage() {
 
   const handleDeleteVehicle = (vehicleId: number) => {
     Alert.alert(
-      t("Delete Vehicle"),
-      t("Are you sure you want to delete this vehicle?"),
+      t("profile.Delete Vehicle"),
+      t("profile.Are you sure you want to delete this vehicle?"),
       [
-        { text: t("Cancel"), style: "cancel" },
+        { text: t("profile.Cancel"), style: "cancel" },
         {
-          text: t("Delete"),
+          text: t("profile.Delete"),
           style: "destructive",
           onPress: async () => {
             try {
               const { deleteVehicle } = await import("@/service/vehicle");
               await deleteVehicle(vehicleId);
-              Alert.alert(t("Success"), t("Vehicle deleted successfully"));
+              Alert.alert(t("profile.Success"), t("profile.Vehicle deleted successfully"));
               handleGetVehicles(); // Refresh list
             } catch (error: any) {
-              Alert.alert(t("Error"), error?.body?.message || t("Failed to delete vehicle"));
+              Alert.alert(t("profile.Error"), error?.body?.message || t("profile.Failed to delete vehicle"));
             }
           },
         },
@@ -505,7 +506,7 @@ export default function ProfilePage() {
               ) : (
                 <View className="items-center py-8 mb-4">
                   <Text className="text-gray-400 text-sm font-[Kanit-Light]">
-                    {t("No vehicles added yet")}
+                    {t("profile.No vehicles added yet")}
                   </Text>
                 </View>
               )}
@@ -530,8 +531,8 @@ export default function ProfilePage() {
             {/* Language Switcher */}
             <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Bank Account"), "/(profile)/bank"],
-                [t("Transactions"), "/(profile)/transactions"],
+                [t("profile.Bank Account"), "/(profile)/bank"],
+                [t("profile.Transactions"), "/(profile)/transactions"],
                 // [t("Payment & Refunds"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity
@@ -555,14 +556,58 @@ export default function ProfilePage() {
                 </TouchableOpacity>
               ))}
             </View>
+
+            {/* Language Switcher */}
+            <View className="px-6 py-4 border-b border-dashed border-gray-200">
+              <TouchableOpacity
+                onPress={async () => {
+                  const newLang = i18n.language === "en" ? "ar" : "en";
+                  const langName = getOppositeLanguageName();
+                  
+                  Alert.alert(
+                    t("profile.Select Language"),
+                    `${t("Change Language")} ${langName}?`,
+                    [
+                      {
+                        text: t("profile.Cancel"),
+                        style: "cancel"
+                      },
+                      {
+                        text: t("profile.ok"),
+                        onPress: async () => {
+                          await changeLanguage(newLang, () => {
+                            refreshProfile();
+                          });
+                        }
+                      }
+                    ]
+                  );
+                }}
+                className="flex-row items-center justify-between"
+              >
+                <View className="flex-row items-center">
+                  <Text fontSize={14} className="text-[14px] font-[Kanit-Light]">
+                    {t("profile.Language")}
+                  </Text>
+                  <Text fontSize={12} className="text-[12px] text-gray-500 font-[Kanit-Light] ml-2">
+                    ({getCurrentLanguageName()})
+                  </Text>
+                </View>
+                {swap(
+                  <ChevronRight size={25} color="#000000" strokeWidth={1} />,
+                  <ChevronLeft size={25} color="#000000" strokeWidth={1} />
+                )}
+              </TouchableOpacity>
+            </View>
+
             <TouchableOpacity onPress={handleLogout} className="px-6 py-4 " >
-              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >Logout</Text>
+              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >{t("Logout")}</Text>
             </TouchableOpacity>
 
             <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
               {[
-                [t("Terms & Conditions"), "/"],
-                [t("Privacy Policy"), "/"],
+                [t("profile.Terms & Conditions"), "/"],
+                [t("profile.Privacy Policy"), "/"],
               ].map(([label, route], idx) => (
                 <TouchableOpacity
                   key={idx}
@@ -586,7 +631,7 @@ export default function ProfilePage() {
               ))}
             </View>
             <View className="px-6 py-4 " >
-              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >Close my account</Text>
+              <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >{t("profile.Close my account")}</Text>
             </View>
 
           </View>

@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { getRecommendedPrice } from "@/service/ride-booking";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 function Pricing() {
   const loaded = useLoadFonts();
@@ -71,6 +72,20 @@ function Pricing() {
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="max-w-lg w-full self-center pt-16 px-4 lg:px-12">
+        {/* Header */}
+        <View className="flex-row items-center gap-4 mb-6 px-2">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+          </TouchableOpacity>
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+            {t("pricing.title")}
+          </Text>
+        </View>
+        
         {/* Adjuster */}
         <View className="flex-row items-center justify-center space-x-2 px-6">
           <TouchableOpacity

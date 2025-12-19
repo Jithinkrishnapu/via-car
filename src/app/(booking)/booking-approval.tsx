@@ -117,7 +117,7 @@ function BookingApproval() {
 
         <View className=" py-6 rounded-none bg-white">
               <View className="flex-row items-center justify-between">
-                <Link href={`/profile`} className="flex-row items-center">
+                <Link href={`/(tabs)/user-profile`} className="flex-row items-center">
                   <View className="w-[40px] ">
                     <Avatar
                       source={require(`../../../public/profile-img.png`)}

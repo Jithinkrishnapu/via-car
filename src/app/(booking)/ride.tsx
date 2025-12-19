@@ -2,6 +2,8 @@ import {
   Check,
   SlidersHorizontal,
   XIcon,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react-native";
 import RideItem from "@/components/common/ride-item";
 import { useEffect, useState } from "react";
@@ -28,6 +30,7 @@ import { useSearchRideStore } from "@/store/useSearchRideStore";
 function Ride() {
   const loaded = useLoadFonts();
   const { t } = useTranslation();
+  const { isRTL, swap } = useDirection();
 
   const [modalVisible, setModalVisible] = useState(false);
   const [filterVisible, setFilterVisible] = useState(false);
@@ -110,6 +113,20 @@ function Ride() {
         }}
         ListHeaderComponent={
           <>
+            {/* Back Button and Header */}
+            <View className="flex-row items-center gap-4 mb-6">
+              <TouchableOpacity
+                className="rounded-full size-[46px] border border-[#EBEBEB] bg-white items-center justify-center"
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+              >
+                {swap(<ChevronLeft size={24} />, <ChevronRight size={24} />)}
+              </TouchableOpacity>
+              <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+                {t("booking.ride.title")}
+              </Text>
+            </View>
+
             {/* Filter Button */}
             <View className="flex-row items-center justify-between mb-4">
               <View className="flex-1">

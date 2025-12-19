@@ -61,12 +61,6 @@ export function AutoComplete<T extends string>({
       Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
       (e) => {
         setKeyboardHeight(e.endCoordinates.height);
-        // Animate the sheet to sit above keyboard
-        Animated.timing(translateY, {
-          toValue: 0,
-          duration: Platform.OS === "ios" ? 250 : 200,
-          useNativeDriver: true,
-        }).start();
       }
     );
 
@@ -81,7 +75,7 @@ export function AutoComplete<T extends string>({
       keyboardWillShow.remove();
       keyboardWillHide.remove();
     };
-  }, [translateY]);
+  }, []);
 
   const openSheet = () => {
     setVisible(true);
@@ -120,7 +114,7 @@ export function AutoComplete<T extends string>({
   };
 
   // Calculate max height: total height minus keyboard height minus some padding
-  const maxSheetHeight = height - keyboardHeight - 40;
+  const maxSheetHeight = height - keyboardHeight - 100;
 
   return (
     <View>
@@ -150,64 +144,70 @@ export function AutoComplete<T extends string>({
           <TouchableOpacity
             onPress={closeSheet}
             activeOpacity={1}
-            className="flex-1 bg-black/50 justify-end"
+            className="flex-1 bg-black/50"
+            style={{ justifyContent: 'flex-end' }}
           >
-            <Animated.View
-              style={{
-                transform: [{ translateY }],
-                marginBottom: keyboardHeight,
-                maxHeight: maxSheetHeight,
-              }}
-              className="bg-white rounded-t-3xl p-6"
-            >
-              <View className="relative mb-4">
-                <TextInput
-                  allowFontScaling={false}
-                  className="border border-gray-300 rounded-lg px-4 py-3 font-[Kanit-Regular] text-base lg:!text-[17px] lg:font-normal !ring-0 lg:border-0 pr-6 lg:px-0 lg:max-w-[140px] max-lg:h-[50px] lg:rounded-none w-full max-lg:mx-auto shadow-none placeholder:text-[#757478] max-lg:bg-[#F1F1F5] max-lg:border-0"
-                  placeholder={t(placeholder, { ns: "components" })}
-                  value={searchValue}
-                  onChangeText={onSearchValueChange}
-                  autoFocus
-                />
-              </View>
-
-              <FlatList
-                data={items}
-                keyExtractor={(item, i) => i.toString()}
-                keyboardShouldPersistTaps="handled"
-                showsVerticalScrollIndicator={true}
-                renderItem={({ item }) => (
-                  <TouchableOpacity
-                    onPress={() => {
-                      handleItemSelect?.(item);
-                      handleSelect(item.value);
-                    }}
-                    className="flex-row items-start py-3 border-b border-gray-200"
-                  >
-                    <Check
-                      size={16}
-                      color="#000"
-                      style={{ opacity: selectedValue === item.value ? 1 : 0 }}
-                      className="mr-2 mt-1"
+            <TouchableOpacity activeOpacity={1}>
+              <Animated.View
+                style={{
+                  transform: [{ translateY }],
+                  paddingBottom: keyboardHeight,
+                  maxHeight: maxSheetHeight,
+                }}
+                className="bg-white rounded-t-3xl"
+              >
+                <View className="p-6">
+                  <View className="relative mb-4">
+                    <TextInput
+                      allowFontScaling={false}
+                      className="border border-gray-300 rounded-lg px-4 py-3 font-[Kanit-Regular] text-base lg:!text-[17px] lg:font-normal !ring-0 lg:border-0 pr-6 lg:px-0 lg:max-w-[140px] max-lg:h-[50px] lg:rounded-none w-full max-lg:mx-auto shadow-none placeholder:text-[#757478] max-lg:bg-[#F1F1F5] max-lg:border-0"
+                      placeholder={t(placeholder, { ns: "components" })}
+                      value={searchValue}
+                      onChangeText={onSearchValueChange}
+                      autoFocus
                     />
-                    <View>
-                      <Text
-                        fontSize={16}
-                        className="text-base font-[Kanit-Regular]"
+                  </View>
+
+                  <FlatList
+                    data={items}
+                    keyExtractor={(item, i) => i.toString()}
+                    keyboardShouldPersistTaps="handled"
+                    showsVerticalScrollIndicator={true}
+                    style={{ maxHeight: maxSheetHeight - 150 }}
+                    renderItem={({ item }) => (
+                      <TouchableOpacity
+                        onPress={() => {
+                          handleItemSelect?.(item);
+                          handleSelect(item.value);
+                        }}
+                        className="flex-row items-start py-3 border-b border-gray-200"
                       >
-                        {item.label}
-                      </Text>
-                      <Text
-                        fontSize={14}
-                        className="text-sm text-[#666] font-[Kanit-Light]"
-                      >
-                        {item.desc}
-                      </Text>
-                    </View>
-                  </TouchableOpacity>
-                )}
-              />
-            </Animated.View>
+                        <Check
+                          size={16}
+                          color="#000"
+                          style={{ opacity: selectedValue === item.value ? 1 : 0 }}
+                          className="mr-2 mt-1"
+                        />
+                        <View className="flex-1">
+                          <Text
+                            fontSize={16}
+                            className="text-base font-[Kanit-Regular]"
+                          >
+                            {item.label}
+                          </Text>
+                          <Text
+                            fontSize={14}
+                            className="text-sm text-[#666] font-[Kanit-Light]"
+                          >
+                            {item.desc}
+                          </Text>
+                        </View>
+                      </TouchableOpacity>
+                    )}
+                  />
+                </View>
+              </Animated.View>
+            </TouchableOpacity>
           </TouchableOpacity>
         </Modal>
       )}

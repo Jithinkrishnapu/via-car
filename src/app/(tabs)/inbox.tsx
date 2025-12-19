@@ -109,43 +109,91 @@ export default function Page() {
   }, [userId]);
   
   return (
-    <ScrollView className="font-[Kanit-Regular] w-full mx-auto px-6 pt-16 pb-10 flex-col gap-2 bg-white">
-      <Text
-        fontSize={22}
-        className="text-[22px] font-[Kanit-Medium] lg:text-[2.188rem] mb-4"
-      >
-        {t("inbox.title")}
-      </Text>
-      {chats.map((chat, index) => {
-  const otherUser = chat.users.find((u) => u !== userId); // get the other participant
-  return (
-    <Fragment key={chat.id}>
-      <TouchableOpacity
-        onPress={() => router.push({ pathname: "/(inbox)/chat", params: { driver_id: chat.id?.split("_")[1],driver_name:chat.users[1] } })}
-        className="flex-row items-center gap-4 py-2"
-        activeOpacity={0.8}
-      >
-        <Avatar
-          source={require("../../../public/profile-img.png")}
-          size={35}
-          initials={chat.users[0]}
-        />
-        <View className="flex-col flex-1">
-          <Text fontSize={14} className="text-[14px] text-black font-[Kanit-Regular]">
-            {chat.users[1]}
-          </Text>
-          <Text fontSize={12} className="text-[12px] text-[#666] font-[Kanit-Light]" numberOfLines={1}>
-            {chat.lastMessage || "No messages yet"}
-          </Text>
+    <View className="flex-1 bg-gray-50">
+      <ScrollView className="font-[Kanit-Regular] w-full mx-auto px-4 pt-16 pb-10 flex-col bg-gray-50">
+        <Text
+          fontSize={24}
+          className="text-[24px] font-[Kanit-SemiBold] lg:text-[2.188rem] mb-6 text-gray-900 px-2"
+        >
+          {t("inbox.title")}
+        </Text>
+        
+        <View className="bg-white rounded-xl shadow-sm border border-gray-100">
+          {chats.length === 0 ? (
+            <View className="py-12 px-6 items-center">
+              <View className="w-16 h-16 bg-gray-100 rounded-full items-center justify-center mb-4">
+                <Text fontSize={24} className="text-gray-400">💬</Text>
+              </View>
+              <Text fontSize={16} className="text-gray-500 font-[Kanit-Medium] text-center mb-2">
+                No conversations yet
+              </Text>
+              <Text fontSize={14} className="text-gray-400 font-[Kanit-Regular] text-center">
+                Your messages will appear here
+              </Text>
+            </View>
+          ) : (
+            chats.map((chat, index) => {
+              const otherUser = chat.users.find((u) => u !== userId);
+              return (
+                <Fragment key={chat.id}>
+                  <TouchableOpacity
+                    onPress={() => router.push({ 
+                      pathname: "/(inbox)/chat", 
+                      params: { 
+                        driver_id: chat.id?.split("_")[1],
+                        driver_name: chat.users[1] 
+                      } 
+                    })}
+                    className="flex-row items-center gap-4 px-4 py-4 active:bg-gray-50"
+                    activeOpacity={0.7}
+                  >
+                    <View className="relative">
+                      <Avatar
+                        source={require("../../../public/profile-img.png")}
+                        size={48}
+                        initials={chat.users[0]}
+                      />
+                      {/* Online indicator */}
+                      <View className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
+                    </View>
+                    
+                    <View className="flex-col flex-1 min-w-0">
+                      <View className="flex-row items-center justify-between mb-1">
+                        <Text fontSize={16} className="text-[16px] text-gray-900 font-[Kanit-Medium] flex-1" numberOfLines={1}>
+                          {chat.users[1] || "Unknown User"}
+                        </Text>
+                        <Text fontSize={12} className="text-[12px] text-gray-400 font-[Kanit-Regular] ml-2">
+                          {chat.updatedAt ? new Date(chat.updatedAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
+                        </Text>
+                      </View>
+                      
+                      <View className="flex-row items-center">
+                        <Text fontSize={14} className="text-[14px] text-gray-600 font-[Kanit-Regular] flex-1" numberOfLines={1}>
+                          {chat.lastMessage || "No messages yet"}
+                        </Text>
+                        {chat.lastMessage && (
+                          <View className="w-2 h-2 bg-blue-500 rounded-full ml-2" />
+                        )}
+                      </View>
+                    </View>
+                    
+                    <ChevronRight className="size-[18px] ml-2" color="#9CA3AF" strokeWidth={1.5} />
+                  </TouchableOpacity>
+                  
+                  {index !== chats.length - 1 && (
+                    <View className="ml-16 mr-4">
+                      <Separator className="border-t border-gray-100 bg-transparent" />
+                    </View>
+                  )}
+                </Fragment>
+              );
+            })
+          )}
         </View>
-        <ChevronRight className="size-[15px] ml-auto" color="#AAAAAA" strokeWidth={1} />
-      </TouchableOpacity>
-      {index !== chats.length - 1 && (
-        <Separator className="border-t !border-dashed !border-[#CDCDCD] bg-transparent my-[15px]" />
-      )}
-    </Fragment>
-  );
-})}
-    </ScrollView>
+        
+        {/* Add some bottom spacing */}
+        <View className="h-6" />
+      </ScrollView>
+    </View>
   );
 }

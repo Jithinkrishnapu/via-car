@@ -8,9 +8,24 @@ import { ChevronLeft } from "lucide-react";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
 import Text from "@/components/common/text";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { useEffect } from "react";
 
 export default function Page() {
   const loaded = useLoadFonts();
+
+  // Check authentication on component mount
+  useEffect(() => {
+    const checkAuth = async () => {
+      const raw = await useAsyncStorage("userDetails").getItem();
+      const token = raw ? JSON.parse(raw).token : "";
+      if (!token) {
+        router.replace("/login");
+      }
+    };
+    checkAuth();
+  }, []);
+
   if (!loaded) return null;
   return (
     <ScrollView>

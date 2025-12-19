@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { Modal, Image, TouchableOpacity, View } from "react-native";
-import { Map } from "lucide-react-native";
+import { Map, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -32,6 +32,20 @@ function StopoversPreview() {
   return (
     <View className="flex-1 bg-white">
       <View className="w-full px-6 pt-16 pb-6 flex-1">
+        {/* Header */}
+        <View className="flex-row items-center gap-4 mb-6">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+          </TouchableOpacity>
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+            {t("stopoversPreview.title")}
+          </Text>
+        </View>
+        
         {/* Timeline Container */}
         <View className="bg-white border border-[#EBEBEB] rounded-2xl p-4 overflow-hidden">
           {/* vertical line */}

@@ -1,11 +1,12 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { I18nManager, Platform } from "react-native";
 import en from "./en";
 import ar from "./ar";
 
 const resources = {
-  en: { translation: en, index: en.login, components: en.components },
-  ar: { translation: ar, index: ar.index,    components: ar.components },
+  en: { translation: en, index: en.login, components: en.components, profile: en.profile, booking: en.booking },
+  ar: { translation: ar, index: ar.index, components: ar.components, profile: ar.profile, booking: ar.booking },
 };
 
 /* ---------- helpers ---------- */
@@ -33,30 +34,59 @@ const setSavedLanguage = async (lng: string) => {
   }
 };
 
+/* ---------- RTL handler ---------- */
+const updateRTL = (lng: string) => {
+  const isRTL = lng === "ar";
+  
+  if (typeof window !== "undefined" && window.document) {
+    // Web platform
+    window.document.documentElement.dir = isRTL ? "rtl" : "ltr";
+    window.document.documentElement.lang = lng;
+  } else if (Platform.OS !== "web") {
+    // React Native platform
+    if (I18nManager.isRTL !== isRTL) {
+      I18nManager.allowRTL(isRTL);
+      I18nManager.forceRTL(isRTL);
+    }
+  }
+};
+
 /* ---------- init ---------- */
-(async () => {
-  i18n
+let isInitialized = false;
+
+const initI18n = async () => {
+  if (isInitialized) return;
+  
+  const savedLang = await getSavedLanguage();
+  const initialLang = savedLang || "en";
+  
+  // Set RTL before i18n initialization
+  updateRTL(initialLang);
+  
+  await i18n
     .use(initReactI18next)
     .init({
       resources,
-      lng: "en",               // ← ALWAYS start in English
+      lng: initialLang,
       fallbackLng: "en",
-      ns: ["translation", "index", "components"],
+      ns: ["translation", "index", "components", "profile", "booking"],
       defaultNS: "translation",
       interpolation: { escapeValue: false },
+      react: {
+        useSuspense: false,
+      },
     });
 
   i18n.on("languageChanged", (lng) => {
-    setSavedLanguage(lng);    // persist choice for later sessions
-    if (typeof window !== "undefined" && window.document) {
-      window.document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
-    } else {
-      try {
-        const { I18nManager, Platform } = require("react-native");
-        if (Platform.OS !== "web") I18nManager.forceRTL(lng === "ar");
-      } catch {}
-    }
+    setSavedLanguage(lng);
+    updateRTL(lng);
   });
-})();
+  
+  isInitialized = true;
+};
+
+// Initialize immediately
+initI18n();
 
 export default i18n;
+export { initI18n };

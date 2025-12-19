@@ -23,17 +23,19 @@ import { useCreateRideStore } from "@/store/useRideStore";
 import { useCreateRide } from "@/service/ride-booking";
 import { RideDetails } from "@/types/ride-types";
 import { useGetProfileDetails } from "@/service/auth";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
 function ShowPricing() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
+  const { isRTL, swap } = useDirection();
 
   const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
 
   const [userDetails, setUserDetails] = useState<any>();
-  const [loading, setLoading] = useState(false);          // ← NEW
+  const [loading, setLoading] = useState(false);
 
   const handleProfileDetails = async () => {
     const response = await useGetProfileDetails();
@@ -57,15 +59,22 @@ function ShowPricing() {
   }, [ride, selectedPlaces]);
 
   const numSegments = Math.max(0, fullRoute.length - 1);
+  // Only store prices for intermediate segments (not the full trip)
   const [segmentPrices, setSegmentPrices] = useState<number[]>(Array(numSegments).fill(10));
-
+  
+  // Initialize segment prices
   useEffect(() => {
     if (numSegments <= 0) { setSegmentPrices([]); return; }
-    if (ride.segmentPrices && ride.segmentPrices.length === numSegments) setSegmentPrices([...ride.segmentPrices]);
-    else setSegmentPrices(Array(numSegments).fill(10));
+    if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
+      setSegmentPrices([...ride.segmentPrices]);
+    } else {
+      // Initialize all segments with default price
+      setSegmentPrices(Array(numSegments).fill(10));
+    }
   }, [numSegments, ride.segmentPrices]);
 
   const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
+  
   const updateSegmentPrice = (idx: number, delta: number) =>
     setSegmentPrices((p) => {
       const copy = [...p];
@@ -75,6 +84,9 @@ function ShowPricing() {
 
   const updatePricePerSeat = (delta: number) =>
     setRideField("price_per_seat", clampPrice((ride.price_per_seat || 10) + delta));
+
+  // Full trip price is the fixed price_per_seat from pricing screen
+  const totalTripPrice = ride.price_per_seat ?? 10;
 
   /* ---------- CONTINUE ---------- */
   const handleContinue = async () => {
@@ -92,24 +104,33 @@ function ShowPricing() {
       const n = fullRoute.length;
       const prices: any[] = [];
       if (n >= 2) {
-        // Build prefix sum array, but use price_per_seat for first segment
+        // FIRST: Add the full trip price (pickup to final drop) - this is the fixed price_per_seat
+        prices.push({
+          pickup_order: 1,
+          drop_order  : n,
+          amount      : ride.price_per_seat || 10,
+        });
+  
+        // THEN: Add prices for intermediate segments (stopovers)
+        // Build prefix sum array using segmentPrices for intermediate stops
         const prefix = [0];
         for (let i = 0; i < segmentPrices.length; i++) {
-          if (i === 0) {
-            // First segment uses price_per_seat from pricing screen
-            prefix.push(prefix[i] + (ride.price_per_seat || 10));
-          } else {
-            prefix.push(prefix[i] + segmentPrices[i]);
-          }
+          prefix.push(prefix[i] + segmentPrices[i]);
         }
   
-        for (let i = 0; i < n; i++)
-          for (let j = i + 1; j < n; j++)
+        // Generate all other possible pickup-drop combinations (excluding full trip)
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            // Skip the full trip as we already added it first
+            if (i === 0 && j === n - 1) continue;
+            
             prices.push({
               pickup_order: i + 1,
               drop_order  : j + 1,
               amount      : prefix[j] - prefix[i],
             });
+          }
+        }
       }
   
       /* ---- assemble payload ---------------------------------------- */
@@ -183,6 +204,20 @@ function ShowPricing() {
         <View style={{ height: heroHeight }}>
           <ImageBackground source={require("../../../public/hero.png")} className="flex-1 w-full" resizeMode="cover">
             <View className="flex-1 max-w-screen-lg w-full mx-auto px-4 pt-10 md:px-6 md:pt-12">
+              {/* Back Button */}
+              <View className="flex-row items-center gap-3 mb-4">
+                <TouchableOpacity
+                  className="rounded-full size-[46px] bg-white/20 items-center justify-center"
+                  onPress={() => router.back()}
+                  activeOpacity={0.8}
+                >
+                  {swap(<ChevronLeft size={20} color="#ffffff" />, <ChevronRight size={20} color="#ffffff" />)}
+                </TouchableOpacity>
+                <Text className="text-lg md:text-xl lg:text-2xl text-white font-[Kanit-Medium]">
+                  {t("showPricing.rideDetails")}
+                </Text>
+              </View>
+              
               <View className="flex-row items-start gap-3 md:gap-4">
                 <Direction4 width={32} height={32} className="mt-1" />
                 <View className="flex-1">
@@ -192,22 +227,22 @@ function ShowPricing() {
                   <Text className="text-sm md:text-base text-white font-[Kanit-Regular]">{fullRoute[fullRoute.length - 1].address}</Text>
                 </View>
 
-                {/* price_per_seat control */}
+                {/* Total trip price (editable) */}
                 <View className="flex-row items-center gap-2 md:gap-3 ml-auto">
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(-10)}
-                    disabled={currentSeatPrice <= 10}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${currentSeatPrice <= 10 ? "opacity-40" : "bg-white/20"}`}
+                    disabled={totalTripPrice <= 10}
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${totalTripPrice <= 10 ? "opacity-40" : "bg-white/20"}`}
                   >
                     <MinusRed width={16} height={16} />
                   </TouchableOpacity>
                   <View className="min-w-[60px] items-center">
-                    <Text className="text-xs md:text-sm text-white font-[Inter] font-semibold">SR {currentSeatPrice}</Text>
+                    <Text className="text-xs md:text-sm text-white font-[Inter] font-semibold">SR {totalTripPrice}</Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(10)}
-                    disabled={currentSeatPrice >= 4000}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${currentSeatPrice >= 4000 ? "opacity-40" : "bg-white/20"}`}
+                    disabled={totalTripPrice >= 4000}
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${totalTripPrice >= 4000 ? "opacity-40" : "bg-white/20"}`}
                   >
                     <PlusRed width={16} height={16} />
                   </TouchableOpacity>
@@ -217,15 +252,13 @@ function ShowPricing() {
           </ImageBackground>
         </View>
 
-        {/* Segments */}
+        {/* Segments - All editable */}
         <View className="px-4 pt-6 md:px-6">
           {fullRoute.slice(0, -1).map((from, idx) => {
             const to = fullRoute[idx + 1];
-            // First segment uses price_per_seat, others use segmentPrices
-            const price = idx === 0 ? currentSeatPrice : (segmentPrices[idx] ?? 10);
+            const price = segmentPrices[idx] ?? 10;
             const fromLabel = idx === 0 ? t("showPricing.pickup") : t("showPricing.stopover");
             const toLabel = idx === fullRoute.length - 2 ? t("showPricing.drop") : t("showPricing.stopover");
-            const isFirstSegment = idx === 0;
 
             return (
               <View key={idx} className="flex-row items-start gap-3 md:gap-4 py-4 border-b border-gray-100">
@@ -236,31 +269,24 @@ function ShowPricing() {
                   <Text className="text-[10px] md:text-xs text-gray-500 font-[Kanit-Light] uppercase tracking-wider">{toLabel}</Text>
                   <Text className="text-xs md:text-sm text-black font-[Kanit-Regular]">{to.address}</Text>
                 </View>
-                {isFirstSegment ? (
-                  // First segment shows price_per_seat (controlled at top)
-                  <View className="flex-row items-center gap-2 md:gap-3">
-                    <Text className="text-xs md:text-sm text-[#14B968] font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
-                  </View>
-                ) : (
-                  // Other segments are adjustable
-                  <View className="flex-row items-center gap-2 md:gap-3">
-                    <TouchableOpacity
-                      onPress={() => updateSegmentPrice(idx, -10)}
-                      disabled={price <= 10}
-                      className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price <= 10 ? "opacity-50" : "bg-gray-100"}`}
-                    >
-                      <MinusRed width={16} height={16} />
-                    </TouchableOpacity>
-                    <Text className="text-xs md:text-sm text-black font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
-                    <TouchableOpacity
-                      onPress={() => updateSegmentPrice(idx, 10)}
-                      disabled={price >= 4000}
-                      className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price >= 4000 ? "opacity-50" : "bg-gray-100"}`}
-                    >
-                      <PlusRed width={16} height={16} />
-                    </TouchableOpacity>
-                  </View>
-                )}
+                {/* All segments are now editable */}
+                <View className="flex-row items-center gap-2 md:gap-3">
+                  <TouchableOpacity
+                    onPress={() => updateSegmentPrice(idx, -10)}
+                    disabled={price <= 10}
+                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price <= 10 ? "opacity-50" : "bg-gray-100"}`}
+                  >
+                    <MinusRed width={16} height={16} />
+                  </TouchableOpacity>
+                  <Text className="text-xs md:text-sm text-black font-[Inter] font-medium min-w-[65px] text-center">SR {price}</Text>
+                  <TouchableOpacity
+                    onPress={() => updateSegmentPrice(idx, 10)}
+                    disabled={price >= 4000}
+                    className={`w-10 h-10 md:w-11 md:h-11 rounded-full items-center justify-center ${price >= 4000 ? "opacity-50" : "bg-gray-100"}`}
+                  >
+                    <PlusRed width={16} height={16} />
+                  </TouchableOpacity>
+                </View>
               </View>
             );
           })}

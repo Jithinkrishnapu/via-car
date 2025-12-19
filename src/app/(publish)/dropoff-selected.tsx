@@ -70,7 +70,7 @@ function DropoffSelected() {
       >
         <View className="flex-1 bg-black/50 justify-end">
           <View className="bg-white h-fit px-4 py-2 rounded-t-3xl overflow-hidden">
-            <Text className="text-[16px] font-[Kanit-Medium] my-4" >Select Vehicle</Text>
+            <Text className="text-[16px] font-[Kanit-Medium] my-4">{t("profile.Select Vehicle")}</Text>
             {vehicleList.length > 0 ? (
               <FlatList
                 contentContainerClassName="gap-3 mb-4"
@@ -123,7 +123,7 @@ function DropoffSelected() {
             ) : (
               <View className="py-8 items-center">
                 <Text className="text-gray-400 font-[Kanit-Light] mb-4">
-                  {t("No vehicles available")}
+                  {t("profile.No vehicles added yet")}
                 </Text>
               </View>
             )}
@@ -143,7 +143,7 @@ function DropoffSelected() {
                   fontSize={18}
                   className="text-lg text-white font-[Kanit-Regular]"
                 >
-                  {t("Continue")}
+                  {t("common.continue")}
                 </Text>
               </TouchableOpacity>
             ) : null}
@@ -170,7 +170,7 @@ function DropoffSelected() {
                   selectedVehicle ? 'text-[#FF4848]' : 'text-white'
                 }`}
               >
-                {t("Add vehicle")}
+                {t("Add vehicle", { ns: "translation" })}
               </Text>
             </TouchableOpacity>
           </View>

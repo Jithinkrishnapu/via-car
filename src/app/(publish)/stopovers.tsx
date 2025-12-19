@@ -4,7 +4,7 @@ import {
   TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
-import { Plus } from "lucide-react-native";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -19,7 +19,7 @@ import { useRoute } from "@react-navigation/native";
 function Stopovers() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const { isRTL } = useDirection();
+  const { isRTL, swap } = useDirection();
   const [places, setPlaces] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const { ride, setSelectedPlaces, selectedPlaces, polyline } =
@@ -85,6 +85,20 @@ function Stopovers() {
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="px-6 pt-16 pb-10 flex flex-col gap-4">
+        {/* Header */}
+        <View className="flex-row items-center gap-4 mb-4">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+          </TouchableOpacity>
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+            {t("stopovers.title")}
+          </Text>
+        </View>
+        
         {/* Stopover List */}
         <View className="flex-col gap-[14px] max-w-lg w-full self-center">
           {places?.map((loc) => {

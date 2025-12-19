@@ -240,7 +240,7 @@ function RideDetails() {
             </View>
             <View className="px-8 py-6 rounded-none bg-white">
               <View className="flex-row items-center justify-between">
-                <Link href={`/profile`} className="flex-row items-start">
+                <Link href={`/(tabs)/user-profile`} className="flex-row items-start">
                   <View className="w-[40px]">
                     <Avatar
                       source={require(`../../../public/profile-img.png`)}

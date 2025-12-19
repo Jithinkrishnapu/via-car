@@ -11,12 +11,15 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useDirection } from "@/hooks/useDirection";
 
 function Time() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
   const { setRideField } = useCreateRideStore();
+  const { isRTL, swap } = useDirection();
 
   if (!loaded) return null;
 
@@ -73,6 +76,20 @@ function Time() {
       className="flex-1 bg-white font-[Kanit-Regular]"
     >
       <View className="flex-1 px-6 pt-16 pb-12">
+        {/* Header */}
+        <View className="flex-row items-center gap-4 mb-6">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+          </TouchableOpacity>
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+            {t("time.title")}
+          </Text>
+        </View>
+        
         {/* Time Inputs */}
         <View className="flex-row items-center justify-center gap-2 mt-10">
           {/* Hour */}

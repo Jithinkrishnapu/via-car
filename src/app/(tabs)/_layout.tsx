@@ -12,12 +12,11 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 export default function TabLayout() {
   const { t } = useTranslation("components");
 
-  /* ---------- helper that redirects if token missing ---------- */
-  const guard = async (allowedRoute: RelativePathString) => {
+  /* ---------- helper that checks if user is authenticated ---------- */
+  const isAuthenticated = async () => {
     const raw = await useAsyncStorage("userDetails").getItem();
     const token = raw ? JSON.parse(raw).token : "";
-    if (!token) router.replace("/login");
-    else router.push(allowedRoute); // normal navigation
+    return !!token;
   };
 
   return (
@@ -31,16 +30,22 @@ export default function TabLayout() {
           <PlatformPressable
             {...props}
             android_ripple={{ color: "transparent" }}
-            onPress={(e) => {
+            onPress={async (e) => {
               /* which tab was pressed? */
               const target = (props.children as any)?.props?.name;
 
-              /* protect only these two tabs */
-              if (target === "pickup" || target === "user-profile") {
-                guard(target);
-              } else {
-                props.onPress?.(e); // default behaviour
+              /* protect all tabs except home (book) - they require authentication */
+              if (target !== "book") {
+                const authenticated = await isAuthenticated();
+                if (!authenticated) {
+                  e.preventDefault(); // Prevent default navigation only if not authenticated
+                  router.replace("/login");
+                  return;
+                }
               }
+              
+              // If authenticated or home tab, allow default navigation
+              props.onPress?.(e);
             }}
           />
         ),

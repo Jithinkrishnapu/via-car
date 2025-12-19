@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { View, TouchableOpacity } from "react-native";
 import { router } from "expo-router";
-import { Circle } from "lucide-react-native";
+import { Circle, ChevronLeft, ChevronRight } from "lucide-react-native";
 import Text from "@/components/common/text";
 import MapComponent from "@/components/ui/map-view";
 import CheckGreen from "../../../public/check-green.svg";
@@ -10,12 +10,14 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { placeRoutes } from "@/service/ride-booking";
+import { useDirection } from "@/hooks/useDirection";
 
 function Route() {
   // -------------------- Hooks --------------------
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { ride,setPolyline } = useCreateRideStore();
+  const { isRTL, swap } = useDirection();
 
   // -------------------- States --------------------
   const [routes, setRoutes] = useState<any[]>([]);
@@ -115,9 +117,18 @@ function Route() {
 
       {/* -------------------- Route Selection -------------------- */}
       <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
-        <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] mb-6">
-          {t("route.title")}
-        </Text>
+        <View className="flex-row items-center gap-4 mb-6">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+          </TouchableOpacity>
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+            {t("route.title")}
+          </Text>
+        </View>
 
         {routes.map((loc) => {
           const isSelected = selectedRoute === loc.route_index;

@@ -34,67 +34,68 @@ function ShowPricingReturn() {
 
   /* -------------------------------------------------
    * 1.  BUILD THE RETURN ROUTE  (reversed outbound)
+   *     Destination → Stopovers (reversed) → Pickup
    * ------------------------------------------------- */
   const fullRoute = useMemo(() => {
-    const route = [];
+    const outboundRoute = [];
+    
+    // Build outbound route first
     if (
       ride.pickup_address?.trim() &&
       typeof ride.pickup_lat === "number" &&
       typeof ride.pickup_lng === "number"
     ) {
-      route.push({
+      outboundRoute.push({
         address: ride.pickup_address,
         lat: ride.pickup_lat,
         lng: ride.pickup_lng,
       });
     }
+    
     selectedPlaces.forEach((place) => {
       if (
         place.address?.trim() &&
         typeof place.lat === "number" &&
         typeof place.lng === "number"
       ) {
-        route.push(place);
+        outboundRoute.push(place);
       }
     });
+    
     if (
       ride.destination_address?.trim() &&
       typeof ride.destination_lat === "number" &&
       typeof ride.destination_lng === "number"
     ) {
-      route.push({
+      outboundRoute.push({
         address: ride.destination_address,
         lat: ride.destination_lat,
         lng: ride.destination_lng,
       });
     }
-    return route.slice().reverse(); //  <---  RETURN LEG
+    
+    // Reverse for return trip: destination becomes pickup, pickup becomes destination
+    return outboundRoute.slice().reverse();
   }, [ride, selectedPlaces]);
 
   const numSegments = Math.max(0, fullRoute.length - 1);
 
   /* -------------------------------------------------
-   * 2.  SEGMENT PRICES  (also reversed)
+   * 2.  SEGMENT PRICES - Initialize with default values
    * ------------------------------------------------- */
-  const [segmentPrices, setSegmentPrices] = useState<number[]>(() =>
+  const [segmentPrices, setSegmentPrices] = useState<number[]>(
     Array(numSegments).fill(10)
   );
 
+  // Initialize segment prices
   useEffect(() => {
     if (numSegments <= 0) {
       setSegmentPrices([]);
       return;
     }
-    // If we already have prices for the return leg – use them
-    if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
-      setSegmentPrices([...ride.segmentPrices]);
-    } else if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
-      // fallback: reverse the outbound prices
-      setSegmentPrices([...ride.segmentPrices].reverse());
-    } else {
-      setSegmentPrices(Array(numSegments).fill(10));
-    }
-  }, [numSegments, ride.segmentPrices, ride.segmentPrices]);
+    // Initialize all segments with default price of 10
+    setSegmentPrices(Array(numSegments).fill(10));
+  }, [numSegments]);
 
   const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
 
@@ -109,6 +110,9 @@ function ShowPricingReturn() {
     const next = clampPrice((ride.price_per_seat ?? 10) + delta);
     setRideField("price_per_seat", next);
   };
+
+  // Full trip price is the fixed price_per_seat
+  const totalTripPrice = ride.price_per_seat ?? 10;
 
   /* -------------------------------------------------
    * 3.  CONTINUE  –  store canonical left->right data
@@ -183,7 +187,7 @@ function ShowPricingReturn() {
   const handlePublishRide = async () => {
     setIsLoading(true);
     try {
-      /* ---- build stops --------------------------------------------- */
+      /* ---- build stops (return trip: destination → pickup) --------- */
       const stops = fullRoute.map((pt, i) => ({
         address: pt.address,
         lat    : pt.lat,
@@ -195,32 +199,49 @@ function ShowPricingReturn() {
       const n = fullRoute.length;
       const prices: any[] = [];
       if (n >= 2) {
-        const prefix = [0];
-        for (let i = 0; i < segmentPrices.length; i++) prefix.push(prefix[i] + segmentPrices[i]);
+        // FIRST: Add the full trip price (fixed price_per_seat)
+        prices.push({
+          pickup_order: 1,
+          drop_order  : n,
+          amount      : ride.price_per_seat || 10,
+        });
   
-        for (let i = 0; i < n; i++)
-          for (let j = i + 1; j < n; j++)
+        // THEN: Add prices for intermediate segments
+        const prefix = [0];
+        for (let i = 0; i < segmentPrices.length; i++) {
+          prefix.push(prefix[i] + segmentPrices[i]);
+        }
+  
+        // Generate all other possible pickup-drop combinations (excluding full trip)
+        for (let i = 0; i < n; i++) {
+          for (let j = i + 1; j < n; j++) {
+            // Skip the full trip as we already added it first
+            if (i === 0 && j === n - 1) continue;
+            
             prices.push({
               pickup_order: i + 1,
               drop_order  : j + 1,
               amount      : prefix[j] - prefix[i],
             });
+          }
+        }
       }
   
-      /* ---- assemble payload ---------------------------------------- */
+      /* ---- assemble payload (return trip coordinates) -------------- */
       const postData: RideDetails = {
         vehicle_id   : ride.vehicle_id,
-        pickup_lat   : ride.pickup_lat,
-        pickup_lng   : ride.pickup_lng,
-        pickup_address: ride.pickup_address,
-        drop_lat     : ride.destination_lat,
-        drop_lng     : ride.destination_lng,
-        drop_address : ride.destination_address,
+        // Return trip: swap pickup and destination
+        pickup_lat   : fullRoute[0].lat,
+        pickup_lng   : fullRoute[0].lng,
+        pickup_address: fullRoute[0].address,
+        drop_lat     : fullRoute[fullRoute.length - 1].lat,
+        drop_lng     : fullRoute[fullRoute.length - 1].lng,
+        drop_address : fullRoute[fullRoute.length - 1].address,
         date         : ride.date,
         pickup_time  : ride.time,
         drop_time    : ride.time,
         passengers   : ride.available_seats,
-        ride_route   : polyline,
+        ride_route   : polyline, // Should be reversed polyline for return trip
         max_2_in_back: ride.max_2_in_back,
         stops,
         prices,
@@ -230,16 +251,14 @@ function ShowPricingReturn() {
       const { ok, data } = await useCreateRide(postData);
   
       if (ok && data?.data?.id) {
-        // router.push({
-        //   pathname: '/(publish)/return',
-        //   params  : {
-        //     ride_id       : data.data.id,
-        //     ride_amount_id: data.data.rideAmounts?.[0]?.pickup_id,
-        //   },
-        // });
-        router.push({pathname:"/(publish)/publish-ride",params:{ride_id:data?.data?.id,ride_amount_id:data?.data?.rideAmounts[0].pickup_id}});
+        router.push({
+          pathname:"/(publish)/publish-ride",
+          params:{
+            ride_id: data?.data?.id,
+            ride_amount_id: data?.data?.rideAmounts[0].pickup_id
+          }
+        });
       }
-      /* ---- error already shown by useCreateRide -------------------- */
     } catch (err: any) {
       Alert.alert('Error', err?.message || 'Something went wrong');
     } finally {
@@ -321,27 +340,27 @@ function ShowPricingReturn() {
                   </Text>
                 </View>
 
-                {/* price_per_seat control */}
+                {/* Total trip price (editable) */}
                 <View className="flex-row items-center gap-2 md:gap-3 ml-auto">
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(-10)}
-                    disabled={currentSeatPrice <= 10}
+                    disabled={totalTripPrice <= 10}
                     className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${
-                      currentSeatPrice <= 10 ? "opacity-40" : "bg-white/20"
+                      totalTripPrice <= 10 ? "opacity-40" : "bg-white/20"
                     }`}
                   >
                     <MinusRed width={16} height={16} />
                   </TouchableOpacity>
                   <View className="min-w-[60px] items-center">
                     <Text className="text-xs md:text-sm text-white font-[Inter] font-semibold">
-                      SR {currentSeatPrice}
+                      SR {totalTripPrice}
                     </Text>
                   </View>
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(10)}
-                    disabled={currentSeatPrice >= 4000}
+                    disabled={totalTripPrice >= 4000}
                     className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${
-                      currentSeatPrice >= 4000 ? "opacity-40" : "bg-white/20"
+                      totalTripPrice >= 4000 ? "opacity-40" : "bg-white/20"
                     }`}
                   >
                     <PlusRed width={16} height={16} />

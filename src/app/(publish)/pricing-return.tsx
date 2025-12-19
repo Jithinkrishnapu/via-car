@@ -8,6 +8,7 @@ import PlusLarge from "../../../public/plus-large.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
+import { ChevronLeft } from "lucide-react-native";
 
 function PricingReturn() {
   const loaded = useLoadFonts();
@@ -16,7 +17,7 @@ function PricingReturn() {
   const [amount, setAmount] = useState(10);
   const { setRideField } = useCreateRideStore();
 
-  const clamp = (val: number) => Math.max(10, Math.min(14000, val));
+  const clamp = (val: number) => Math.max(0, Math.min(14000, val));
 
   const adjustAmount = (delta: number) => {
     setAmount((prev) => clamp(prev + delta));
@@ -52,9 +53,9 @@ function PricingReturn() {
         {/* Adjuster */}
         <View className="flex-row items-center justify-center space-x-2 px-6">
           <TouchableOpacity
-            onPress={() => adjustAmount(-10)}
+            onPress={() => adjustAmount(-1)}
             activeOpacity={0.8}
-            disabled={amount === 10}
+            disabled={amount === 0}
             className="w-8 h-8 rounded-full items-center justify-center"
           >
             <MinusLarge width={32} height={32} />
@@ -71,7 +72,7 @@ function PricingReturn() {
           </View>
 
           <TouchableOpacity
-            onPress={() => adjustAmount(10)}
+            onPress={() => adjustAmount(1)}
             activeOpacity={0.8}
             disabled={amount === 14000}
             className="w-8 h-8 rounded-full items-center justify-center"

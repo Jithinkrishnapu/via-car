@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   View,
   Modal,
@@ -19,6 +19,7 @@ import Text from "../common/text";
 import { useTranslation } from "react-i18next";
 import { handleSendOtp, handleVerifyOtp } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { NotificationService } from "@/services/notificationService";
 
 const { height } = Dimensions.get("window");
 
@@ -29,6 +30,34 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   const translateY = useRef(new Animated.Value(height)).current;
   const refs = useRef<TextInput[]>([]);
   const [otpId, setOtpId] = useState("");
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [isValidating, setIsValidating] = useState(false);
+
+  // Get FCM token when component mounts
+  useEffect(() => {
+    const getFcmToken = async () => {
+      try {
+        // Request permissions first
+        const permissionGranted = await NotificationService.requestPermissions();
+        if (permissionGranted) {
+          // Get FCM token
+          const token = await NotificationService.getFCMToken();
+          setFcmToken(token);
+          console.log('FCM Token for login:', token);
+        } else {
+          console.log('Notification permissions not granted');
+          // Set a fallback token or handle gracefully
+          setFcmToken('no_permission');
+        }
+      } catch (error) {
+        console.error('Error getting FCM token:', error);
+        // Fallback for Expo Go or when Firebase is not available
+        setFcmToken('expo_go_fallback');
+      }
+    };
+
+    getFcmToken();
+  }, []);
 
   const handleChange = (text: string, idx: number) => {
     const newOtp = [...otp];
@@ -63,16 +92,25 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   }
 
   const handleValidate = async () => {
+    if (isValidating) return; // Prevent multiple submissions
+    
+    setIsValidating(true);
+    
+    // Ensure we have an FCM token before proceeding
+    const tokenToSend = fcmToken || 'no_token_available';
+    
     const formdata = new FormData()
     formdata.append("otp_id", otpId)
     formdata.append("otp", otp.join(''))
-    formdata.append("device_type", "1")
-    formdata.append("fcm_token", "test")
-    console.log("sheeet==========", formdata)
+    formdata.append("device_type", Platform.OS === 'ios' ? "2" : "1") // 1 for Android, 2 for iOS
+    formdata.append("fcm_token", tokenToSend)
+    
+    console.log("Validating OTP with FCM token:", tokenToSend)
+    
     try {
       const response = await handleVerifyOtp(formdata)
       if (response?.data?.type) {
-        console.log("response============", response)
+        console.log("OTP validation successful:", response)
         closeSheet();
         if (response?.data?.type == "register") {
           router.replace(`/register`);
@@ -81,10 +119,13 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
           router.push(`/(tabs)/book`);
         }
       } else {
-        Alert.alert(response?.message)
+        Alert.alert("Verification Failed", response?.message || "Invalid OTP. Please try again.")
       }
     } catch (error) {
-      console.log("error===========", error)
+      console.log("OTP validation error:", error)
+      Alert.alert("Error", "Something went wrong. Please try again.")
+    } finally {
+      setIsValidating(false);
     }
   }
 
@@ -182,14 +223,19 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
 
                       <TouchableOpacity
                         onPress={handleValidate}
-                        className="bg-[#FF4848] rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center"
+                        disabled={isValidating || otp.join('').length !== 6}
+                        className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
+                          isValidating || otp.join('').length !== 6 
+                            ? 'bg-gray-400' 
+                            : 'bg-[#FF4848]'
+                        }`}
                         activeOpacity={0.8}
                       >
                         <Text
                           fontSize={20}
                           className="text-white text-[20px] font-[Kanit-Regular]"
                         >
-                          {t("Verify")}
+                          {isValidating ? "Verifying..." : t("Verify")}
                         </Text>
                       </TouchableOpacity>
 

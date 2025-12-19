@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, TouchableOpacity } from "react-native";
-import { ChevronRight, Circle } from "lucide-react-native";
+import { ChevronRight, Circle ,ChevronLeft} from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
