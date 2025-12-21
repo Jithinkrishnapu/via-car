@@ -10,6 +10,7 @@ import {
   Pressable,
   RefreshControl,
   TextInput,
+  Platform,
 } from 'react-native';
 import Animated, {
   useSharedValue,
@@ -277,8 +278,17 @@ export default function RidesTabsScreen() {
             </View>
           }
           ListFooterComponent={() => <View className='w-full h-[100px] my-5' ></View>}
+          scrollEnabled={true}
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustsScrollIndicatorInsets={false}
           refreshControl={
-            <RefreshControl refreshing={refreshing} onRefresh={() => fetchList(true)} />
+            <RefreshControl 
+              refreshing={refreshing} 
+              onRefresh={() => fetchList(true)}
+              tintColor={Platform.OS === 'ios' ? '#FF4848' : undefined}
+              title={Platform.OS === 'ios' ? 'Pull to refresh' : undefined}
+              titleColor={Platform.OS === 'ios' ? '#666' : undefined}
+            />
           }
         />
       </View>

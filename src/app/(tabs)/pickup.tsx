@@ -35,7 +35,7 @@ function Pickup() {
           if (d?.id_verification?.status == "pending") {
             router.push('/pending-verification')
           } else {
-            router.replace('/(publish)/upload-document');
+            router.push('/(publish)/upload-document');
           }
           // or your ID screen
           return;
@@ -44,16 +44,16 @@ function Pickup() {
         /* 3. No vehicles (for driver flow) */
         if (d?.account?.is_driver && !d?.vehicles?.has_vehicles) {
           setPath("/(tabs)/pickup")
-          router.replace('/add-vehicles');
+          router.push('/add-vehicles');
           return;
         }
       } else {
-        router.replace('/login')
+        router.push('/login')
       }
 
     } catch (e) {
       console.log('Status check failed', e);
-      router.replace('/login')
+      router.push('/login')
       /* optionally send to login */
     }
   }
@@ -73,7 +73,12 @@ function Pickup() {
 
   if (!loaded) return null;
   return (
-    <ScrollView bounces={false} className="w-full px-6 pt-16 pb-12 bg-white">
+    <ScrollView 
+      bounces={false} 
+      className="w-full px-6 pt-16 pb-12 bg-white"
+      contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustsScrollIndicatorInsets={false}
+    >
       <Text
         fontSize={25}
         className="text-[25px] text-[#0A2033] font-[Kanit-Medium] w-full mx-auto leading-tight mb-[33px]"

@@ -220,6 +220,8 @@ export default function LocationSearch({ onSelect }: Props) {
           bounces={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="flex-grow-1"
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustsScrollIndicatorInsets={false}
           className="bg-white w-full mt-1 rounded-lg max-h-[300px] shadow-lg"
         >
           <View className="px-4 py-2">

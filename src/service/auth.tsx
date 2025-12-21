@@ -1,43 +1,65 @@
 import { API_URL } from "@/constants/constants";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { apiRequest, handleApiError, ApiResponse } from "@/utils/apiErrorHandler";
 
-export const handleSendOtp = async (postData: FormData) => {
+export const handleSendOtp = async (postData: FormData): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/send-auth-otp`, {
       body: postData,
       method: 'POST'
     });
-    return response.json()
-  } catch (error) {
-    console.log("api error", error)
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Send OTP API error:", error);
+    throw error;
   }
-
 }
 
-export const handleVerifyOtp = async (postData: FormData) => {
+export const handleVerifyOtp = async (postData: FormData): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/verify-auth-otp`, {
       body: postData,
       method: 'POST'
     });
-    return response.json()
-  } catch (error) {
-    console.log("api error", error)
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Verify OTP API error:", error);
+    throw error;
   }
-
 }
 
-export const handleRegister = async (postData: FormData) => {
+export const handleRegister = async (postData: FormData): Promise<any> => {
   try {
     const response = await fetch(`${API_URL}/api/register`, {
       body: postData,
       method: 'POST'
     });
-    return response.json()
-  } catch (error) {
-    console.log("api error", error)
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Register API error:", error);
+    throw error;
   }
-
 }
 
 // export const handleBankSave = async (payload: Record<string, unknown>) => {
@@ -145,34 +167,40 @@ export const handleBankDelete = async (payload: Record<string, unknown>) => {
   }
 };
 
-export const handleLogOut = async () => {
+export const handleLogOut = async (): Promise<any> => {
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
+  
   try {
     const response = await fetch(`${API_URL}/api/logout`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+        Authorization: `Bearer ${token}`,
       }
     });
-    return response.json()
-  } catch (error) {
-    console.log("api error", error)
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Logout API error:", error);
+    throw error;
   }
-
 }
 
-export const handleVerifyId = async (postData: FormData) => {
+export const handleVerifyId = async (postData: FormData): Promise<Response> => {
   const userDetailsString = await useAsyncStorage("userDetails").getItem();
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token || "";
 
-  // 🔍 DEBUG: Log request info to build curl
   console.log('API URL:', `${API_URL}/api/verify-id`);
   console.log('Auth Token:', token);
 
-  // Log FormData keys (you can't log full FormData easily, but you can list keys)
   for (const [key, value] of postData.entries()) {
     if (typeof value === 'string') {
       console.log(`Form field: ${key} = ${value}`);
@@ -181,52 +209,78 @@ export const handleVerifyId = async (postData: FormData) => {
     }
   }
 
-  const response = await fetch(`${API_URL}/api/verify-id`, {
-    method: 'POST',
-    body: postData,
-    headers: {
-      Accept: 'application/json',
-      Authorization: `Bearer ${token}`
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/verify-id`, {
+      method: 'POST',
+      body: postData,
+      headers: {
+        Accept: 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+    });
 
-  return response;
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
+      throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+    }
+
+    return response;
+  } catch (error: any) {
+    console.error("Verify ID API error:", error);
+    throw error;
+  }
 };
 
-
-export const useGetProfileDetails = async () => {
+export const useGetProfileDetails = async (): Promise<any> => {
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
   const token = userDetails ? userDetails?.token : ""
+  
   try {
     const response = await fetch(`${API_URL}/api/profile`, {
       method: 'GET',
       headers: {
         'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
+        Authorization: `Bearer ${token}`,
       }
     });
-    return response.json()
-  } catch (error) {
-    console.log("api error", error)
+    
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Get profile API error:", error);
+    throw error;
   }
-
 }
 
-
-export async function getUserStatus() {
+export async function getUserStatus(): Promise<any> {
   const userDetailsString = await useAsyncStorage('userDetails').getItem();
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null;
   const token = userDetails?.token ?? '';
 
-  const res = await fetch(`${API_URL}/api/user/status`, {
-    method: 'GET',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/json',
-    },
-  });
+  try {
+    const response = await fetch(`${API_URL}/api/user/status`, {
+      method: 'GET',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
 
-  if (!res.ok) throw new Error(res.statusText);
-  return res.json(); // typed below
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+    }
+    
+    return data;
+  } catch (error: any) {
+    console.error("Get user status API error:", error);
+    throw error;
+  }
 }

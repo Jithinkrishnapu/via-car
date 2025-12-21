@@ -19,9 +19,19 @@ export const useAuthorizePayment = async (postData: BookingPaymentData) => {
                 Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
               }
           });
-          return response.json()
-      } catch (error) {
+          
+          const data = await response.json();
+          
+          // If response is not ok, throw an error with the response data
+          if (!response.ok) {
+              throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+          }
+          
+          return data;
+      } catch (error: any) {
           console.log("api error", error)
+          // Re-throw the error so it can be handled by the calling component
+          throw error;
       }
   
   }

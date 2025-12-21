@@ -1,8 +1,9 @@
 import { router } from "expo-router";
-import { Check, Circle, CirclePlus, Radio } from "lucide-react-native";
+import { Check, Circle, CirclePlus } from "lucide-react-native";
 import LocationSearchSelected from "@/components/common/location-search-selected";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { FlatList, Modal, Pressable, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
@@ -27,7 +28,7 @@ function DropoffSelected() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const [isModalVisible, setModalVisible] = useState(false)
-  const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
+  const { ride, setRideField } = useCreateRideStore()
   const [vehicleList, setVehhicleList] = useState<Vehicle[]>([])
   const [selectedVehicle, setVehhicleSelected] = useState<number | null>(null)
   const [loadingVehicles, setLoadingVehicles] = useState(false)
@@ -72,24 +73,26 @@ function DropoffSelected() {
 
   if (!loaded) return null;
   return (
-    <View className="flex-auto h-full pt-16 bg-white">
-      <LocationSearchSelected
-        initialRegion={{
-          latitude: ride.destination_lat,
-          longitude: ride.destination_lng,
-          latitudeDelta: 0.01,
-          longitudeDelta: 0.01
-        }}
-        onContinue={(location) => {
-          setRideField("destination_lat", location.latitude)
-          setRideField("destination_lng", location.longitude)
-          setRideField("destination_address", location.address || "")
-          // router.push("/(publish)/route");
-          handleGetVehicles().then(() => {
-            setModalVisible(true)
-          })
-        }}
-      />
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <View className="flex-1">
+        <LocationSearchSelected
+          initialRegion={{
+            latitude: ride.destination_lat,
+            longitude: ride.destination_lng,
+            latitudeDelta: 0.01,
+            longitudeDelta: 0.01
+          }}
+          onContinue={(location) => {
+            setRideField("destination_lat", location.latitude)
+            setRideField("destination_lng", location.longitude)
+            setRideField("destination_address", location.address || "")
+            // router.push("/(publish)/route");
+            handleGetVehicles().then(() => {
+              setModalVisible(true)
+            })
+          }}
+        />
+      </View>
       <Modal
         visible={isModalVisible}
         animationType="slide"
@@ -125,6 +128,9 @@ function DropoffSelected() {
               <FlatList
                 contentContainerClassName="gap-3 mb-4"
                 data={vehicleList}
+                scrollEnabled={true}
+                contentInsetAdjustmentBehavior="automatic"
+                automaticallyAdjustsScrollIndicatorInsets={false}
                 renderItem={({ item, index }) => {
                   const isSelected = selectedVehicle === item?.id
                   return (
@@ -234,7 +240,7 @@ function DropoffSelected() {
           </Pressable>
         </Pressable>
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

@@ -6,6 +6,7 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   CountryCode,
   getCountries,
@@ -154,7 +155,8 @@ function PhoneInput({
       </View>
 
       <Modal visible={modalVisible} animationType="slide">
-        <View className="flex-1 p-4 bg-white" style={{ direction: "ltr" }}>
+        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+          <View className="flex-1 p-4" style={{ direction: "ltr" }}>
           <TextInput
             allowFontScaling={false}
             placeholder={t("Search...", { ns: "components" })}
@@ -192,7 +194,8 @@ function PhoneInput({
               </TouchableOpacity>
             )}
           />
-        </View>
+          </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );

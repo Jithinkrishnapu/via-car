@@ -250,7 +250,7 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
 
             {/* Selected Location Label */}
             <View style={styles.addressContainer}>
-                <Text style={styles.addressLabel} numberOfLines={2}>
+                <Text style={styles.addressLabel} numberOfLines={3} ellipsizeMode="tail">
                     {address}
                 </Text>
             </View>
@@ -291,21 +291,27 @@ const styles = StyleSheet.create({
         top: 60,
         left: 20,
         right: 20,
-        backgroundColor: 'rgba(255, 255, 255, 0.92)',
-        padding: 12,
-        borderRadius: 10,
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        paddingHorizontal: 16,
+        paddingVertical: 12,
+        borderRadius: 12,
         alignItems: 'center',
         elevation: 3,
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 1 },
         shadowOpacity: 0.15,
         shadowRadius: 3,
+        minHeight: 44, // Ensure minimum height for text
+        justifyContent: 'center',
     },
     addressLabel: {
         fontSize: 14,
         color: '#333',
         textAlign: 'center',
-        lineHeight: 18,
+        lineHeight: 20,
+        fontFamily: 'Kanit-Regular',
+        flexWrap: 'wrap',
+        maxWidth: '100%',
     },
     buttonContainer: {
         position: 'absolute',

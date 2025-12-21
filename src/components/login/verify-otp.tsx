@@ -221,6 +221,8 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
                       keyboardShouldPersistTaps="handled"
                       showsVerticalScrollIndicator={false}
                       bounces={false}
+                      contentInsetAdjustmentBehavior="automatic"
+                      automaticallyAdjustsScrollIndicatorInsets={false}
                     >
                       <View className="flex flex-col items-center relative">
                         <TouchableOpacity

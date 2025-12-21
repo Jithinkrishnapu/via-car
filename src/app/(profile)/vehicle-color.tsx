@@ -9,38 +9,69 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { addVehicle } from "@/service/vehicle";
 import { useStore } from "@/store/useStore";
-import { clampRGBA } from "react-native-reanimated/lib/typescript/Colors";
+import { handleApiError } from "@/utils/apiErrorHandler";
 
 export default function VehiclePage() {
   const loaded = useLoadFonts();
   const router = useRouter();
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
+  const { vehicle_model_id, path } = useStore();
+  const [selectedColor, setSelectedColor] = useState("");
+  const [loading, setLoading] = useState(false);
+
   if (!loaded) return null;
-  const {vehicle_model_id,path} = useStore()
-  const [selectedColor,setSelectedColor] = useState("")
 
-
-  const handleAddVehicle =async()=>{
-    const formdata = new FormData()
-    formdata.append("model_id",vehicle_model_id)
-    formdata.append("color",selectedColor)
-    formdata.append("year","2021")
-    const response = await addVehicle(formdata)
-    console.log("response=====adsd",response)
-
-    if(response?.ok){
-      console.log("response=====adsd",response)
-      // Ensure path is a supported type for router.replace
-      if (typeof path === "string" && path.startsWith("/")) {
-        router.replace(path as any)
-      } else {
-        router.replace("/")
-      }
-    }else{
-      Alert.alert("Something went wrong")
+  const handleAddVehicle = async () => {
+    if (!selectedColor.trim()) {
+      Alert.alert(t("error"), t("profile.pleaseSelectColor"));
+      return;
     }
-  }
+
+    if (!vehicle_model_id) {
+      Alert.alert(t("error"), t("profile.vehicleModelRequired"));
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const formdata = new FormData();
+      formdata.append("model_id", vehicle_model_id.toString());
+      formdata.append("color", selectedColor.trim());
+      formdata.append("year", "2021");
+
+      const response = await addVehicle(formdata);
+      console.log("Add vehicle response:", response);
+
+      if (response?.ok) {
+        Alert.alert(
+          t("success"),
+          t("profile.vehicleAddedSuccessfully"),
+          [
+            {
+              text: t("ok"),
+              onPress: () => {
+                // Navigate to the specified path or default to home
+                if (typeof path === "string" && path.startsWith("/")) {
+                  router.replace(path as any);
+                } else {
+                  router.replace("/");
+                }
+              }
+            }
+          ]
+        );
+      } else {
+        // Handle non-ok response
+        Alert.alert(t("error"), t("profile.failedToAddVehicle"));
+      }
+    } catch (error: any) {
+      console.error("Add vehicle error:", error);
+      handleApiError(error, "Add Vehicle");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <View className="font-[Kanit-Regular] flex-1 bg-white relative">
@@ -49,6 +80,7 @@ export default function VehiclePage() {
           onPress={() => router.back()}
           activeOpacity={0.8}
           className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+          disabled={loading}
         >
           {swap(
             <ChevronLeft size={24} color="#3C3F4E" />,
@@ -71,23 +103,26 @@ export default function VehiclePage() {
           name="pickup"
           placeholder={t("profile.enterVehicleName")}
           onSelect={(value) => setSelectedColor(value)}
+          disabled={loading}
         />
       </View>
+      
       <View className="absolute inset-x-0 bottom-10 px-6">
         <TouchableOpacity
-          onPress={() => {
-            console.log("add click")
-            handleAddVehicle()
-          }
-          }
+          onPress={handleAddVehicle}
           activeOpacity={0.8}
-          className="bg-red-500 h-14 rounded-full flex-row items-center justify-center"
+          disabled={loading || !selectedColor.trim()}
+          className={`h-14 rounded-full flex-row items-center justify-center ${
+            loading || !selectedColor.trim() 
+              ? 'bg-gray-400' 
+              : 'bg-red-500'
+          }`}
         >
           <Text
             fontSize={20}
             className="text-xl text-white font-[Kanit-Regular]"
           >
-            {t("profile.add")}
+            {loading ? t("profile.adding") : t("profile.add")}
           </Text>
         </TouchableOpacity>
       </View>

@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, View, TouchableOpacity, Animated } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Text from "./text";
 import StopWatch from "../../../public/stopwatch.svg";
 import Walk from "../../../public/walk.svg";
@@ -17,9 +18,10 @@ interface Props {
     verifiedProfile: boolean;
     aminities:Record<string, boolean>
   }) => void;
+  onDismiss: () => void;
 }
 
-const RideFilters = ({ close }: Props) => {
+const RideFilters = ({ close, onDismiss }: Props) => {
   const { t } = useTranslation("components");
   const [sortOption, setSortOption] = useState(
     t("rideFilter.earliestDeparture")
@@ -106,25 +108,23 @@ const RideFilters = ({ close }: Props) => {
   console.log("checked==========",checkedItems)
 
   return (
-    <ScrollView bounces={false}>
-      <View className="px-[27px] pt-6 pb-6">
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-6">
-          <View className="flex-row items-center gap-[20px]">
-            <TouchableOpacity
-              className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
-              activeOpacity={0.8}
-              onPress={() =>
-                close({
-                  sortOption: toSortCode(sortOption),
-                  numberOfStops: toStopCode(numberOfStops),
-                  verifiedProfile,
-                  aminities:checkedItems!
-                })
-              }
-            >
-              <XIcon />
-            </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <ScrollView 
+        bounces={false}
+        contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustsScrollIndicatorInsets={false}
+      >
+        <View className="px-[27px] pt-6 pb-6">
+          {/* Header */}
+          <View className="flex-row justify-between items-center mb-6">
+            <View className="flex-row items-center gap-[20px]">
+              <TouchableOpacity
+                className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
+                activeOpacity={0.8}
+                onPress={onDismiss}
+              >
+                <XIcon />
+              </TouchableOpacity>
             <Text fontSize={25} className="text-[25px] font-[Kanit-Regular]">
               {t("rideFilter.filter")}
             </Text>
@@ -380,8 +380,9 @@ const RideFilters = ({ close }: Props) => {
             {t("rideFilter.apply")}
           </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

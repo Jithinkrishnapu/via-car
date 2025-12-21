@@ -194,10 +194,13 @@ function Ride() {
         visible={filterVisible}
         onRequestClose={() => setFilterVisible(false)}
       >
-        <RideFilters close={(filters) => {
-          setFilterVisible(false)
-          setFilter(filters)
-        }} />
+        <RideFilters 
+          close={(filters) => {
+            setFilterVisible(false)
+            setFilter(filters)
+          }} 
+          onDismiss={() => setFilterVisible(false)}
+        />
       </Modal>
 
       {/* Email Alert Modal */}

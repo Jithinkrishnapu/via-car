@@ -5,7 +5,9 @@ import {
   TouchableOpacity,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -71,108 +73,129 @@ function Time() {
   };
 
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-white font-[Kanit-Regular]"
-    >
-      <View className="flex-1 px-6 pt-16 pb-12">
-        {/* Header */}
-        <View className="flex-row items-center gap-4 mb-6">
-          <TouchableOpacity
-            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.back()}
-            activeOpacity={0.8}
-          >
-            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
-          </TouchableOpacity>
-          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
-            {t("time.title")}
-          </Text>
-        </View>
-        
-        {/* Time Inputs */}
-        <View className="flex-row items-center justify-center gap-2 mt-10">
-          {/* Hour */}
-          <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
-            <TextInput
-              value={hour}
-              onChangeText={onChangeHour}
-              onBlur={onBlurHour}
-              keyboardType="number-pad"
-              maxLength={2}
-              className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center leading-[59px]"
-            />
-          </View>
-
-          {/* Colon */}
-          <Text
-            fontSize={59}
-            className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E]"
-          >
-            :
-          </Text>
-
-          {/* Minute */}
-          <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
-            <TextInput
-              value={minute}
-              onChangeText={onChangeMinute}
-              onBlur={onBlurMinute}
-              keyboardType="number-pad"
-              maxLength={2}
-              className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center leading-[59px]"
-            />
-          </View>
-
-          {/* AM/PM Toggle */}
-          <View className="ml-2 h-[84px] w-[55px] rounded-lg overflow-hidden border border-[#00665A]">
-            {(["AM", "PM"] as const).map((p, i) => {
-              const isSel = period === p;
-              return (
-                <TouchableOpacity
-                  key={p}
-                  onPress={() => setPeriod(p)}
-                  activeOpacity={0.8}
-                  className={`flex-1 items-center justify-center ${
-                    isSel ? "bg-[#00665A]" : "bg-white"
-                  }`}
-                  style={
-                    i === 0
-                      ? { borderBottomWidth: 1, borderBottomColor: "#00665A" }
-                      : {}
-                  }
-                >
-                  <Text
-                    fontSize={15}
-                    className={`text-[15px] font-[Kanit-Medium] ${
-                      isSel ? "text-white" : "text-[#5F6368]"
-                    }`}
-                  >
-                    {p === "AM" ? t("time.am") : t("time.pm")}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
-        </View>
-      </View>
-
-      {/* Continue Button */}
-      <View className="absolute bottom-8 left-0 right-0 px-6">
-        <TouchableOpacity
-          onPress={handleContinue}
-          activeOpacity={0.8}
-          className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        className="flex-1"
+      >
+        <ScrollView 
+          className="flex-1"
+          contentContainerStyle={{ flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text
-            fontSize={20}
-            className="text-xl text-white font-[Kanit-Regular]"
+          <View className="flex-1 px-6 pt-6 pb-12">
+            {/* Header */}
+            <View className="flex-row items-center gap-4 mb-6">
+              <TouchableOpacity
+                className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+                onPress={() => router.back()}
+                activeOpacity={0.8}
+              >
+                {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+              </TouchableOpacity>
+              <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+                {t("time.title")}
+              </Text>
+            </View>
+            
+            {/* Spacer to center the time inputs */}
+            <View className="flex-1r">
+              {/* Time Inputs */}
+              <View className="flex-row items-center justify-center gap-2">
+                {/* Hour */}
+                <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
+                  <TextInput
+                    value={hour}
+                    onChangeText={onChangeHour}
+                    onBlur={onBlurHour}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
+                    style={{
+                      textAlignVertical: 'center',
+                      includeFontPadding: false,
+                      lineHeight: Platform.OS === 'ios' ? 84 : 59,
+                    }}
+                  />
+                </View>
+
+                {/* Colon */}
+                <Text
+                  fontSize={59}
+                  className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E]"
+                >
+                  :
+                </Text>
+
+                {/* Minute */}
+                <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
+                  <TextInput
+                    value={minute}
+                    onChangeText={onChangeMinute}
+                    onBlur={onBlurMinute}
+                    keyboardType="number-pad"
+                    maxLength={2}
+                    className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
+                    style={{
+                      textAlignVertical: 'center',
+                      includeFontPadding: false,
+                      lineHeight: Platform.OS === 'ios' ? 84 : 59,
+                    }}
+                  />
+                </View>
+
+                {/* AM/PM Toggle */}
+                <View className="ml-2 h-[84px] w-[55px] rounded-lg overflow-hidden border border-[#00665A]">
+                  {(["AM", "PM"] as const).map((p, i) => {
+                    const isSel = period === p;
+                    return (
+                      <TouchableOpacity
+                        key={p}
+                        onPress={() => setPeriod(p)}
+                        activeOpacity={0.8}
+                        className={`flex-1 items-center justify-center ${
+                          isSel ? "bg-[#00665A]" : "bg-white"
+                        }`}
+                        style={
+                          i === 0
+                            ? { borderBottomWidth: 1, borderBottomColor: "#00665A" }
+                            : {}
+                        }
+                      >
+                        <Text
+                          fontSize={15}
+                          className={`text-[15px] font-[Kanit-Medium] ${
+                            isSel ? "text-white" : "text-[#5F6368]"
+                          }`}
+                        >
+                          {p === "AM" ? t("time.am") : t("time.pm")}
+                        </Text>
+                      </TouchableOpacity>
+                    );
+                  })}
+                </View>
+              </View>
+            </View>
+          </View>
+        </ScrollView>
+
+        {/* Continue Button */}
+        <View className="px-6 pb-6">
+          <TouchableOpacity
+            onPress={handleContinue}
+            activeOpacity={0.8}
+            className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
           >
-            {t("common.continue")}
-          </Text>
-        </TouchableOpacity>
-      </View>
-    </KeyboardAvoidingView>
+            <Text
+              fontSize={20}
+              className="text-xl text-white font-[Kanit-Regular]"
+            >
+              {t("common.continue")}
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

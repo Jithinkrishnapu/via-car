@@ -167,7 +167,7 @@ const AddNewCard: React.FC = () => {
             payment_brand: formData.cardType.toUpperCase(),
             card_number: cleanedCardNumber,
             card_holder_name: formData.cardHolderName.trim(),
-            card_expiration_month: month,
+            card_expiration_month: month.toString().padStart(2, '0'),
             card_expiration_year: 2000 + year,
             card_cvv: formData.cvv,
             customer_email: formData.email.trim(),
@@ -185,7 +185,26 @@ const AddNewCard: React.FC = () => {
             console.log('Payment authorization response:', response);
             console.log('Payment authorization req:', postData);
 
-            // Fix: Create a SavedCardMeta type data (with all required fields) for saveCard and cardStore.save
+            // Check for API error responses
+            if (response?.error || response?.status === 'error') {
+                const errorMessage = response?.message || response?.error || 'Payment authorization failed';
+                Alert.alert('Payment Error', errorMessage);
+                return;
+            }
+
+            // Check for validation errors
+            if (response?.errors && Array.isArray(response.errors)) {
+                const errorMessages = response.errors.map((error: any) => error.message || error).join('\n');
+                Alert.alert('Validation Error', errorMessages);
+                return;
+            }
+
+            // Check for specific payment failures
+            if (response?.result?.code && response.result.code !== '000.100.110') {
+                const errorMessage = response?.result?.description || 'Payment processing failed';
+                Alert.alert('Payment Failed', errorMessage);
+                return;
+            }
 
             // Extract last 4 digits and brand
             const last4 = cleanedCardNumber.slice(-4);
@@ -218,20 +237,43 @@ const AddNewCard: React.FC = () => {
             const cards = (await getCards()) || [];
             const updatedCards = [...cards, savedCardMeta];
             await saveCards(updatedCards);
-
+            console.log(response)
             // Check if 3DS authentication is required
             if (response?.message?.url && response?.message?.parameters) {
                 setAuthUrl(response.message.url);
                 setAuthParams(response.message.parameters);
                 setShow3DS(true);
-            } else {
-                // No 3DS required, payment successful
-                // Alert.alert('Success', 'Card added successfully!');
-                // router.back();
+            } else if (response?.result?.code === '000.100.110') {
+                // Payment successful without 3DS
+                Alert.alert('Success', 'Card added successfully!');
+                router.back();
             }
         } catch (err: any) {
             console.error('Payment failed:', err);
-            Alert.alert('Error', err?.message || 'Failed to authorize payment.');
+            
+            // Handle network errors
+            if (err.name === 'TypeError' && err.message.includes('Network request failed')) {
+                Alert.alert('Network Error', 'Please check your internet connection and try again.');
+                return;
+            }
+            
+            // Handle timeout errors
+            if (err.name === 'AbortError' || err.message.includes('timeout')) {
+                Alert.alert('Timeout Error', 'Request timed out. Please try again.');
+                return;
+            }
+            
+            // Handle JSON parsing errors
+            if (err.message.includes('JSON')) {
+                Alert.alert('Server Error', 'Invalid response from server. Please try again later.');
+                return;
+            }
+            
+            // Generic error handling
+            const errorMessage = err?.response?.data?.message || 
+                               err?.message || 
+                               'Failed to authorize payment. Please try again.';
+            Alert.alert('Error', errorMessage);
         } finally {
             setLoading(false);
         }

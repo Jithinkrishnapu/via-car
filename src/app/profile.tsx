@@ -20,7 +20,7 @@ export default function Page() {
       const raw = await useAsyncStorage("userDetails").getItem();
       const token = raw ? JSON.parse(raw).token : "";
       if (!token) {
-        router.replace("/login");
+        router.push("/login");
       }
     };
     checkAuth();

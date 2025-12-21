@@ -182,6 +182,7 @@ const UploadDocumentsScreen = () => {
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+        enabled={Platform.OS === 'ios'}
       >
         <ScrollView
           bounces={false}
@@ -193,6 +194,8 @@ const UploadDocumentsScreen = () => {
           }}
           showsVerticalScrollIndicator={false}
           keyboardShouldPersistTaps="handled"
+          contentInsetAdjustmentBehavior="automatic"
+          automaticallyAdjustsScrollIndicatorInsets={false}
         >
           {/* National ID */}
           <View className="mb-6">

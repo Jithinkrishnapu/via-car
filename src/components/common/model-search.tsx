@@ -33,7 +33,7 @@ export default function ModelSearch({
   const { swap } = useDirection();
   const [searchValue, setSearchValue] = useState("");
   const [selectedValue, setSelectedValue] = useState("");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [modelList, setModelList] = useState([]);
   const inputRef = useRef<View>(null);
@@ -49,15 +49,29 @@ export default function ModelSearch({
   const handleInputChange = (text: string) => {
     setSearchValue(text);
     setSelectedValue("");
-    setOpen(true);
+    // Keep dropdown open when searching
   };
 
   const handleGetVehiclesModel = async()=>{
     console.log("calling in handle")
-    const response = await getModelList(vehicle.brand_id,vehicle.category_id)
-    console.log("res=======models",response)
-    if(response.data){
-      setModelList(response.data)
+    setIsLoading(true);
+    try {
+      const response = await getModelList(vehicle.brand_id,vehicle.category_id)
+      console.log("res=======models",response)
+      if(response.data){
+        setModelList(response.data)
+      } else if(response.models) {
+        // Handle case where models are directly in response
+        setModelList(response)
+      } else {
+        console.warn("No models found in response:", response);
+        setModelList([]);
+      }
+    } catch (error) {
+      console.error("Error fetching models:", error);
+      setModelList([]);
+    } finally {
+      setIsLoading(false);
     }
   }
 
@@ -71,30 +85,43 @@ export default function ModelSearch({
   );
 
   useEffect(()=>{
-    // Only fetch if we have the required IDs and the list is empty
-    if (vehicle.brand_id && vehicle.category_id && modelList.length === 0) {
-      console.log("calling api")
+    // Fetch models when component mounts if we have the required IDs
+    if (vehicle.brand_id && vehicle.category_id) {
+      console.log("calling api on mount")
       handleGetVehiclesModel()
     }
   },[vehicle.brand_id, vehicle.category_id]) // Remove searchValue dependency
 
-  const selectItem = (value: string) => {
+  const selectItem = (value: string, modelId?: string, colors?: any[]) => {
     setSelectedValue(value);
-    setSearchValue(labels[value] || value);
-    setOpen(false);
-    onSelect?.(value);
+    setSearchValue(value);
+    // Don't close dropdown after selection
+    
+    // Store model data in state if provided
+    if (modelId) {
+      setVehicleModelId(modelId);
+    }
+    if (colors) {
+      setVehicleColors(colors);
+    }
+    
+    // Call the onSelect callback
+    if (onSelect) {
+      onSelect(value);
+    }
   };
 
   const onInputBlur = () => {
-    // Increased timeout to allow for item selection
-    setTimeout(() => setOpen(false), 200);
+    // Don't close dropdown on blur
   };
 
   const handleInputFocus = () => {
-    setOpen(true);
-    if (!searchValue) {
-      // Trigger API call when focusing if no search value
+    // Already open by default
+    if (!searchValue && vehicle.brand_id && vehicle.category_id) {
+      // Trigger API call when focusing if no search value and we have required IDs
       handleGetVehiclesModel();
+    } else if (!vehicle.brand_id || !vehicle.category_id) {
+      console.warn("Missing brand_id or category_id for model search");
     }
   };
 
@@ -126,36 +153,29 @@ export default function ModelSearch({
         />
       </View>
 
-      {/* Backdrop to close dropdown when tapping outside */}
-      {open && (
-        <Pressable
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: -1000,
-            right: -1000,
-            bottom: -1000,
-            zIndex: 5,
-          }}
-          onPress={() => setOpen(false)}
-        />
-      )}
+      {/* Removed backdrop - dropdown stays open */}
 
       {open && (
         <ScrollView bounces={false} className="z-10 bg-white w-full mt-1 rounded-lg max-h-60 border border-gray-200 shadow-lg">
           {isLoading ? (
             <View className="p-4">
-              <Text fontSize={16}>Loading...</Text>
+              <Text fontSize={16}>Loading models...</Text>
+            </View>
+          ) : !vehicle.brand_id || !vehicle.category_id ? (
+            <View className="px-6 py-4">
+              <Text fontSize={14} className="text-sm text-red-500">
+                Please select a vehicle brand and category first
+              </Text>
             </View>
           ) : filtered?.length > 0 ? (
             filtered?.map((opt, idx) => (
-              <Pressable
+              <TouchableOpacity
                 key={opt.id}
                 activeOpacity={0.8}
                 onPress={() => {
-                  setVehicleColors(opt.colors)
-                  setVehicleModelId(opt.id)
-                  selectItem(opt.name)}}
+                  console.log("Model selected:", opt.name, opt.id);
+                  selectItem(opt.name, opt.id, opt.colors);
+                }}
                 className={cn(
                   "flex-row items-center justify-between px-4 py-4",
                   idx + 1 < filtered.length && "border-b border-[#EBEBEB]"
@@ -179,12 +199,18 @@ export default function ModelSearch({
                   <ChevronRight size={20} color="#AAAAAA" />,
                   <ChevronLeft size={20} color="#AAAAAA" />
                 )}
-              </Pressable>
+              </TouchableOpacity>
             ))
           ) : searchValue.length > 0 ? (
             <View className="px-6 py-4">
               <Text fontSize={14} className="text-sm text-gray-500">
                 No models found for "{searchValue}"
+              </Text>
+            </View>
+          ) : modelList?.models?.length === 0 ? (
+            <View className="px-6 py-4">
+              <Text fontSize={14} className="text-sm text-gray-500">
+                No models available for this brand and category
               </Text>
             </View>
           ) : null}

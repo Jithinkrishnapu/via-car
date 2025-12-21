@@ -18,7 +18,12 @@ function Book() {
 
 
   return (
-    <ScrollView alwaysBounceVertical={false} className="flex-col bg-white">
+    <ScrollView 
+      bounces={false} 
+      className="flex-col bg-white"
+      contentInsetAdjustmentBehavior="automatic"
+      automaticallyAdjustsScrollIndicatorInsets={false}
+    >
        
       <ImageBackground
         source={require("../../../public/hero.png")}

@@ -14,9 +14,10 @@ import { InputComponent } from "@/components/inputs/common-input";
 import ColorSearch from "@/components/common/color-search";
 import VehicleSearch from "@/components/common/vehicle-search";
 import ModelSearch from "@/components/common/model-search";
-import { updateVehicle } from "@/service/vehicle";
+import { updateVehicle, getVehicleCategoryList } from "@/service/vehicle";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/store/useStore";
+import { handleApiError } from "@/utils/apiErrorHandler";
 import CheckGreen from "../../../public/check-green.svg";
 
 export default function EditVehicle() {
@@ -60,13 +61,13 @@ export default function EditVehicle() {
   const fetchCategories = async () => {
     try {
       setLoadingCategories(true);
-      const { getVehicleCategoryList } = await import("@/service/vehicle");
       const response = await getVehicleCategoryList();
       if (response?.data) {
         setCategories(response.data);
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to fetch categories:", error);
+      handleApiError(error, "Fetch Vehicle Categories");
     } finally {
       setLoadingCategories(false);
     }
@@ -76,18 +77,18 @@ export default function EditVehicle() {
     const newErrors: typeof errors = {};
 
     if (!color.trim()) {
-      newErrors.color = t("Color is required");
+      newErrors.color = t("profile.colorRequired") || "Color is required";
     }
 
     if (!year.trim()) {
-      newErrors.year = t("Year is required");
+      newErrors.year = t("profile.yearRequired") || "Year is required";
     } else if (!/^\d{4}$/.test(year)) {
-      newErrors.year = t("Year must be 4 digits");
+      newErrors.year = t("profile.yearMustBe4Digits") || "Year must be 4 digits";
     } else {
       const yearNum = parseInt(year);
       const currentYear = new Date().getFullYear();
       if (yearNum < 1900 || yearNum > currentYear + 1) {
-        newErrors.year = t(`Year must be between 1900 and ${currentYear + 1}`);
+        newErrors.year = t("profile.yearRange", { min: 1900, max: currentYear + 1 }) || `Year must be between 1900 and ${currentYear + 1}`;
       }
     }
 
@@ -96,36 +97,59 @@ export default function EditVehicle() {
   };
 
   const handleUpdate = async () => {
-    if (!validate()) return;
+    if (!validate()) {
+      Alert.alert(t("error") || "Error", t("profile.pleaseFixErrors") || "Please fix the errors before continuing");
+      return;
+    }
 
-    setIsLoading(true);
-    
-    // Use updated model_id if changed, otherwise use original
-    const modelId = vehicle_model_id || vehicleData?.model?.id;
-    
-    // API expects JSON body with vehicle_id, model_id, year, color
-    const payload = {
-      vehicle_id: vehicleData?.id,
-      model_id: parseInt(modelId),
-      year: parseInt(year.trim()),
-      color: color.trim(),
-    };
-    console.log("update---payload----",payload)
+    if (!vehicleData?.id) {
+      Alert.alert(t("error") || "Error", t("profile.vehicleDataMissing") || "Vehicle data is missing");
+      return;
+    }
+
     try {
+      setIsLoading(true);
+      
+      // Use updated model_id if changed, otherwise use original
+      const modelId = vehicle_model_id || vehicleData?.model?.id;
+      
+      if (!modelId) {
+        Alert.alert(t("error") || "Error", t("profile.modelIdRequired") || "Model ID is required");
+        return;
+      }
+
+      // API expects JSON body with vehicle_id, model_id, year, color
+      const payload = {
+        vehicle_id: vehicleData.id,
+        model_id: parseInt(modelId.toString()),
+        year: parseInt(year.trim()),
+        color: color.trim(),
+      };
+      
+      console.log("Update vehicle payload:", payload);
+      
       const { body } = await updateVehicle(payload);
       
-      if (body?.message) {
-        Alert.alert(t("Success"), body.message);
-      }
+      // Show success message
+      Alert.alert(
+        t("success") || "Success", 
+        body?.message || t("profile.vehicleUpdatedSuccessfully") || "Vehicle updated successfully",
+        [
+          {
+            text: t("ok") || "OK",
+            onPress: () => {
+              // Clear store
+              setVehicleModelId("");
+              setVehicle("", "");
+              router.back();
+            }
+          }
+        ]
+      );
       
-      // Clear store
-      setVehicleModelId("");
-      setVehicle("", "");
-      
-      router.back();
     } catch (error: any) {
-      const errorMessage = error?.body?.message || error.message || t("Failed to update vehicle");
-      Alert.alert(t("Error"), errorMessage);
+      console.error("Update vehicle error:", error);
+      handleApiError(error, "Update Vehicle");
     } finally {
       setIsLoading(false);
     }
@@ -138,11 +162,12 @@ export default function EditVehicle() {
           onPress={() => router.back()}
           activeOpacity={0.8}
           className="p-2 -ml-2"
+          disabled={isLoading}
         >
           <ArrowLeft size={24} color="#0A2033" />
         </TouchableOpacity>
         <Text fontSize={24} className="text-2xl text-black font-[Kanit-Medium]">
-          {t("Edit Vehicle")}
+          {t("profile.editVehicle") || "Edit Vehicle"}
         </Text>
       </View>
 
@@ -150,20 +175,21 @@ export default function EditVehicle() {
         {/* Brand Selection */}
         <View className="mb-4">
           <Text fontSize={14} className="text-sm font-[Kanit-Medium] mb-2">
-            {t("Brand & Model")}
+            {t("profile.brandModel") || "Brand & Model"}
           </Text>
           {!showBrandSelection ? (
             <TouchableOpacity
               onPress={() => setShowBrandSelection(true)}
               className="flex-row items-center justify-between p-4 bg-gray-50 rounded-lg"
               activeOpacity={0.7}
+              disabled={isLoading}
             >
               <View>
                 <Text fontSize={16} className="font-[Kanit-Medium]">
                   {vehicleData?.brand?.name} {vehicleData?.model?.name}
                 </Text>
                 <Text fontSize={12} className="text-gray-600 font-[Kanit-Light]">
-                  {t("Tap to change")}
+                  {t("profile.tapToChange") || "Tap to change"}
                 </Text>
               </View>
               <ChevronRight size={20} color="#666" />
@@ -171,8 +197,9 @@ export default function EditVehicle() {
           ) : (
             <VehicleSearch
               name="brand"
-              placeholder={t("Search brand")}
+              placeholder={t("profile.searchBrand") || "Search brand"}
               onSelect={() => setShowCategorySelection(true)}
+              disabled={isLoading}
             />
           )}
         </View>
@@ -181,11 +208,12 @@ export default function EditVehicle() {
         {showCategorySelection && (
           <View className="mb-4">
             <Text fontSize={14} className="text-sm font-[Kanit-Medium] mb-2">
-              {t("Category")}
+              {t("profile.category") || "Category"}
             </Text>
             {loadingCategories ? (
               <View className="py-8 items-center">
                 <ActivityIndicator size="small" color="#FF4848" />
+                <Text className="text-gray-500 mt-2">{t("profile.loadingCategories") || "Loading categories..."}</Text>
               </View>
             ) : (
               <View className="flex-wrap flex-row gap-3">
@@ -200,6 +228,7 @@ export default function EditVehicle() {
                     <TouchableOpacity
                       key={category.id}
                       activeOpacity={0.8}
+                      disabled={isLoading}
                       onPress={() => {
                         setVehicle(vehicle.brand_id, category.id.toString());
                         setSelectedCategory(category.id.toString());
@@ -207,7 +236,7 @@ export default function EditVehicle() {
                       }}
                       className={`border ${
                         isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
-                      } rounded-2xl p-3 flex-1 min-w-[100px]`}
+                      } rounded-2xl p-3 flex-1 min-w-[100px] ${isLoading ? 'opacity-50' : ''}`}
                     >
                       <Image
                         source={imageSource}
@@ -232,11 +261,12 @@ export default function EditVehicle() {
         {showModelSelection && (
           <View className="mb-4">
             <Text fontSize={14} className="text-sm font-[Kanit-Medium] mb-2">
-              {t("Model")}
+              {t("profile.model") || "Model"}
             </Text>
             <ModelSearch
               name="model"
-              placeholder={t("Search model")}
+              placeholder={t("profile.searchModel") || "Search model"}
+              disabled={isLoading}
               onSelect={() => {
                 setShowBrandSelection(false);
                 setShowCategorySelection(false);
@@ -249,11 +279,12 @@ export default function EditVehicle() {
         {/* Color */}
         <View className="mb-4">
           <Text fontSize={14} className="text-sm font-[Kanit-Medium] mb-2">
-            {t("Color")}
+            {t("profile.color") || "Color"}
           </Text>
           <ColorSearch
             name="color"
-            placeholder={t("Select vehicle color")}
+            placeholder={t("profile.selectVehicleColor") || "Select vehicle color"}
+            disabled={isLoading}
             onSelect={(selectedColor) => {
               setColor(selectedColor);
               setErrors((prev) => ({ ...prev, color: undefined }));
@@ -265,8 +296,8 @@ export default function EditVehicle() {
         </View>
 
         <InputComponent
-          label={t("Year")}
-          placeHolder={t("Enter year (e.g., 2024)")}
+          label={t("profile.year") || "Year"}
+          placeHolder={t("profile.enterYear") || "Enter year (e.g., 2024)"}
           value={year}
           onChangeText={(text) => {
             setYear(text);
@@ -274,6 +305,7 @@ export default function EditVehicle() {
           }}
           keyboardType="number-pad"
           error={errors.year}
+          editable={!isLoading}
         />
 
         {/* Update Button */}
@@ -286,10 +318,15 @@ export default function EditVehicle() {
           activeOpacity={0.8}
         >
           {isLoading ? (
-            <ActivityIndicator color="#fff" />
+            <View className="flex-row items-center">
+              <ActivityIndicator color="#fff" size="small" />
+              <Text fontSize={16} className="text-white font-[Kanit-Regular] ml-2">
+                {t("profile.updating") || "Updating..."}
+              </Text>
+            </View>
           ) : (
             <Text fontSize={20} className="text-white font-[Kanit-Regular]">
-              {t("Update Vehicle")}
+              {t("profile.updateVehicle") || "Update Vehicle"}
             </Text>
           )}
         </TouchableOpacity>

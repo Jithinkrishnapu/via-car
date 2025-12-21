@@ -5,7 +5,7 @@ import PublishIcon from "@/components/icons/publish-icon";
 import YourRidesIcon from "@/components/icons/your-rides-icon";
 import { PlatformPressable } from "@react-navigation/elements";
 import { RelativePathString, router, Tabs } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { StyleSheet, View, Platform } from "react-native";
 import { useTranslation } from "react-i18next";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
@@ -146,6 +146,7 @@ const styles = StyleSheet.create({
     shadowRadius: 5,
     elevation: 10,
     paddingBottom: 5,
+    paddingBottom: Platform.OS === 'ios' ? 5 : 5,
   },
   tabWrapper: {
     alignItems: "center",
