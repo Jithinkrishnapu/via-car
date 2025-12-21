@@ -73,7 +73,7 @@ function Pickup() {
 
   if (!loaded) return null;
   return (
-    <ScrollView className="w-full px-6 pt-16 pb-12 bg-white">
+    <ScrollView bounces={false} className="w-full px-6 pt-16 pb-12 bg-white">
       <Text
         fontSize={25}
         className="text-[25px] text-[#0A2033] font-[Kanit-Medium] w-full mx-auto leading-tight mb-[33px]"

@@ -13,7 +13,7 @@ function Dropoff() {
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
   if (!loaded) return null;
   return (
-    <ScrollView className="px-6 pt-16 pb-12 bg-white">
+    <ScrollView bounces={false} className="px-6 pt-16 pb-12 bg-white">
       <View className="flex-row items-center gap-4 mb-6">
         <TouchableOpacity
           className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"

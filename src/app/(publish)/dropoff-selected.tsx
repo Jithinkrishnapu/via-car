@@ -2,7 +2,7 @@ import { router } from "expo-router";
 import { Check, Circle, CirclePlus, Radio } from "lucide-react-native";
 import LocationSearchSelected from "@/components/common/location-search-selected";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
-import { FlatList, Modal, Pressable, TouchableOpacity, View } from "react-native";
+import { FlatList, Modal, Pressable, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
@@ -11,13 +11,26 @@ import { Separator } from "@/components/ui/separator";
 import { getVehicleList } from "@/service/vehicle";
 import { useStore } from "@/store/useStore";
 
+interface Vehicle {
+  id: number;
+  model: {
+    name: string;
+    category_name: string;
+  };
+  brand: {
+    name: string;
+  };
+  year: number;
+}
+
 function DropoffSelected() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const [isModalVisible, setModalVisible] = useState(false)
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore()
-  const [vehicleList, setVehhicleList] = useState([])
+  const [vehicleList, setVehhicleList] = useState<Vehicle[]>([])
   const [selectedVehicle, setVehhicleSelected] = useState<number | null>(null)
+  const [loadingVehicles, setLoadingVehicles] = useState(false)
   const {setPath} = useStore()
 
   // Set default vehicle if ride already has vehicle_id
@@ -27,18 +40,33 @@ function DropoffSelected() {
     }
   }, [ride.vehicle_id]);
 
+  // Handle modal visibility when component mounts/unmounts
+  useEffect(() => {
+    return () => {
+      // Cleanup: ensure modal is closed when component unmounts
+      setModalVisible(false);
+    };
+  }, []);
+
 
   const handleGetVehicles = async () => {
-    const response = await getVehicleList()
-    if (response.data && response.data.vehicles.length > 0) {
-      const vehicles = response.data.vehicles;
-      setVehhicleList(vehicles);
-      
-      // Auto-select first vehicle if none selected
-      if (!selectedVehicle && vehicles[0]) {
-        setVehhicleSelected(vehicles[0].id);
-        setRideField("vehicle_id", vehicles[0].id);
+    setLoadingVehicles(true);
+    try {
+      const response = await getVehicleList()
+      if (response.data && response.data.vehicles.length > 0) {
+        const vehicles = response.data.vehicles;
+        setVehhicleList(vehicles);
+        
+        // Auto-select first vehicle if none selected
+        if (!selectedVehicle && vehicles[0]) {
+          setVehhicleSelected(vehicles[0].id);
+          setRideField("vehicle_id", vehicles[0].id);
+        }
       }
+    } catch (error) {
+      console.error("Error fetching vehicles:", error);
+    } finally {
+      setLoadingVehicles(false);
     }
   }
 
@@ -55,7 +83,7 @@ function DropoffSelected() {
         onContinue={(location) => {
           setRideField("destination_lat", location.latitude)
           setRideField("destination_lng", location.longitude)
-          setRideField("destination_address", location.address)
+          setRideField("destination_address", location.address || "")
           // router.push("/(publish)/route");
           handleGetVehicles().then(() => {
             setModalVisible(true)
@@ -68,10 +96,32 @@ function DropoffSelected() {
         transparent
         onRequestClose={() => setModalVisible(false)}
       >
-        <View className="flex-1 bg-black/50 justify-end">
-          <View className="bg-white h-fit px-4 py-2 rounded-t-3xl overflow-hidden">
-            <Text className="text-[16px] font-[Kanit-Medium] my-4">{t("profile.Select Vehicle")}</Text>
-            {vehicleList.length > 0 ? (
+        <Pressable 
+          className="flex-1 bg-black/50 justify-end"
+          onPress={() => setModalVisible(false)}
+        >
+          <Pressable 
+            className="bg-white h-fit px-4 py-2 rounded-t-3xl overflow-hidden"
+            onPress={(e) => e.stopPropagation()} // Prevent modal close when tapping inside
+          >
+            <View className="flex-row justify-between items-center my-4">
+              <Text className="text-[16px] font-[Kanit-Medium]">{t("profile.Select Vehicle")}</Text>
+              <TouchableOpacity
+                onPress={() => setModalVisible(false)}
+                className="p-2"
+                activeOpacity={0.7}
+              >
+                <Text className="text-[#FF4848] font-[Kanit-Medium]">{t("common.close", "Close")}</Text>
+              </TouchableOpacity>
+            </View>
+            {loadingVehicles ? (
+              <View className="py-8 items-center">
+                <ActivityIndicator size="large" color="#FF4848" />
+                <Text className="text-gray-400 font-[Kanit-Light] mt-2">
+                  {t("Loading vehicles...")}
+                </Text>
+              </View>
+            ) : vehicleList.length > 0 ? (
               <FlatList
                 contentContainerClassName="gap-3 mb-4"
                 data={vehicleList}
@@ -80,8 +130,8 @@ function DropoffSelected() {
                   return (
                     <Pressable 
                       onPress={() => {
-                        setRideField("vehicle_id", item.id)
-                        setVehhicleSelected(item?.id)
+                        setRideField("vehicle_id", item.id);
+                        setVehhicleSelected(item?.id);
                       }}  
                       key={index} 
                       className={`flex-row p-3 rounded-lg justify-between items-center ${
@@ -120,13 +170,13 @@ function DropoffSelected() {
                 }}
                 keyExtractor={(item) => item.id.toString()}
               />
-            ) : (
+            ) : !loadingVehicles ? (
               <View className="py-8 items-center">
                 <Text className="text-gray-400 font-[Kanit-Light] mb-4">
                   {t("profile.No vehicles added yet")}
                 </Text>
               </View>
-            )}
+            ) : null}
             
             <Separator className="border-gray-200 my-4" />
             
@@ -134,7 +184,11 @@ function DropoffSelected() {
             {selectedVehicle ? (
               <TouchableOpacity
                 onPress={() => {
-                  router.push("/(publish)/route");
+                  setModalVisible(false);
+                  // Small delay to ensure modal closes before navigation
+                  setTimeout(() => {
+                    router.push("/(publish)/route");
+                  }, 100);
                 }}
                 className="flex-row items-center justify-center h-14 rounded-full bg-[#FF4848] mb-3"
                 activeOpacity={0.8}
@@ -151,8 +205,12 @@ function DropoffSelected() {
             {/* Add Vehicle Button */}
             <TouchableOpacity
               onPress={() => {
-                setPath("/(publish)/dropoff-selected")
-                router.push("/(profile)/add-vehicles")
+                setModalVisible(false);
+                setPath("/(publish)/dropoff-selected");
+                // Small delay to ensure modal closes before navigation
+                setTimeout(() => {
+                  router.push("/(profile)/add-vehicles");
+                }, 100);
               }}
               className={`flex-row items-center justify-center h-14 rounded-full ${
                 selectedVehicle ? 'bg-white border-2 border-[#FF4848]' : 'bg-[#FF4848]'
@@ -173,8 +231,8 @@ function DropoffSelected() {
                 {t("Add vehicle", { ns: "translation" })}
               </Text>
             </TouchableOpacity>
-          </View>
-        </View>
+          </Pressable>
+        </Pressable>
       </Modal>
     </View>
   );

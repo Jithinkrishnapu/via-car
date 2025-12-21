@@ -116,7 +116,7 @@ export default function VehicleSearch({
         />
       </View>
 
-      <ScrollView className="z-10 bg-white w-full mt-1 rounded-lg max-h-60">
+      <ScrollView bounces={false} className="z-10 bg-white w-full mt-1 rounded-lg max-h-60">
         {isLoading ? (
           <View className="p-4">
             <Text fontSize={16}>Loading...</Text>

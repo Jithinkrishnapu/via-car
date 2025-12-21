@@ -336,6 +336,7 @@ var wpwlOptions = {
                 keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 0}
             >
                 <ScrollView
+                    bounces={false}
                     className="flex-1"
                     showsVerticalScrollIndicator={false}
                     keyboardShouldPersistTaps="handled"

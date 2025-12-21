@@ -127,7 +127,7 @@ function Payment() {
 
   return (
     <View className="flex-1 relative pb-[100px]">
-      <ScrollView className="font-[Kanit-Regular] w-full bg-white">
+      <ScrollView bounces={false} className="font-[Kanit-Regular] w-full bg-white">
         <View className="max-w-[1379px] w-full mx-auto px-6 pt-16 lg:pt-[80px] pb-10 lg:pb-[100px] flex flex-col gap-7">
           <View className="flex-row items-center gap-4 mb-6 w-full">
             <TouchableOpacity

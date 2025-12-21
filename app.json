@@ -11,9 +11,8 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.viacar",
-      "googleServicesFile": "./ios/ViaCar/GoogleService-Info.plist",
       "config": {
-        "googleMapsApiKey": "AIzaSyCWa-8hKZdGiYnIg-JS8vkkzD5lmhn5yP4"
+        "googleMapsApiKey": "AIzaSyD4KYXp4bh_CxCX24Q04Bk7iuBmnjYqz8g"
       },
       "infoPlist": {
         "NSLocationWhenInUseUsageDescription": "ViaCar needs location access to show your position on the map and provide navigation services.",
@@ -51,8 +50,7 @@
         "android.permission.WRITE_EXTERNAL_STORAGE",
         "android.permission.READ_MEDIA_IMAGES",
         "android.permission.POST_NOTIFICATIONS"
-      ],
-      "googleServicesFile": "./android/app/google-services.json"
+      ]
     },
     "androidStatusBar": {
       "backgroundColor": "#FF4848",
@@ -66,7 +64,6 @@
     },
     "plugins": [
       "expo-router",
-      "@react-native-firebase/app",
       [
         "expo-splash-screen",
         {

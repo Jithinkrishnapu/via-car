@@ -241,6 +241,7 @@ export default function BankSave() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
+        bounces={false}
         className="flex-1 w-full bg-white"
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"

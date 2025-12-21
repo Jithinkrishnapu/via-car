@@ -69,7 +69,7 @@ export default function ItineraryDetailsScreen() {
   /* 6. Render real UI – every field is now safe to access              */
   /* ------------------------------------------------------------------ */
   return (
-    <ScrollView className="flex-1 bg-white font-[Kanit-Regular]">
+    <ScrollView bounces={false} className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="max-w-[1388px] w-full self-center px-6 pt-16 pb-6 flex flex-col gap-7">
         {/* ---------------- Header ---------------- */}
         <View className="flex-row items-center gap-4 w-full mb-4">

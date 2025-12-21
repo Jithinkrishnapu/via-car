@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import { View, StyleSheet, Text } from 'react-native';
 import MapView, {
   Marker,
@@ -49,28 +49,36 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
     }
   }, [EncodedPolyline]);
 
-  /* -------------- fit camera -------------- */
+  /* -------------- fit camera (prevent continuous re-renders) -------------- */
+  const hasInitializedRef = useRef(false);
+  
   useEffect(() => {
-    if (!mapRef.current) return;
+    if (!mapRef.current || hasInitializedRef.current) return;
 
-    /* case 1 : we have markers – fit all markers */
-    if (markers?.length) {
-      const coords = markers.map((m) => ({ latitude: m.lat, longitude: m.lng }));
-      mapRef.current.fitToCoordinates(coords, {
-        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-        animated: true,
-      });
-      return;
-    }
+    const timer = setTimeout(() => {
+      /* case 1 : we have markers – fit all markers */
+      if (markers?.length) {
+        const coords = markers.map((m) => ({ latitude: m.lat, longitude: m.lng }));
+        mapRef.current?.fitToCoordinates(coords, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
+        hasInitializedRef.current = true;
+        return;
+      }
 
-    /* case 2 : we have a polyline – fit the whole route */
-    if (polyCoords.length) {
-      mapRef.current.fitToCoordinates(polyCoords, {
-        edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
-        animated: true,
-      });
-    }
-  }, [markers, polyCoords]);
+      /* case 2 : we have a polyline – fit the whole route */
+      if (polyCoords.length) {
+        mapRef.current?.fitToCoordinates(polyCoords, {
+          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          animated: true,
+        });
+        hasInitializedRef.current = true;
+      }
+    }, 500); // Increased delay to ensure map is ready
+
+    return () => clearTimeout(timer);
+  }, [markers?.length, polyCoords.length]); // Only depend on length, not the arrays themselves
 
   /* -------------- helpers -------------- */
   const showPolyline = !markers?.length && polyCoords.length > 0;
@@ -80,6 +88,13 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
   console.log(markers, "----------------------------------")
 
   /* -------------- render -------------- */
+  const initialRegion = useMemo(() => ({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  }), []);
+
   return (
     <View style={styles.container}>
        { name && <View className=' bg-green-100 self-center rounded-full border border-green-800 mb-3 w-3/4 justify-center items-center p-2' >
@@ -89,12 +104,7 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
-        initialRegion={{
-          latitude: 37.78825,
-          longitude: -122.4324,
-          latitudeDelta: 0.0922,
-          longitudeDelta: 0.0421,
-        }}
+        initialRegion={initialRegion}
       >
         {/* 1.  Polyline (only when NO markers supplied) */}
         {showPolyline && (
@@ -111,11 +121,12 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
         {showMarkers &&
           markers.map((m, idx) => (
             <Marker
-              key={`${m.lat}-${m.lng}`}
+              key={`${m.lat}-${m.lng}-${idx}`}
               coordinate={{ latitude: m.lat, longitude: m.lng }}
               onPress={() => {
-                setName(m.name)
-                onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx,m.name)}}
+                setName(m.name);
+                onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx, m.name);
+              }}
             >
               <Callout tooltip={false}>
                 <View>

@@ -28,7 +28,7 @@ export default function Page() {
 
   if (!loaded) return null;
   return (
-    <ScrollView>
+    <ScrollView bounces={false}>
       <View className="font-[Kanit-Regular] w-full px-6 pt-16 pb-12 flex-col items-start gap-2">
         <View className="flex-row items-center gap-4 mb-6 w-full">
           <TouchableOpacity

@@ -271,7 +271,7 @@ function ShowPricingReturn() {
   if (fullRoute.length < 2) {
     return (
       <SafeAreaView className="flex-1 bg-white">
-        <ScrollView className="flex-1 p-4">
+        <ScrollView bounces={false} className="flex-1 p-4">
           <View className="items-center justify-center flex-1 px-6">
             <Text className="text-red-500 text-center text-base md:text-lg mb-6">
               {t("showPricing.insufficientRouteData")}
@@ -298,7 +298,7 @@ function ShowPricingReturn() {
    * ------------------------------------------------- */
   return (
     <SafeAreaView className="flex-1 bg-white">
-      <ScrollView contentContainerStyle={{ paddingBottom: 90 }} className="flex-1">
+      <ScrollView bounces={false} contentContainerStyle={{ paddingBottom: 90 }} className="flex-1">
         {/* Hero */}
         <View style={{ height: heroHeight }}>
           <ImageBackground

@@ -48,7 +48,7 @@ export default function BookingRequest() {
     /* ---------- render ---------- */
     return (
       <SafeAreaView style={{ flex: 1, paddingTop: 25 }}>
-        <ScrollView style={styles.container}>
+        <ScrollView bounces={false} style={styles.container}>
           {/* ---- header ---- */}
           <View style={styles.headerRow}>
             <TouchableOpacity

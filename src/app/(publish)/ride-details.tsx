@@ -77,7 +77,7 @@ function RideDetails() {
   }, [])
 
   return (
-    <ScrollView>
+    <ScrollView bounces={false}>
       <View className="bg-[#F5F5F5] font-[Kanit-Regular]">
         <ImageBackground
           source={require("../../../public/hero.png")}

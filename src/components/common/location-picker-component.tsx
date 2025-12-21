@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     StyleSheet,
@@ -29,6 +29,9 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
     confirmButtonText = 'Continue',
 }) => {
     const mapRef = useRef<MapView>(null);
+    const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const lastGeocodeTimeRef = useRef<number>(0);
+    
     const [mapRegion, setMapRegion] = useState<Region>(
         initialRegion || {
             latitude: 37.78825,
@@ -54,13 +57,19 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
             longitude: mapRegion.longitude,
         });
 
-        // Reverse geocode initial location
+        // Reverse geocode initial location with delay
         if (initialLocation) {
-            reverseGeocode(initialLocation);
-        } else {
-            getCurrentLocation();
+            setTimeout(() => reverseGeocode(initialLocation), 500);
         }
-    }, []);
+        // Remove automatic getCurrentLocation() call to prevent unwanted map movement
+        
+        // Cleanup timeout on unmount
+        return () => {
+            if (debounceTimeoutRef.current) {
+                clearTimeout(debounceTimeoutRef.current);
+            }
+        };
+    }, []); // ✅ Empty dependency array to run only once
 
     const getCurrentLocation = async () => {
         try {
@@ -71,33 +80,90 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
                 return;
             }
 
-            const location = await Location.getCurrentPositionAsync({});
+            const location = await Location.getCurrentPositionAsync({
+                accuracy: Location.Accuracy.Balanced, // Changed from default for better performance
+            });
             const { latitude, longitude } = location.coords;
 
-            const newRegion = { latitude, longitude, latitudeDelta: 0.0922, longitudeDelta: 0.0421 };
+            const newRegion = { 
+                latitude, 
+                longitude, 
+                latitudeDelta: 0.0922, 
+                longitudeDelta: 0.0421 
+            };
+            
+            // Only animate if this is significantly different from current region
+            const isSignificantChange = 
+                Math.abs(mapRegion.latitude - latitude) > 0.01 ||
+                Math.abs(mapRegion.longitude - longitude) > 0.01;
+                
             setMapRegion(newRegion);
             setSelectedLocation({ latitude, longitude });
+            
+            if (isSignificantChange && mapRef.current) {
+                mapRef.current.animateToRegion(newRegion, 1000);
+            }
+            
             reverseGeocode({ latitude, longitude });
-
-            mapRef.current?.animateToRegion(newRegion, 1000);
         } catch (error) {
             console.error('Error getting location:', error);
             setAddress('Failed to get current location');
         }
     };
 
-    const handleRegionChangeComplete = async (region: Region) => {
+    const debouncedReverseGeocode = useCallback((location: SelectedLocation) => {
+        // Clear existing timeout
+        if (debounceTimeoutRef.current) {
+            clearTimeout(debounceTimeoutRef.current);
+        }
+        
+        // Set new timeout
+        debounceTimeoutRef.current = setTimeout(() => {
+            reverseGeocode(location);
+        }, 1200); // Increased debounce time to reduce API calls
+    }, []); // Remove reverseGeocode dependency to prevent recreation
+
+    const handleRegionChangeComplete = useCallback(async (region: Region) => {
         const newLocation = {
             latitude: region.latitude,
             longitude: region.longitude,
         };
+        
+        // Only update if the region has actually changed significantly
+        const hasSignificantChange = 
+            Math.abs(mapRegion.latitude - region.latitude) > 0.001 || // Increased threshold
+            Math.abs(mapRegion.longitude - region.longitude) > 0.001;
+            
+        if (!hasSignificantChange) {
+            return; // Prevent unnecessary updates
+        }
+        
         setMapRegion(region);
         setSelectedLocation(newLocation);
-        reverseGeocode(newLocation); // Update address
-    };
+        
+        // Use debounced geocoding to avoid rate limits
+        debouncedReverseGeocode(newLocation);
+    }, [mapRegion.latitude, mapRegion.longitude, debouncedReverseGeocode]); // More specific dependencies
 
-    const reverseGeocode = async (location: SelectedLocation) => {
+    const reverseGeocode = useCallback(async (location: SelectedLocation) => {
+        const now = Date.now();
+        const RATE_LIMIT_MS = 1000; // Minimum 1 second between requests
+        
+        // Rate limiting check
+        if (now - lastGeocodeTimeRef.current < RATE_LIMIT_MS) {
+            console.log('Rate limiting: skipping geocode request');
+            const fallbackAddress = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+            setAddress(fallbackAddress);
+            onLocationSelected({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address: fallbackAddress
+            });
+            return;
+        }
+        
         try {
+            lastGeocodeTimeRef.current = now;
             const [place] = await Location.reverseGeocodeAsync(location);
             let formattedAddress = '';
 
@@ -113,13 +179,26 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
                     .filter(Boolean)
                     .join(', ');
             }
-            onLocationSelected({latitude:location.latitude,longitude:location.longitude,address:formattedAddress})
-            setAddress(formattedAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`);
+            
+            const finalAddress = formattedAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+            
+            onLocationSelected({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address: finalAddress
+            });
+            setAddress(finalAddress);
         } catch (err) {
             console.warn('Reverse geocoding failed:', err);
-            setAddress(`${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`);
+            const fallbackAddress = `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
+            setAddress(fallbackAddress);
+            onLocationSelected({
+                latitude: location.latitude,
+                longitude: location.longitude,
+                address: fallbackAddress
+            });
         }
-    };
+    }, [onLocationSelected]); // ✅ Only depend on onLocationSelected
 
     const handleConfirm = () => {
         if (selectedLocation) {
@@ -141,6 +220,23 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
                 showsMyLocationButton={false}
                 zoomEnabled
                 scrollEnabled
+                pitchEnabled={false}
+                rotateEnabled={false}
+                loadingEnabled={true}
+                loadingIndicatorColor="#FF4848"
+                loadingBackgroundColor="#ffffff"
+                moveOnMarkerPress={false}
+                showsPointsOfInterest={false}
+                showsCompass={false}
+                showsScale={false}
+                showsBuildings={false}
+                showsTraffic={false}
+                showsIndoors={false}
+                maxZoomLevel={18}
+                minZoomLevel={8}
+                followsUserLocation={false}
+                userLocationUpdateInterval={5000}
+                userLocationFastestInterval={5000}
             />
 
             {/* Center Marker */}

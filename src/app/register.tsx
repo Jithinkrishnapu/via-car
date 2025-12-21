@@ -113,6 +113,7 @@ function Register() {
       keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
     >
       <ScrollView
+        bounces={false}
         className="flex-1 w-full"
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"

@@ -1,128 +1,134 @@
-import { useEffect, useState } from "react";
-import { CircleHelp, Search } from "lucide-react-native";
-import { Image, TextInput, TouchableOpacity, View } from "react-native";
+import { useEffect, useState, useCallback } from "react";
+import { CircleHelp, ArrowLeft } from "lucide-react-native";
+import { TouchableOpacity, View, ActivityIndicator } from "react-native";
 import Text from "./text";
 import { useTranslation } from "react-i18next";
-import MapView, { Region } from 'react-native-maps';
-import MapDirections from "../ui/map-view";
+import { Region } from 'react-native-maps';
 import MapComponent from "../ui/map-view";
 import LocationPickerComponent from "./location-picker-component";
 import { useGetExactLocation } from "@/service/ride-booking";
-import { useCreateRideStore } from "@/store/useRideStore";
+import { router } from "expo-router";
 
-interface Props {
-  onContinue?: (location:any) => void;
-  initialRegion:Region
+interface LocationData {
+  latitude: number;
+  longitude: number;
+  address?: string;
 }
 
-export default function LocationSearchSelected({ onContinue,initialRegion }: Props) {
-  const { i18n, t } = useTranslation("components");
-  const defaultValue = i18n.language === "ar" ? "الخبر" : "Al Khobar";
-  const [searchValue, setSearchValue] = useState(defaultValue);
-  const [location, setLocation] = useState<any>(null)
-  const [markers, setMarkers] = useState<any>(null)
-  const [whayExact,setWhyExact] = useState<boolean>(false)
+interface Props {
+  onContinue?: (location: LocationData) => void;
+  initialRegion: Region;
+  onBack?: () => void;
+}
 
+export default function LocationSearchSelected({ 
+  onContinue, 
+  initialRegion, 
+  onBack 
+}: Props) {
+  const { t } = useTranslation("components");
+  
+  // State management
+  const [location, setLocation] = useState<LocationData | null>(null);
+  const [markers, setMarkers] = useState<any>(null);
+  const [whyExact, setWhyExact] = useState<boolean>(false);
+  const [isLoadingMarkers, setIsLoadingMarkers] = useState<boolean>(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const handleInputChange = (text: string) => {
-    setSearchValue(text);
+  // Fetch exact location markers
+  const handleGetExactLocation = useCallback(async () => {
+    if (!initialRegion?.latitude || !initialRegion?.longitude) {
+      return;
+    }
+    
+    // Prevent duplicate calls
+    if (isLoadingMarkers) {
+      return;
+    }
+    
+    setIsLoadingMarkers(true);
+    setError(null);
+    
+    try {
+      const request = {
+        lat: initialRegion.latitude,
+        lng: initialRegion.longitude,
+        radius: 5000,
+        limit: 20
+      };
+      
+      const response = await useGetExactLocation(request);
+      
+      if (response?.data?.places) {
+        setMarkers(response.data.places);
+      } else {
+        setError(t("locationSearchSelected.noLocationsFound", "No locations found nearby"));
+      }
+    } catch (err) {
+      console.error("Error fetching exact location:", err);
+      setError(t("locationSearchSelected.errorFetchingLocations", "Failed to load nearby locations"));
+    } finally {
+      setIsLoadingMarkers(false);
+    }
+  }, [initialRegion?.latitude, initialRegion?.longitude, t]);
+
+  // Fetch markers when whyExact becomes true for the first time
+  useEffect(() => {
+    if (whyExact && !markers && !isLoadingMarkers) {
+      handleGetExactLocation();
+    }
+  }, [whyExact, markers, isLoadingMarkers, handleGetExactLocation]);
+
+  // Navigation handlers
+  const handleBack = () => {
+    if (onBack) {
+      onBack();
+    } else {
+      router.back();
+    }
   };
 
-  const handleGetExactLocation =async()=>{
-    const request ={
-      "lat": initialRegion?.latitude,
-      "lng": initialRegion?.longitude,
-      "radius": 5000,
-      "limit": 20
+  const handleContinue = () => {
+    if (!location) {
+      // Optionally show a warning that no location is selected
+      console.warn("No location selected");
+      return;
     }
-    const response = await useGetExactLocation(request)
-    console.log("response==========",JSON.stringify(response))
-    setMarkers(response?.data?.places)
-  }
+    
+    onContinue?.(location);
+  };
 
-  useEffect(()=>{
-    handleGetExactLocation()
-  },[whayExact])
+  const handleLocationSelected = (selectedLocation: LocationData) => {
+    setLocation(selectedLocation);
+    setError(null); // Clear any previous errors
+  };
 
-  const directionsData = [
-    {
-      coordinates: [
-        { latitude: 37.7749, longitude: -122.4194 }, // San Francisco
-        { latitude: 37.7849, longitude: -122.4094 },
-        { latitude: 37.7949, longitude: -122.3994 },
-      ],
-      strokeColor: '#FF0000',
-      strokeWidth: 18,
-    }
-  ];
-
-  const markersData = [
-    {
-      id: '1',
-      coordinate: { latitude: 37.78825, longitude: -122.4324 },
-      title: 'King Fahd Road',
-      description: 'First marker',
-      pinColor: 'green',
-    },
-    {
-      id: '2',
-      coordinate:   { latitude: 24.8247, longitude: 46.7975 },
-      title: 'Riyadh outskirts',
-      description: 'Second marker',
-      pinColor: 'yellow',
-    },
-    {
-      id: '3',
-      coordinate:  { latitude: 25.0619, longitude: 47.1429 },
-      title: 'Highway 40',
-      description: 'First marker',
-      pinColor: 'green',
-    },
-    {
-      id: '4',
-      coordinate:  { latitude: 25.2847, longitude: 47.4823 },
-      title: 'Buqayq area',
-      description: 'Second marker',
-      pinColor: 'yellow',
-    },
-  ];
-
-  const realRoadRoute = [
-    {
-      coordinates: [
-        { latitude: 24.7136, longitude: 46.6753 }, // Riyadh - King Fahd Road
-        { latitude: 24.8247, longitude: 46.7975 }, // Riyadh outskirts
-        { latitude: 25.0619, longitude: 47.1429 }, // Highway 40 - Buqayq direction
-        { latitude: 25.2847, longitude: 47.4823 }, // Buqayq area
-        { latitude: 25.3619, longitude: 48.1429 }, // Halfway point
-        { latitude: 25.4247, longitude: 48.5823 }, // Near Hofuf
-        { latitude: 26.0619, longitude: 49.4429 }, // Approaching Dammam
-        { latitude: 26.4242, longitude: 50.0881 }, // Dammam city center
-      ],
-      strokeColor: '#FF0000',
-      strokeWidth: 6,
-    }
-  ];
-
+  const handleMarkerPress = (loc: any, _index: number, name: string) => {
+    setLocation({
+      latitude: loc.latitude,
+      longitude: loc.longitude,
+      address: name
+    });
+    setError(null);
+  };
 
   return (
     <View className="relative flex-1 font-[Kanit-Regular]">
-      {/* <View className="flex-row items-center gap-4 relative px-6">
-        <View className="absolute left-10 my-auto z-[1]">
-          <Search className="size-[20px]" strokeWidth={1} color="black" />
-        </View>
-        <TextInput
-          allowFontScaling={false}
-          value={searchValue}
-          onChangeText={handleInputChange}
-          placeholder={t("locationSearchSelected.label")}
-          autoComplete="off"
-          className="text-lg font-[Kanit-Light] placeholder:text-[#666666] bg-[#F1F1F5] border-none h-[57px] rounded-full pl-16 flex-1"
-        />
-      </View> */}
-      <View className="flex-auto flex-col gap-4 mt-4 h-full">
+      {/* Back Button */}
+      <View className="absolute top-12 left-6 z-20">
         <TouchableOpacity
-          onPress={()=>setWhyExact(true)}
+          onPress={handleBack}
+          className="bg-white rounded-full p-3 shadow-lg"
+          activeOpacity={0.8}
+        >
+          <ArrowLeft className="size-[20px]" strokeWidth={2} color="black" />
+        </TouchableOpacity>
+      </View>
+
+      <View className="flex-auto flex-col gap-4 mt-4 h-full">
+        {/* Why Exact Location Button */}
+        <TouchableOpacity
+          onPress={() => setWhyExact(true)}
           className="border border-[#EBEBEB] rounded-full h-max w-max mx-auto mb-4 flex-row items-center gap-[15px] px-[10px] py-[6px]"
           activeOpacity={0.8}
         >
@@ -131,45 +137,54 @@ export default function LocationSearchSelected({ onContinue,initialRegion }: Pro
             fontSize={12}
             className="text-[12px] font-[Kanit-Light] text-[#3C3F4E]"
           >
-            {t(
-              "locationSearchSelected.whyExactLocation",
-              "Why an exact location?"
-            )}
+            {t("locationSearchSelected.whyExactLocation", "Why an exact location?")}
           </Text>
         </TouchableOpacity>
-        {/* <View className="rounded-2xl overflow-hidden flex-2"> */}
-        {/* <Image
-            className="w-full h-full object-cover"
-            source={require(`../../../public/map-select.png`)}
-            alt=""
-          /> */}
-        {/* <MapComponent directions={realRoadRoute} markers={markersData} /> */}
-        { whayExact ? 
-        <MapComponent onMarkerPress={(loc,i,name)=>setLocation({
-          latitude:loc.latitude,
-          longitude:loc.longitude,
-          address:name
-        })} markers={markers} /> :
-        <LocationPickerComponent initialRegion={initialRegion} onLocationSelected={(location) => {
-        setLocation(location)
-          // Handle the selected location
-        }}
-          // showCurrentLocation={true}
-          markerColor="red"
-          confirmButtonText="Select This Location" />}
-        {/* </View> */}
+
+        {/* Error Message */}
+        {error && (
+          <View className="mx-6 p-3 bg-red-100 rounded-lg">
+            <Text className="text-red-600 text-sm">{error}</Text>
+          </View>
+        )}
+
+        {/* Loading Indicator */}
+        {isLoadingMarkers && (
+          <View className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+            <ActivityIndicator size="large" color="#FF4848" />
+          </View>
+        )}
+
+        {/* Map Component - Conditional Rendering */}
+        {whyExact ? (
+          <MapComponent 
+            onMarkerPress={handleMarkerPress} 
+            markers={markers} 
+          />
+        ) : (
+          <LocationPickerComponent 
+            initialRegion={initialRegion} 
+            onLocationSelected={handleLocationSelected}
+            confirmButtonText={t("locationSearchSelected.selectLocation", "Select This Location")}
+          />
+        )}
       </View>
+
+      {/* Continue Button */}
       <View className="absolute right-0 bottom-10 left-0 px-6 z-10">
         <TouchableOpacity
-          className="bg-[#FF4848] rounded-full w-full h-[55px] cursor-pointer items-center justify-center"
-          onPress={()=>onContinue?.(location)}
+          className={`rounded-full w-full h-[55px] items-center justify-center ${
+            location ? 'bg-[#FF4848]' : 'bg-gray-400'
+          }`}
+          onPress={handleContinue}
           activeOpacity={0.8}
+          disabled={!location}
         >
           <Text
             fontSize={20}
             className="text-xl text-white font-[Kanit-Regular]"
           >
-            {t("locationSearchSelected.continue")}
+            {t("locationSearchSelected.continue", "Continue")}
           </Text>
         </TouchableOpacity>
       </View>

@@ -184,6 +184,7 @@ const UploadDocumentsScreen = () => {
         keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
       >
         <ScrollView
+          bounces={false}
           contentContainerStyle={{
             paddingHorizontal: 24,
             paddingTop: 16,

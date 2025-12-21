@@ -24,6 +24,9 @@ export default function LocationSearch({ onSelect }: Props) {
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
   const [showDropdown, setShowDropdown] = useState(false);
   const [loadingLocation, setLoadingLocation] = useState(false);
+  
+  // Rate limiting for geocoding
+  const lastGeocodeTimeRef = useState(0)[0];
 
   const fetchLocations = useCallback(async () => {
     try {
@@ -95,39 +98,57 @@ export default function LocationSearch({ onSelect }: Props) {
 
       const { latitude, longitude } = location.coords;
 
-      // Reverse geocode to get address
-      const addresses = await Location.reverseGeocodeAsync({
-        latitude,
-        longitude,
-      });
+      // Reverse geocode to get address with error handling
+      try {
+        const addresses = await Location.reverseGeocodeAsync({
+          latitude,
+          longitude,
+        });
 
-      if (addresses && addresses.length > 0) {
-        const address = addresses[0];
-        
-        // Format address similar to API response
-        const mainText = [address.street, address.name].filter(Boolean).join(', ') || 
-                        [address.city, address.region].filter(Boolean).join(', ') ||
-                        'Current Location';
-        
-        const fullText = [
-          address.street,
-          address.name,
-          address.city,
-          address.region,
-          address.country,
-        ].filter(Boolean).join(', ');
+        if (addresses && addresses.length > 0) {
+          const address = addresses[0];
+          
+          // Format address similar to API response
+          const mainText = [address.street, address.name].filter(Boolean).join(', ') || 
+                          [address.city, address.region].filter(Boolean).join(', ') ||
+                          'Current Location';
+          
+          const fullText = [
+            address.street,
+            address.name,
+            address.city,
+            address.region,
+            address.country,
+          ].filter(Boolean).join(', ');
 
+          const locationData: LocationData = {
+            placeId: `current_${Date.now()}`,
+            mainText,
+            text: fullText,
+            lat: latitude,
+            lng: longitude,
+          };
+
+          // Set as selected location
+          setSelectedLocation(locationData);
+          setSearchValue(mainText);
+          setShowDropdown(false);
+          onSelect?.(locationData);
+        }
+      } catch (geocodeError) {
+        console.warn('Reverse geocoding failed, using coordinates:', geocodeError);
+        
+        // Fallback: use coordinates if geocoding fails
         const locationData: LocationData = {
           placeId: `current_${Date.now()}`,
-          mainText,
-          text: fullText,
+          mainText: 'Current Location',
+          text: `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`,
           lat: latitude,
           lng: longitude,
         };
 
-        // Set as selected location
         setSelectedLocation(locationData);
-        setSearchValue(mainText);
+        setSearchValue('Current Location');
         setShowDropdown(false);
         onSelect?.(locationData);
       }
@@ -196,6 +217,7 @@ export default function LocationSearch({ onSelect }: Props) {
       {/* 📍 Dropdown List */}
       {showDropdown && locations.length > 0 && (
         <ScrollView
+          bounces={false}
           keyboardShouldPersistTaps="handled"
           contentContainerClassName="flex-grow-1"
           className="bg-white w-full mt-1 rounded-lg max-h-[300px] shadow-lg"

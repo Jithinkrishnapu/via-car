@@ -90,11 +90,11 @@ const DobPicker: React.FC<DobPickerProps> = ({
                   <Text className="text-red-600 font-semibold">Done</Text>
                 </TouchableOpacity>
               </View>
-              <ScrollView className="max-h-80">
+              <ScrollView bounces={false} className="max-h-80">
                 {/* Year Picker */}
                 <View className="mb-4">
                   <Text className="text-gray-600 text-sm mb-2">Year</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                  <ScrollView bounces={false} horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                     {Array.from({ length: 100 }, (_, i) => {
                       const year = new Date().getFullYear() - minimumAge - i;
                       return (
@@ -117,7 +117,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
                 {/* Month Picker */}
                 <View className="mb-4">
                   <Text className="text-gray-600 text-sm mb-2">Month</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                  <ScrollView bounces={false} horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                     {Array.from({ length: 12 }, (_, i) => (
                       <TouchableOpacity
                         key={i + 1}
@@ -137,7 +137,7 @@ const DobPicker: React.FC<DobPickerProps> = ({
                 {/* Day Picker */}
                 <View className="mb-4">
                   <Text className="text-gray-600 text-sm mb-2">Day</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} className="flex-row">
+                  <ScrollView bounces={false} horizontal showsHorizontalScrollIndicator={false} className="flex-row">
                     {Array.from({ length: 31 }, (_, i) => (
                       <TouchableOpacity
                         key={i + 1}

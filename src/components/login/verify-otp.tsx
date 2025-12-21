@@ -10,6 +10,8 @@ import {
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  ScrollView,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import OtpAnimation from "../animated/otp-animation";
@@ -32,6 +34,40 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   const [otpId, setOtpId] = useState("");
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+
+  // Keyboard listeners for iOS
+  useEffect(() => {
+    if (Platform.OS === 'ios') {
+      const keyboardWillShowListener = Keyboard.addListener('keyboardWillShow', (e) => {
+        const keyboardHeight = e.endCoordinates.height;
+        setKeyboardHeight(keyboardHeight);
+        
+        // Animate the modal up when keyboard appears
+        Animated.timing(translateY, {
+          toValue: -keyboardHeight / 2,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+      
+      const keyboardWillHideListener = Keyboard.addListener('keyboardWillHide', () => {
+        setKeyboardHeight(0);
+        
+        // Animate the modal back to original position
+        Animated.timing(translateY, {
+          toValue: 0,
+          duration: 250,
+          useNativeDriver: true,
+        }).start();
+      });
+
+      return () => {
+        keyboardWillShowListener.remove();
+        keyboardWillHideListener.remove();
+      };
+    }
+  }, [translateY]);
 
   // Get FCM token when component mounts
   useEffect(() => {
@@ -40,17 +76,17 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
         // Request permissions first
         const permissionGranted = await NotificationService.requestPermissions();
         if (permissionGranted) {
-          // Get FCM token
-          const token = await NotificationService.getFCMToken();
+          // Get Expo push token
+          const token = await NotificationService.getExpoPushToken();
           setFcmToken(token);
-          console.log('FCM Token for login:', token);
+          console.log('Expo Push Token for login:', token);
         } else {
           console.log('Notification permissions not granted');
           // Set a fallback token or handle gracefully
           setFcmToken('no_permission');
         }
       } catch (error) {
-        console.error('Error getting FCM token:', error);
+        console.error('Error getting push token:', error);
         // Fallback for Expo Go or when Firebase is not available
         setFcmToken('expo_go_fallback');
       }
@@ -105,7 +141,7 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
     formdata.append("device_type", Platform.OS === 'ios' ? "2" : "1") // 1 for Android, 2 for iOS
     formdata.append("fcm_token", tokenToSend)
     
-    console.log("Validating OTP with FCM token:", tokenToSend)
+    console.log("Validating OTP with push token:", tokenToSend)
     
     try {
       const response = await handleVerifyOtp(formdata)
@@ -131,6 +167,8 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
 
   const openSheet = () => {
     setVisible(true);
+    // Reset keyboard height when opening
+    setKeyboardHeight(0);
     Animated.timing(translateY, {
       toValue: 0,
       duration: 500,
@@ -162,103 +200,195 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
         </Text>
       </TouchableOpacity>
 
-      <Modal transparent visible={visible} animationType="none">
+      <Modal 
+        transparent 
+        visible={visible} 
+        animationType="none"
+        presentationStyle="overFullScreen"
+      >
         <TouchableWithoutFeedback onPress={closeSheet}>
           <View className="flex-1 bg-black/50 justify-end">
             <TouchableWithoutFeedback>
               <Animated.View
-                style={{ transform: [{ translateY }] }}
+                style={{ 
+                  transform: [{ translateY }],
+                }}
                 className="bg-white rounded-t-3xl max-h-[90%]"
               >
-                <KeyboardAwareScrollView
-                  contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
-                  keyboardShouldPersistTaps="handled"
-                  showsVerticalScrollIndicator={false}
-                  enableOnAndroid={true}
-                  enableAutomaticScroll={true}
-                  // extraScrollHeight={Platform.OS === "ios" ? 80 : 100}
-                  // extraHeight={Platform.OS === "ios" ? 180 : 200}
-                  bounces={false}
-                >
-                    <View className="flex flex-col items-center relative">
-                      <TouchableOpacity
-                        activeOpacity={0.8}
-                        onPress={closeSheet}
-                        className="absolute top-4 right-4 z-10"
-                      >
-                        <XIcon className="size-4" color="#666666" />
-                      </TouchableOpacity>
-                      <OtpAnimation />
-                      <Text
-                        fontSize={25}
-                        className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
-                      >
-                        {t("Please Verify Your Number")}
-                      </Text>
-                      <Text
-                        fontSize={14}
-                        className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
-                      >
-                        {t(
-                          "Please enter the six-digit verification code that we have sent to your mobile number ending in"
-                        )}
-                        <Text fontSize={14} className="text-[#FF4848]">
-                          {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
-                        </Text>
-                      </Text>
-                      <View className="flex-row justify-center">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                          <TextInput
-                            key={i}
-                            ref={(r) => { refs.current[i] = r!; }}
-                            value={otp[i]}
-                            onChangeText={(t) => handleChange(t, i)}
-                            onKeyPress={(e) => handleKeyPress(e, i)}
-                            maxLength={1}
-                            keyboardType="number-pad"
-                            className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
-                          />
-                        ))}
-                      </View>
-
-                      <TouchableOpacity
-                        onPress={handleValidate}
-                        disabled={isValidating || otp.join('').length !== 6}
-                        className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
-                          isValidating || otp.join('').length !== 6 
-                            ? 'bg-gray-400' 
-                            : 'bg-[#FF4848]'
-                        }`}
-                        activeOpacity={0.8}
-                      >
-                        <Text
-                          fontSize={20}
-                          className="text-white text-[20px] font-[Kanit-Regular]"
+                  {Platform.OS === 'ios' ? (
+                    <ScrollView
+                      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
+                      bounces={false}
+                    >
+                      <View className="flex flex-col items-center relative">
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={closeSheet}
+                          className="absolute top-4 right-4 z-10"
                         >
-                          {isValidating ? "Verifying..." : t("Verify")}
+                          <XIcon className="size-4" color="#666666" />
+                        </TouchableOpacity>
+                        <OtpAnimation />
+                        <Text
+                          fontSize={25}
+                          className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
+                        >
+                          {t("Please Verify Your Number")}
                         </Text>
-                      </TouchableOpacity>
-
-                      <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
                         <Text
                           fontSize={14}
-                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
+                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
                         >
                           {t(
-                            "If you haven't received the code, please check your messages or"
+                            "Please enter the six-digit verification code that we have sent to your mobile number ending in"
                           )}
-                          <Text
-                            fontSize={14}
-                            className="text-[#FF4848] font-[Kanit-Regular]"
-                          >
-                            {" "}
-                            {t("request a new code.")}
+                          <Text fontSize={14} className="text-[#FF4848]">
+                            {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
                           </Text>
                         </Text>
+                        <View className="flex-row justify-center">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <TextInput
+                              key={i}
+                              ref={(r) => { refs.current[i] = r!; }}
+                              value={otp[i]}
+                              onChangeText={(t) => handleChange(t, i)}
+                              onKeyPress={(e) => handleKeyPress(e, i)}
+                              maxLength={1}
+                              keyboardType="number-pad"
+                              className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
+                            />
+                          ))}
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={handleValidate}
+                          disabled={isValidating || otp.join('').length !== 6}
+                          className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
+                            isValidating || otp.join('').length !== 6 
+                              ? 'bg-gray-400' 
+                              : 'bg-[#FF4848]'
+                          }`}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            fontSize={20}
+                            className="text-white text-[20px] font-[Kanit-Regular]"
+                          >
+                            {isValidating ? "Verifying..." : t("Verify")}
+                          </Text>
+                        </TouchableOpacity>
+
+                        <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
+                          <Text
+                            fontSize={14}
+                            className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t(
+                              "If you haven't received the code, please check your messages or"
+                            )}
+                            <Text
+                              fontSize={14}
+                              className="text-[#FF4848] font-[Kanit-Regular]"
+                            >
+                              {" "}
+                              {t("request a new code.")}
+                            </Text>
+                          </Text>
+                        </View>
                       </View>
-                  </View>
-                </KeyboardAwareScrollView>
-              </Animated.View>
+                    </ScrollView>
+                  ) : (
+                    <KeyboardAwareScrollView
+                      contentContainerStyle={{ paddingHorizontal: 24, paddingTop: 24, paddingBottom: 40 }}
+                      keyboardShouldPersistTaps="handled"
+                      showsVerticalScrollIndicator={false}
+                      enableOnAndroid={true}
+                      enableAutomaticScroll={true}
+                      bounces={false}
+                    >
+                      <View className="flex flex-col items-center relative">
+                        <TouchableOpacity
+                          activeOpacity={0.8}
+                          onPress={closeSheet}
+                          className="absolute top-4 right-4 z-10"
+                        >
+                          <XIcon className="size-4" color="#666666" />
+                        </TouchableOpacity>
+                        <OtpAnimation />
+                        <Text
+                          fontSize={25}
+                          className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
+                        >
+                          {t("Please Verify Your Number")}
+                        </Text>
+                        <Text
+                          fontSize={14}
+                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
+                        >
+                          {t(
+                            "Please enter the six-digit verification code that we have sent to your mobile number ending in"
+                          )}
+                          <Text fontSize={14} className="text-[#FF4848]">
+                            {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
+                          </Text>
+                        </Text>
+                        <View className="flex-row justify-center">
+                          {Array.from({ length: 6 }).map((_, i) => (
+                            <TextInput
+                              key={i}
+                              ref={(r) => { refs.current[i] = r!; }}
+                              value={otp[i]}
+                              onChangeText={(t) => handleChange(t, i)}
+                              onKeyPress={(e) => handleKeyPress(e, i)}
+                              maxLength={1}
+                              keyboardType="number-pad"
+                              className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
+                            />
+                          ))}
+                        </View>
+
+                        <TouchableOpacity
+                          onPress={handleValidate}
+                          disabled={isValidating || otp.join('').length !== 6}
+                          className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
+                            isValidating || otp.join('').length !== 6 
+                              ? 'bg-gray-400' 
+                              : 'bg-[#FF4848]'
+                          }`}
+                          activeOpacity={0.8}
+                        >
+                          <Text
+                            fontSize={20}
+                            className="text-white text-[20px] font-[Kanit-Regular]"
+                          >
+                            {isValidating ? "Verifying..." : t("Verify")}
+                          </Text>
+                        </TouchableOpacity>
+
+                        <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
+                          <Text
+                            fontSize={14}
+                            className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
+                          >
+                            {t(
+                              "If you haven't received the code, please check your messages or"
+                            )}
+                            <Text
+                              fontSize={14}
+                              className="text-[#FF4848] font-[Kanit-Regular]"
+                            >
+                              {" "}
+                              {t("request a new code.")}
+                            </Text>
+                          </Text>
+                        </View>
+                      </View>
+                    </KeyboardAwareScrollView>
+                  )}
+                </Animated.View>
             </TouchableWithoutFeedback>
           </View>
         </TouchableWithoutFeedback>

@@ -40,7 +40,7 @@ export function DrawerComponent() {
       };
 
     return (
-        <ScrollView contentContainerStyle={{ paddingBottom: 40 }}>
+        <ScrollView bounces={false} contentContainerStyle={{ paddingBottom: 40 }}>
             {/* Header */}
             {/* Menu rows */}
             <View className="px-4 gap-3">

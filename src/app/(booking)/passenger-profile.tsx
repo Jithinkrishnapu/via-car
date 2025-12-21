@@ -11,7 +11,7 @@ function PassengerProfile() {
   const { t } = useTranslation("components");
   if (!loaded) return null;
   return (
-    <ScrollView className="flex-1 h-full bg-white">
+    <ScrollView bounces={false} className="flex-1 h-full bg-white">
       <View className="font-[Kanit-Regular] w-full pt-16 pb-12 flex-col items-start gap-2">
         <View className="flex-row items-center gap-4 mb-6 w-full px-6">
           <TouchableOpacity

@@ -78,7 +78,7 @@ export default function BankScreen() {
     /* ------------------------------------------------------------------ */
     return (
         <SafeAreaView className="flex-1 p-4 bg-white">
-            <ScrollView className="px-4 pt-6">
+            <ScrollView bounces={false} className="px-4 pt-6">
                 {/* -------------------- Header -------------------- */}
                 <View className="flex-row items-center my-8 gap-3">
                     <TouchableOpacity

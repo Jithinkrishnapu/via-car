@@ -106,7 +106,7 @@ const RideFilters = ({ close }: Props) => {
   console.log("checked==========",checkedItems)
 
   return (
-    <ScrollView>
+    <ScrollView bounces={false}>
       <View className="px-[27px] pt-6 pb-6">
         {/* Header */}
         <View className="flex-row justify-between items-center mb-6">

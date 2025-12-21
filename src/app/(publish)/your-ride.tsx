@@ -48,7 +48,7 @@ export default function RidePlanScreen() {
   },[])
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView bounces={false} className="flex-1 bg-white">
       {/* Hero Section */}
       <View className="h-[275px]">
         <ImageBackground
