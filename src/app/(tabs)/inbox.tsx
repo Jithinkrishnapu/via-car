@@ -21,6 +21,7 @@ import { useGetProfileDetails } from "@/service/auth";
 interface Chat {
   id: string;
   users: string[];
+  userNames?: { [key: string]: string };
   lastMessage: string;
   updatedAt: any;
 }
@@ -97,9 +98,14 @@ export default function Page() {
         console.log(data)
         return {
           id: doc.id,
-          users: [data?.from_name,data?.to_name],
+          users: data?.participants || [], // Use participants array (user IDs)
+          userNames: {
+            // Map user IDs to their names using the stored from_id/to_id and from_name/to_name
+            [data?.from_id]: data?.from_name,
+            [data?.to_id]: data?.to_name
+          }, // Map user IDs to names
           lastMessage: data?.lastMessage ?? '',
-          updatedAt: data?.updatedAt ?? null,
+          updatedAt: data?.lastMessageAt ?? null, // Use lastMessageAt instead of updatedAt
         } as Chat;
       });
       setChats(list);
@@ -133,15 +139,19 @@ export default function Page() {
             </View>
           ) : (
             chats.map((chat, index) => {
-              const otherUser = chat.users.find((u) => u !== userId);
+              // Find the other user ID (not the current user)
+              const otherUserId = chat.users.find((u) => u.toString() !== userId.toString());
+              // Get the other user's name from the userNames mapping
+              const otherUserName = chat.userNames?.[otherUserId] || "Unknown User";
+              
               return (
                 <Fragment key={chat.id}>
                   <TouchableOpacity
                     onPress={() => router.push({ 
                       pathname: "/(inbox)/chat", 
                       params: { 
-                        driver_id: chat.id?.split("_")[1],
-                        driver_name: chat.users[1] 
+                        driver_id: otherUserId,
+                        driver_name: otherUserName
                       } 
                     })}
                     className="flex-row items-center gap-4 px-4 py-4 active:bg-gray-50"
@@ -151,7 +161,7 @@ export default function Page() {
                       <Avatar
                         source={require("../../../public/profile-img.png")}
                         size={48}
-                        initials={chat.users[0]}
+                        initials={otherUserName?.charAt(0) || "U"}
                       />
                       {/* Online indicator */}
                       <View className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
@@ -160,7 +170,7 @@ export default function Page() {
                     <View className="flex-col flex-1 min-w-0">
                       <View className="flex-row items-center justify-between mb-1">
                         <Text fontSize={16} className="text-[16px] text-gray-900 font-[Kanit-Medium] flex-1" numberOfLines={1}>
-                          {chat.users[1] || "Unknown User"}
+                          {otherUserName}
                         </Text>
                         <Text fontSize={12} className="text-[12px] text-gray-400 font-[Kanit-Regular] ml-2">
                           {chat.updatedAt ? new Date(chat.updatedAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}

@@ -24,6 +24,7 @@ interface CustomPickerProps {
   onValueChange: (value: string | number) => void;
   placeholder?: string;
   style?: string; // Tailwind classes for outer container
+  error?: string; // Error message
 }
 
 const CustomPicker: React.FC<CustomPickerProps> = ({
@@ -33,6 +34,7 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
   onValueChange,
   placeholder = 'Select an option',
   style = '',
+  error,
 }) => {
   const [visible, setVisible] = useState(false);
 
@@ -44,6 +46,8 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
     setVisible(false);
   };
 
+  const borderColor = error ? 'border-red-500' : 'border-[#EBEBEB]';
+
   return (
     <View className={`mb-4 px-2 ${style}`}>
       {label && (
@@ -54,7 +58,7 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
       <TouchableOpacity
         onPress={() => setVisible(true)}
         activeOpacity={0.8}
-        className="h-[50px] border border-[#EBEBEB] rounded-full bg-white flex-row items-center justify-between px-4"
+        className={`h-[50px] border ${borderColor} rounded-full bg-white flex-row items-center justify-between px-4`}
       >
         <Text
           className={`text-base ${
@@ -65,6 +69,11 @@ const CustomPicker: React.FC<CustomPickerProps> = ({
         </Text>
         <Text className="text-gray-500 text-lg">▼</Text>
       </TouchableOpacity>
+
+      {/* Error message */}
+      {error && (
+        <Text className="text-red-500 text-sm mt-1 ml-3">{error}</Text>
+      )}
 
       {/* Identical modal on both platforms */}
       <Modal

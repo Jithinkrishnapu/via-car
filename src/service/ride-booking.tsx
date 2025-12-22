@@ -363,7 +363,7 @@ export const useBookingApproval = async (postData: {
   }
 }
 
-export const useGetAllBooking = async (booking_type: "booked" | "published", status_type: "pending" | "completed" | "cancelled" |  "requested"): Promise<any> => {
+export const useGetAllBooking = async (booking_type: "booked" | "published", status_type: "pending" | "completed" | "cancelled" |  "requested" | "ongoing"): Promise<any> => {
   console.log("request==========", booking_type, status_type)
   const userDetailsString = await useAsyncStorage("userDetails").getItem()
   const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null

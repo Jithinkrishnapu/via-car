@@ -1,5 +1,5 @@
-import { useEffect, useState } from "react";
-import { TouchableOpacity, View, Modal, TextInput, FlatList } from "react-native";
+import { useEffect, useState, useRef } from "react";
+import { TouchableOpacity, View, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform } from "react-native";
 import Text from "@/components/common/text";
 import Avatar from "@/components/ui/avatar";
 import { ArrowRight, ChevronLeft, ChevronRight, Ellipsis, Send, TriangleAlert } from "lucide-react-native";
@@ -20,9 +20,9 @@ import {
 } from "firebase/firestore";
 import { db } from "@/firebase";
 
-// fake ids for now (replace with real user ids from your backend)
-const currentUserId = "user_123";
-const targetUserId = "user_456";
+// Remove the fake IDs since we're using real user data
+// const currentUserId = "user_123";
+// const targetUserId = "user_456";
 
 function Chat() {
   const { t } = useTranslation("components");
@@ -33,6 +33,7 @@ function Chat() {
   const route = useRoute()
   const [messages, setMessages] = useState<Message[]>([]);
   const [chatId, setChatId] = useState<string>('');
+  const flatListRef = useRef<FlatList>(null);
 
 
   const handleProfileDetails = async () => {
@@ -90,6 +91,11 @@ function Chat() {
     console?.log(userDetails.id, "userDeatails===============,", route?.params?.driver_id, route?.params?.driver_name, chatId)
     await sendMessage(chatId, userDetails?.id, route?.params?.driver_id, message.trim(), route?.params?.driver_name, userDetails?.first_name);
     setMessage("");
+    
+    // Scroll to bottom after sending message
+    setTimeout(() => {
+      flatListRef.current?.scrollToEnd({ animated: true });
+    }, 100);
   };
 
   const userName = i18n.language === "ar" ? t("inbox.nameAr") : t("inbox.nameEn");
@@ -118,8 +124,12 @@ function Chat() {
     //     </TouchableOpacity>
     //   </View>
     // </View>
-    <View className="flex-1 relative bg-white">
-      <View className="flex-1 pb-[180px]">
+    <KeyboardAvoidingView 
+      className="flex-1 relative bg-white"
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+    >
+      <View className="flex-1">
         <View className="w-full flex gap-[20px] font-[Kanit-Regular] flex-1 h-full">
           {/* Header */}
           <View className="px-[30px] pt-16">
@@ -153,36 +163,11 @@ function Chat() {
                 <Ellipsis size={25} stroke="#FF4848" fill="none" strokeWidth={1} />
               </TouchableOpacity>
             </View>
-            {/* <Separator className="my-[15px] border-t border-dashed border-[#CDCDCD]" /> */}
-            {/* Ride summary */}
-            {/* <TouchableOpacity
-              className="flex-row items-center justify-between py-4"
-              onPress={() => { }}
-              activeOpacity={0.8}
-            >
-              <View className="flex-col gap-1">
-                <View className="flex-row items-center gap-2">
-                  <Text fontSize={12} className="text-[12px]">
-                    {from}
-                  </Text>
-                  <ArrowRight size={16} color="#FF4848" />
-                  <Text fontSize={12} className="text-[12px]">
-                    {to}
-                  </Text>
-                </View>
-                <Text fontSize={10} className="text-[10px]">
-                  {date} {time}{" "}
-                  <Text fontSize={10} className="text-[#FFBD00] ml-6">
-                    {t("chat.awaitingApproval")}
-                  </Text>
-                </Text>
-              </View>
-              <ChevronRight size={16} color="#AAAAAA" />
-            </TouchableOpacity> */}
             <Separator className="mb-4 border-t border-dashed border-[#CDCDCD]" />
           </View>
+          
           {/* Chat area */}
-          <View className="bg-[#F5F5F5] rounded-xl mx-[30px] px-4 pt-12 relative h-[100%]">
+          <View className="bg-[#F5F5F5] rounded-xl mx-[30px] px-4 pt-4 flex-1">
             {/* Guidelines & Alerts notice */}
             <View className="items-center mb-4 px-4">
               <Text fontSize={10} className="text-[10px] text-center text-[#939393]">
@@ -201,6 +186,7 @@ function Chat() {
                 </Text>
               </View>
             </View>
+            
             {/* "New" separator */}
             <View className="flex-row items-center justify-center my-4">
               <Separator className="flex-1 border-t border-dashed border-[#CDCDCD]" />
@@ -212,41 +198,17 @@ function Chat() {
               </Text>
               <Separator className="flex-1 border-t border-dashed border-[#CDCDCD]" />
             </View>
-            {/* Messages */}
-            {/* <View className="mb-[100px] space-y-4">
-              <View className="flex-row items-start gap-2">
-                <Avatar
-                  source={require("../../../public/profile-img.png")}
-                  size={30}
-                  initials="CN"
-                />
-                <View className="rounded-tl-[1px] rounded-[10px] bg-[#D9D9D9] px-4 py-2">
-                  <Text fontSize={11} className="text-[11px]">
-                    {t("chat.hello")}
-                  </Text>
-                </View>
-              </View>
-              <View className="flex-row-reverse items-start gap-2">
-                <Avatar
-                  source={require("../../../public/profile-img.png")}
-                  size={30}
-                  initials="CN"
-                />
-                <View className="rounded-tr-[1px] rounded-[10px] bg-[#FF4848] px-4 py-2">
-                  <Text fontSize={11} className="text-[11px] text-white">
-                    {t("chat.hello")}
-                  </Text>
-                </View>
-              </View>
-            </View> */}
 
+            {/* Messages */}
             <FlatList
+              ref={flatListRef}
               showsVerticalScrollIndicator={false}
               data={messages}
               keyExtractor={(item) => item.id}
-              contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
+              contentContainerStyle={{ paddingBottom: 80 }}
+              onContentSizeChange={() => flatListRef.current?.scrollToEnd({ animated: true })}
               renderItem={({ item }) => {
-                const isMe = item.from === currentUserId;
+                const isMe = item.from === userDetails?.id?.toString();
                 return (
                   <View
                     style={{
@@ -279,27 +241,33 @@ function Chat() {
                   </View>
                 );
               }}
-            />˝
-
-            {/* Bottom message input */}
-            <View className="absolute bottom-5 left-5 right-5 flex-row items-center">
-              <TextInput
-                value={message}
-                onChangeText={setMessage}
-                placeholder={t("chat.yourMessage")}
-                placeholderTextColor="#666"
-                className="flex-1 bg-white border border-[#EBEBEB] rounded-full pl-6 pr-12 h-[50px]"
-              />
-              <TouchableOpacity
-                className="absolute right-3 bg-[#00D074] w-[40px] h-[40px] rounded-full items-center justify-center"
-                onPress={handleSend}
-              >
-                <Send size={20} color="#fff" />
-              </TouchableOpacity>
-            </View>
+            />
+          </View>
+        </View>
+        
+        {/* Bottom message input */}
+        <View className="px-[30px] pb-8 pt-4 bg-white">
+          <View className="flex-row items-center">
+            <TextInput
+              value={message}
+              onChangeText={setMessage}
+              placeholder={t("chat.yourMessage")}
+              placeholderTextColor="#666"
+              className="flex-1 bg-white border border-[#EBEBEB] rounded-full pl-6 pr-12 h-[50px]"
+              multiline={false}
+              returnKeyType="send"
+              onSubmitEditing={handleSend}
+            />
+            <TouchableOpacity
+              className="absolute right-3 bg-[#00D074] w-[40px] h-[40px] rounded-full items-center justify-center"
+              onPress={handleSend}
+            >
+              <Send size={20} color="#fff" />
+            </TouchableOpacity>
           </View>
         </View>
       </View>
+      
       {/* Messaging Guidelines Modal */}
       <Modal
         visible={showGuidelines}
@@ -342,7 +310,7 @@ function Chat() {
           </View>
         </View>
       </Modal>
-    </View>
+    </KeyboardAvoidingView>
   );
 }
 

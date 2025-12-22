@@ -8,12 +8,14 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  ActivityIndicator,
 } from "react-native";
 import { router } from "expo-router";
 import { useTranslation } from "react-i18next";
 import { InputComponent } from "@/components/inputs/common-input";
 import CustomPicker from "@/components/common/dropdown-component";
 import DobPicker from "@/components/common/dob-calander";
+import Dialog from "@/components/ui/dialog";
 import { useState } from "react";
 import { getUserStatus, handleRegister } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
@@ -31,6 +33,15 @@ function Register() {
   const [error, setError] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
+  const [fieldErrors, setFieldErrors] = useState({
+    firstName: '',
+    lastName: '',
+    dob: '',
+    gender: ''
+  });
 
   const categories = [
     { label: 'Male', value: '1' },
@@ -45,9 +56,76 @@ function Register() {
     const age = new Date().getFullYear() - date.getFullYear();
     if (age < 18) {
       setError('You must be at least 18 years old.');
+      setFieldErrors(prev => ({ ...prev, dob: 'You must be at least 18 years old.' }));
     } else {
       setError('');
+      setFieldErrors(prev => ({ ...prev, dob: '' }));
     }
+  };
+
+  const validateForm = () => {
+    const errors = {
+      firstName: '',
+      lastName: '',
+      dob: '',
+      gender: ''
+    };
+
+    let isValid = true;
+
+    // Validate first name
+    if (!firstName.trim()) {
+      errors.firstName = 'First name is required';
+      isValid = false;
+    } else if (firstName.trim().length < 2) {
+      errors.firstName = 'First name must be at least 2 characters';
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(firstName.trim())) {
+      errors.firstName = 'First name can only contain letters';
+      isValid = false;
+    }
+
+    // Validate last name
+    if (!lastName.trim()) {
+      errors.lastName = 'Last name is required';
+      isValid = false;
+    } else if (lastName.trim().length < 2) {
+      errors.lastName = 'Last name must be at least 2 characters';
+      isValid = false;
+    } else if (!/^[a-zA-Z\s]+$/.test(lastName.trim())) {
+      errors.lastName = 'Last name can only contain letters';
+      isValid = false;
+    }
+
+    // Validate date of birth
+    if (!dob) {
+      errors.dob = 'Date of birth is required';
+      isValid = false;
+    } else {
+      const age = new Date().getFullYear() - new Date(dob).getFullYear();
+      if (age < 18) {
+        errors.dob = 'You must be at least 18 years old';
+        isValid = false;
+      }
+    }
+
+    // Validate gender
+    if (!category) {
+      errors.gender = 'Gender selection is required';
+      isValid = false;
+    }
+
+    setFieldErrors(errors);
+    return isValid;
+  };
+
+  const isFormValid = () => {
+    return firstName.trim() && 
+           lastName.trim() && 
+           dob && 
+           category && 
+           !error &&
+           Object.values(fieldErrors).every(err => !err);
   };
 
   async function enforceProfileCompleteness() {
@@ -55,13 +133,18 @@ function Register() {
       const json: UserStatusResp = await getUserStatus();
       const d = json.data;
 
+      // Check if user needs to complete publish flow
       if (!d.bank_details.has_bank_details) {
         router.replace('/bank-save');
         return;
       }
 
       if (!d.id_verification.completed) {
-        router.replace('/(publish)/upload-document');
+        if (d.id_verification.status === "pending") {
+          router.replace('/pending-verification');
+        } else {
+          router.replace('/(publish)/upload-document');
+        }
         return;
       }
 
@@ -70,39 +153,72 @@ function Register() {
         return;
       }
 
-      router.replace('/(tabs)/book');
+      // All requirements met, go to pickup
+      router.replace('/(tabs)/pickup');
     } catch (e) {
       console.log('Status check failed', e);
+      // On error, go to book tab as fallback
+      router.replace('/(tabs)/book');
     }
   }
 
   const handleRegistration = async () => {
-    const otpId = await useAsyncStorage("otp_id").getItem();
-    const formdata = new FormData();
-    formdata.append("otp_id", otpId!);
-    formdata.append("device_type", "1");
-    formdata.append("first_name", firstName);
-    formdata.append("last_name", lastName);
-    formdata.append("date_of_birth", dob);
-    formdata.append("gender", category);
-    formdata.append("fcm_token", "test");
+    if (!validateForm()) {
+      setErrorMessage('Please fill in all required fields correctly.');
+      setShowErrorDialog(true);
+      return;
+    }
 
+    setIsLoading(true);
+    
     try {
+      const otpId = await useAsyncStorage("otp_id").getItem();
+      
+      if (!otpId) {
+        setErrorMessage('Session expired. Please try logging in again.');
+        setShowErrorDialog(true);
+        setIsLoading(false);
+        return;
+      }
+
+      const formdata = new FormData();
+      formdata.append("otp_id", otpId);
+      formdata.append("device_type", "1");
+      formdata.append("first_name", firstName.trim());
+      formdata.append("last_name", lastName.trim());
+      formdata.append("date_of_birth", dob);
+      formdata.append("gender", category);
+      formdata.append("fcm_token", "test");
+
       const response = await handleRegister(formdata);
+      
       if (response) {
         if (response?.data?.type === "login") {
           await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data));
           if (isPublish) {
+            // User came from publish flow, enforce profile completeness
             enforceProfileCompleteness();
           } else {
+            // Normal user registration, go to book tab
             router.replace(`/(tabs)/book`);
           }
         } else {
-          Alert.alert(response?.message);
+          setErrorMessage(response?.message || 'Registration failed. Please try again.');
+          setShowErrorDialog(true);
         }
+      } else {
+        setErrorMessage('Registration failed. Please try again.');
+        setShowErrorDialog(true);
       }
-    } catch (error) {
-      console.log("error===========", error);
+    } catch (error: any) {
+      console.log("Registration error:", error);
+      setErrorMessage(
+        error?.message || 
+        'Registration failed. Please check your connection and try again.'
+      );
+      setShowErrorDialog(true);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -137,43 +253,84 @@ function Register() {
             <InputComponent
               label="First Name"
               placeHolder="first name"
-              onChangeText={(text) => setFirstName(text)}
+              onChangeText={(text) => {
+                setFirstName(text);
+                if (fieldErrors.firstName) {
+                  setFieldErrors(prev => ({ ...prev, firstName: '' }));
+                }
+              }}
               value={firstName}
+              error={fieldErrors.firstName}
             />
             <InputComponent
               label="Last Name"
               placeHolder="last name"
-              onChangeText={(text) => setLastName(text)}
+              onChangeText={(text) => {
+                setLastName(text);
+                if (fieldErrors.lastName) {
+                  setFieldErrors(prev => ({ ...prev, lastName: '' }));
+                }
+              }}
               value={lastName}
+              error={fieldErrors.lastName}
             />
             <DobPicker
               onDateChange={handleDateChange}
-              errorMessage={error}
+              errorMessage={error || fieldErrors.dob}
               minimumAge={18}
             />
             <CustomPicker
               label="Select Gender"
               items={categories}
               selectedValue={category}
-              onValueChange={(value) => setCategory(String(value))}
+              onValueChange={(value) => {
+                setCategory(String(value));
+                if (fieldErrors.gender) {
+                  setFieldErrors(prev => ({ ...prev, gender: '' }));
+                }
+              }}
               placeholder="Choose your gender"
               style="w-full"
+              error={fieldErrors.gender}
             />
             <TouchableOpacity
               onPress={handleRegistration}
-              className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
+              disabled={!isFormValid() || isLoading}
+              className={`flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5 ${
+                !isFormValid() || isLoading 
+                  ? 'bg-gray-400' 
+                  : 'bg-[#FF4848]'
+              }`}
               activeOpacity={0.8}
             >
-              <Text
-                fontSize={20}
-                className="my-auto text-[20px] text-white font-[Kanit-Regular]"
-              >
-                {t("Verify")}
-              </Text>
+              {isLoading ? (
+                <ActivityIndicator color="white" size="small" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
+              ) : (
+                <Text
+                  fontSize={20}
+                  className="my-auto text-[20px] text-white font-[Kanit-Regular]"
+                >
+                  {t("Verify")}
+                </Text>
+              )}
             </TouchableOpacity>
           </View>
         </View>
       </ScrollView>
+
+      {/* Error Dialog */}
+      <Dialog
+        visible={showErrorDialog}
+        onClose={() => setShowErrorDialog(false)}
+        title="Registration Error"
+        showButtons={true}
+        confirmText="OK"
+        onConfirm={() => setShowErrorDialog(false)}
+      >
+        <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 text-center">
+          {errorMessage}
+        </Text>
+      </Dialog>
     </KeyboardAvoidingView>
   );
 }

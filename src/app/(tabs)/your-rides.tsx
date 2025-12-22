@@ -150,7 +150,7 @@ export default function RidesTabsScreen() {
         side === 'User'
           ? await useGetAllBooking(
             'booked',
-            activeTab.toLowerCase() as 'pending' | 'completed' | 'cancelled'
+            activeTab.toLowerCase() == "in progress" ? "ongoing" : activeTab.toLowerCase() as 'pending' | 'completed' | 'cancelled' | 'ongoing'
           )
           : await useGetAlRides(activeTab?.toLowerCase() as 'pending' | 'completed' | 'cancelled');
       console.log("side============", side, "===================", activeTab, "==============", res?.data)

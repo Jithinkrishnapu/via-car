@@ -408,7 +408,27 @@ function RideDetails() {
                   fontSize={12}
                   className="flex-1 text-[12px] text-[#666666] font-[Kanit-Light]"
                 >
-                  {t("rideDetails.serviceFeeAndVAT")}
+                  Service Fee ({rideDetail?.platformFeePercentage}%)
+                </Text>
+                <Text
+                  fontSize={15}
+                  className="w-[10px] text-[15px] font-[Kanit-Regular]"
+                >
+                  :
+                </Text>
+                <Text
+                  fontSize={12}
+                  className="text-[12px] text-end font-[Kanit-Regular]"
+                >
+                  SR {rideDetail?.platformFeeAmount}
+                </Text>
+              </View>
+              <View className="flex-row gap-2 items-center">
+                <Text
+                  fontSize={12}
+                  className="flex-1 text-[12px] text-[#666666] font-[Kanit-Light]"
+                >
+                  VAT ({rideDetail?.vatPercentage}%)
                 </Text>
                 <Text
                   fontSize={15}

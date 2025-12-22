@@ -1,10 +1,11 @@
 import React, { useState } from "react";
-import { View, TouchableOpacity, ScrollView, Alert } from "react-native";
+import { View, TouchableOpacity, ScrollView } from "react-native";
 import { useRouter } from "expo-router";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import ColorSearch from "@/components/common/color-search";
+import Dialog from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { addVehicle } from "@/service/vehicle";
@@ -19,17 +20,46 @@ export default function VehiclePage() {
   const { vehicle_model_id, path } = useStore();
   const [selectedColor, setSelectedColor] = useState("");
   const [loading, setLoading] = useState(false);
+  
+  // Dialog states
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogTitle, setDialogTitle] = useState('');
 
   if (!loaded) return null;
 
+  const showError = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setShowErrorDialog(true);
+  };
+
+  const showSuccess = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setShowSuccessDialog(true);
+  };
+
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false);
+    // Navigate to the specified path or default to pickup for publish flow
+    if (typeof path === "string" && path.startsWith("/")) {
+      router.replace(path as any);
+    } else {
+      // Default to pickup for publish users
+      router.replace("/(tabs)/pickup");
+    }
+  };
+
   const handleAddVehicle = async () => {
     if (!selectedColor.trim()) {
-      Alert.alert(t("error"), t("profile.pleaseSelectColor"));
+      showError(t("error"), t("profile.pleaseSelectColor"));
       return;
     }
 
     if (!vehicle_model_id) {
-      Alert.alert(t("error"), t("profile.vehicleModelRequired"));
+      showError(t("error"), t("profile.vehicleModelRequired"));
       return;
     }
 
@@ -44,30 +74,39 @@ export default function VehiclePage() {
       console.log("Add vehicle response:", response);
 
       if (response?.ok) {
-        Alert.alert(
-          t("success"),
-          t("profile.vehicleAddedSuccessfully"),
-          [
-            {
-              text: t("ok"),
-              onPress: () => {
-                // Navigate to the specified path or default to home
-                if (typeof path === "string" && path.startsWith("/")) {
-                  router.replace(path as any);
-                } else {
-                  router.replace("/");
-                }
-              }
-            }
-          ]
-        );
+        showSuccess(t("success"), t("profile.vehicleAddedSuccessfully"));
       } else {
         // Handle non-ok response
-        Alert.alert(t("error"), t("profile.failedToAddVehicle"));
+        let errorMessage = t("profile.failedToAddVehicle");
+        
+        // Try to get more specific error message from response
+        try {
+          const errorData = await response.json();
+          if (errorData?.message) {
+            errorMessage = errorData.message;
+          } else if (errorData?.error) {
+            errorMessage = errorData.error;
+          }
+        } catch (parseError) {
+          console.log("Could not parse error response:", parseError);
+        }
+        
+        showError(t("error"), errorMessage);
       }
     } catch (error: any) {
       console.error("Add vehicle error:", error);
-      handleApiError(error, "Add Vehicle");
+      
+      let errorMessage = t("profile.failedToAddVehicle");
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      }
+      
+      showError(t("error"), errorMessage);
     } finally {
       setLoading(false);
     }
@@ -99,12 +138,13 @@ export default function VehiclePage() {
       </View>
 
       <View className="px-6 mt-6">
-        <ColorSearch
-          name="pickup"
-          placeholder={t("profile.enterVehicleName")}
-          onSelect={(value) => setSelectedColor(value)}
-          disabled={loading}
-        />
+        <View className={loading ? "opacity-50" : "opacity-100"} pointerEvents={loading ? "none" : "auto"}>
+          <ColorSearch
+            name="pickup"
+            placeholder={t("profile.enterVehicleName")}
+            onSelect={(value) => setSelectedColor(value)}
+          />
+        </View>
       </View>
       
       <View className="absolute inset-x-0 bottom-10 px-6">
@@ -122,10 +162,38 @@ export default function VehiclePage() {
             fontSize={20}
             className="text-xl text-white font-[Kanit-Regular]"
           >
-            {loading ? t("profile.adding") : t("profile.add")}
+            {loading ? t("profile.adding") + "..." : t("profile.add")}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Success Dialog */}
+      <Dialog
+        visible={showSuccessDialog}
+        onClose={handleSuccessDialogClose}
+        title={dialogTitle}
+        showButtons={true}
+        confirmText={t("ok")}
+        onConfirm={handleSuccessDialogClose}
+      >
+        <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 text-center">
+          {dialogMessage}
+        </Text>
+      </Dialog>
+
+      {/* Error Dialog */}
+      <Dialog
+        visible={showErrorDialog}
+        onClose={() => setShowErrorDialog(false)}
+        title={dialogTitle}
+        showButtons={true}
+        confirmText={t("ok")}
+        onConfirm={() => setShowErrorDialog(false)}
+      >
+        <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 text-center">
+          {dialogMessage}
+        </Text>
+      </Dialog>
     </View>
   );
 }

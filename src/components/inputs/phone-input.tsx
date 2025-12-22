@@ -50,6 +50,7 @@ interface PhoneInputProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  error?: string;
 }
 
 function PhoneInput({
@@ -59,6 +60,7 @@ function PhoneInput({
   placeholder = "00 00 00 00 00",
   label = "Phone Number",
   className = "",
+  error = "",
 }: PhoneInputProps) {
   const { t } = useTranslation("components");
   const { isRTL } = useDirection();
@@ -115,7 +117,9 @@ function PhoneInput({
       )}
 
       <View
-        className="flex-row border border-[#F5F5F5] rounded-full overflow-hidden items-center bg-white"
+        className={`flex-row border rounded-full overflow-hidden items-center bg-white ${
+          error ? 'border-red-500' : 'border-[#F5F5F5]'
+        }`}
         style={{ direction: "ltr" }}
       >
         <TouchableOpacity
@@ -153,6 +157,17 @@ function PhoneInput({
           }}
         />
       </View>
+
+      {/* Error Message */}
+      {error && (
+        <Text
+          fontSize={14}
+          className="text-[14px] font-[Kanit-Light] text-red-500 mt-2 px-3"
+          style={{ direction: isRTL ? "rtl" : "ltr" }}
+        >
+          {error}
+        </Text>
+      )}
 
       <Modal visible={modalVisible} animationType="slide">
         <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>

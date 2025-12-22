@@ -6,11 +6,9 @@ import {
   TouchableOpacity,
   Dimensions,
   TextInput,
-  Alert,
   Platform,
   Keyboard,
   TouchableWithoutFeedback,
-  KeyboardAvoidingView,
   ScrollView,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
@@ -18,14 +16,24 @@ import OtpAnimation from "../animated/otp-animation";
 import { XIcon } from "lucide-react-native";
 import { router } from "expo-router";
 import Text from "../common/text";
+import AlertDialog from "../ui/alert-dialog";
 import { useTranslation } from "react-i18next";
 import { handleSendOtp, handleVerifyOtp } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { NotificationService } from "@/services/notificationService";
+import { ApiError } from "@/utils/apiErrorHandler";
 
 const { height } = Dimensions.get("window");
 
-const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
+const VerifyOtp = ({ 
+  phoneNumber, 
+  disabled = false, 
+  onError 
+}: { 
+  phoneNumber: string; 
+  disabled?: boolean;
+  onError?: (title: string, message: string, type?: "info" | "warning" | "error" | "success") => void;
+}) => {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
@@ -35,6 +43,144 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   const [fcmToken, setFcmToken] = useState<string | null>(null);
   const [isValidating, setIsValidating] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [isSendingOtp, setIsSendingOtp] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "error" | "success";
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "error",
+  });
+
+  const showError = (title: string, message: string, type: "info" | "warning" | "error" | "success" = "error") => {
+    if (onError) {
+      onError(title, message, type);
+    } else {
+      setErrorDialog({
+        visible: true,
+        title,
+        message,
+        type,
+      });
+    }
+  };
+
+  const closeErrorDialog = () => {
+    setErrorDialog({
+      ...errorDialog,
+      visible: false,
+    });
+  };
+
+  const getErrorMessage = (error: any): { title: string; message: string; type: "error" | "warning" } => {
+    console.error("API Error:", error);
+    
+    // Handle API errors with status codes
+    if (error.status) {
+      switch (error.status) {
+        case 400:
+          return {
+            title: "Invalid Request",
+            message: error.message || "Please check your input and try again.",
+            type: "error"
+          };
+        case 401:
+          return {
+            title: "Authentication Error",
+            message: "Invalid credentials. Please try again.",
+            type: "error"
+          };
+        case 403:
+          return {
+            title: "Access Denied",
+            message: "You do not have permission to perform this action.",
+            type: "error"
+          };
+        case 404:
+          return {
+            title: "Service Not Found",
+            message: "The service is temporarily unavailable. Please try again later.",
+            type: "error"
+          };
+        case 422:
+          return {
+            title: "Validation Error",
+            message: error.message || "Please check your input and try again.",
+            type: "error"
+          };
+        case 429:
+          return {
+            title: "Too Many Requests",
+            message: "Please wait a moment before trying again.",
+            type: "warning"
+          };
+        case 500:
+          return {
+            title: "Server Error",
+            message: "Something went wrong on our end. Please try again later.",
+            type: "error"
+          };
+        case 502:
+        case 503:
+        case 504:
+          return {
+            title: "Service Unavailable",
+            message: "The service is temporarily unavailable. Please try again later.",
+            type: "error"
+          };
+        default:
+          return {
+            title: `Error ${error.status}`,
+            message: error.message || "An unexpected error occurred.",
+            type: "error"
+          };
+      }
+    }
+    
+    // Handle network and other errors
+    if (error.message) {
+      if (error.message.includes('Network') || error.message.includes('network')) {
+        return {
+          title: "Connection Error",
+          message: "Please check your internet connection and try again.",
+          type: "error"
+        };
+      }
+      
+      if (error.message.includes('timeout') || error.message.includes('Timeout')) {
+        return {
+          title: "Timeout Error",
+          message: "The request took too long. Please try again.",
+          type: "error"
+        };
+      }
+      
+      if (error.message.includes('Invalid') || error.message.includes('OTP')) {
+        return {
+          title: "Invalid Code",
+          message: "The verification code is invalid. Please check and try again.",
+          type: "error"
+        };
+      }
+      
+      return {
+        title: "Error",
+        message: error.message,
+        type: "error"
+      };
+    }
+    
+    // Default error
+    return {
+      title: "Unexpected Error",
+      message: "Something went wrong. Please try again.",
+      type: "error"
+    };
+  };
 
   // Keyboard listeners for iOS
   useEffect(() => {
@@ -111,55 +257,111 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
     }
   };
 
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+    
+    if (!phone || phone.trim().length === 0) {
+      return false;
+    }
+    
+    if (digitsOnly.length < 8) {
+      return false;
+    }
+    
+    if (digitsOnly.length > 15) {
+      return false;
+    }
+    
+    return true;
+  };
+
   const handleLogin = async () => {
-    const formdata = new FormData()
-    formdata.append("country_code", "+966")
-    formdata.append("mobile_number", phoneNumber?.startsWith("0") ? phoneNumber.slice(1)?.replace(/\D/g, '') : phoneNumber?.replace(/\D/g, ''))
-    console.log("sheeet==========", formdata)
-    const response = await handleSendOtp(formdata)
-    console.log("response============", response)
-    if (response?.data?.otpId) {
-      setOtpId(response?.data?.otpId)
-      useAsyncStorage("otp_id").setItem(response?.data?.otpId)
-      openSheet()
-    } else {
-      console.log("response============", response)
+    if (isSendingOtp) return; // Prevent multiple requests
+    
+    // Validate phone number
+    if (!validatePhoneNumber(phoneNumber)) {
+      showError("Invalid Phone Number", "Please enter a valid phone number with at least 8 digits.");
+      return;
+    }
+
+    setIsSendingOtp(true);
+    
+    try {
+      const formdata = new FormData()
+      formdata.append("country_code", "+966")
+      formdata.append("mobile_number", phoneNumber?.startsWith("0") ? phoneNumber.slice(1)?.replace(/\D/g, '') : phoneNumber?.replace(/\D/g, ''))
+      
+      console.log("Sending OTP request:", formdata)
+      const response = await handleSendOtp(formdata)
+      console.log("OTP response:", response)
+      
+      if (response?.data?.otpId) {
+        setOtpId(response?.data?.otpId)
+        useAsyncStorage("otp_id").setItem(response?.data?.otpId)
+        openSheet()
+        showError("OTP Sent", "Verification code has been sent to your phone.", "success");
+      } else {
+        const errorMessage = response?.message || response?.error || "Failed to send OTP. Please try again.";
+        showError("OTP Failed", errorMessage);
+      }
+    } catch (error: any) {
+      const errorInfo = getErrorMessage(error);
+      showError(errorInfo.title, errorInfo.message, errorInfo.type);
+    } finally {
+      setIsSendingOtp(false);
     }
   }
 
   const handleValidate = async () => {
     if (isValidating) return; // Prevent multiple submissions
     
+    // Validate OTP
+    const otpString = otp.join('');
+    if (otpString.length !== 6) {
+      showError("Invalid OTP", "Please enter the complete 6-digit verification code.");
+      return;
+    }
+    
+    if (!otpId) {
+      showError("Session Error", "OTP session expired. Please request a new code.");
+      return;
+    }
+    
     setIsValidating(true);
     
-    // Ensure we have an FCM token before proceeding
-    const tokenToSend = fcmToken || 'no_token_available';
-    
-    const formdata = new FormData()
-    formdata.append("otp_id", otpId)
-    formdata.append("otp", otp.join(''))
-    formdata.append("device_type", Platform.OS === 'ios' ? "2" : "1") // 1 for Android, 2 for iOS
-    formdata.append("fcm_token", tokenToSend)
-    
-    console.log("Validating OTP with push token:", tokenToSend)
-    
     try {
+      // Ensure we have an FCM token before proceeding
+      const tokenToSend = fcmToken || 'no_token_available';
+      
+      const formdata = new FormData()
+      formdata.append("otp_id", otpId)
+      formdata.append("otp", otpString)
+      formdata.append("device_type", Platform.OS === 'ios' ? "2" : "1") // 1 for Android, 2 for iOS
+      formdata.append("fcm_token", tokenToSend)
+      
+      console.log("Validating OTP with push token:", tokenToSend)
+      
       const response = await handleVerifyOtp(formdata)
+      
       if (response?.data?.type) {
         console.log("OTP validation successful:", response)
         closeSheet();
+        
         if (response?.data?.type == "register") {
           router.replace(`/register`);
         } else {
           await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
+          // For existing users, go directly to book tab (normal user flow)
           router.push(`/(tabs)/book`);
         }
       } else {
-        Alert.alert("Verification Failed", response?.message || "Invalid OTP. Please try again.")
+        const errorMessage = response?.message || response?.error || "Invalid OTP. Please try again.";
+        showError("Verification Failed", errorMessage);
       }
-    } catch (error) {
-      console.log("OTP validation error:", error)
-      Alert.alert("Error", "Something went wrong. Please try again.")
+    } catch (error: any) {
+      const errorInfo = getErrorMessage(error);
+      showError(errorInfo.title, errorInfo.message, errorInfo.type);
     } finally {
       setIsValidating(false);
     }
@@ -188,15 +390,18 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
   return (
     <View>
       <TouchableOpacity
-        onPress={handleLogin}
-        className="bg-[#FF4848] flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5"
-        activeOpacity={0.8}
+        onPress={disabled ? undefined : handleLogin}
+        disabled={disabled || isSendingOtp}
+        className={`flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5 ${
+          disabled || isSendingOtp ? 'bg-gray-400 opacity-50' : 'bg-[#FF4848]'
+        }`}
+        activeOpacity={disabled || isSendingOtp ? 1 : 0.8}
       >
         <Text
           fontSize={20}
           className="my-auto text-[20px] text-white font-[Kanit-Regular]"
         >
-          {t("Verify")}
+          {isSendingOtp ? "Sending..." : t("Verify")}
         </Text>
       </TouchableOpacity>
 
@@ -395,6 +600,18 @@ const VerifyOtp = ({ phoneNumber }: { phoneNumber: string }) => {
           </View>
         </TouchableWithoutFeedback>
       </Modal>
+
+      {/* Error Dialog - only show if no onError callback provided */}
+      {!onError && (
+        <AlertDialog
+          visible={errorDialog.visible}
+          onClose={closeErrorDialog}
+          title={errorDialog.title}
+          message={errorDialog.message}
+          type={errorDialog.type}
+          confirmText="OK"
+        />
+      )}
     </View>
   );
 };

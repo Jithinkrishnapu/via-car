@@ -83,6 +83,10 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
   /* -------------- helpers -------------- */
   const showPolyline = !markers?.length && polyCoords.length > 0;
   const showMarkers = !!markers?.length;
+  
+  // Get start and end points for polyline
+  const startPoint = polyCoords.length > 0 ? polyCoords[0] : null;
+  const endPoint = polyCoords.length > 0 ? polyCoords[polyCoords.length - 1] : null;
 
 
   console.log(markers, "----------------------------------")
@@ -108,13 +112,47 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
       >
         {/* 1.  Polyline (only when NO markers supplied) */}
         {showPolyline && (
-          <Polyline
-            coordinates={polyCoords}
-            strokeWidth={5}
-            strokeColor="#2980b9"
-            lineCap="round"
-            lineJoin="round"
-          />
+          <>
+            <Polyline
+              coordinates={polyCoords}
+              strokeWidth={5}
+              strokeColor="#2980b9"
+              lineCap="round"
+              lineJoin="round"
+            />
+            
+            {/* Start point marker */}
+            {startPoint && (
+              <Marker
+                coordinate={startPoint}
+                anchor={{ x: 0.5, y: 0.5 }}
+                centerOffset={{ x: 0, y: 0 }}
+              >
+                <View className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-md" />
+                <Callout tooltip={false}>
+                  <View className="bg-white p-2 rounded-lg">
+                    <Text className="text-sm font-medium text-green-600">Start Point</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            )}
+            
+            {/* End point marker */}
+            {endPoint && (
+              <Marker
+                coordinate={endPoint}
+                anchor={{ x: 0.5, y: 0.5 }}
+                centerOffset={{ x: 0, y: 0 }}
+              >
+                <View className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-md" />
+                <Callout tooltip={false}>
+                  <View className="bg-white p-2 rounded-lg">
+                    <Text className="text-sm font-medium text-red-600">End Point</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            )}
+          </>
         )}
 
         {/* 2.  Markers (only when supplied) */}

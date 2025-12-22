@@ -6,7 +6,6 @@ import {
   TouchableOpacity,
   TextInput,
   Image,
-  Alert,
   SafeAreaView,
   StatusBar,
   ActivityIndicator,
@@ -20,6 +19,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import { handleVerifyId } from '@/service/auth';
+import Dialog from '@/components/ui/dialog';
 
 const UploadDocumentsScreen = () => {
   const [nationalId, setNationalId] = useState<ImagePicker.ImagePickerAsset | null>(null);
@@ -31,18 +31,36 @@ const UploadDocumentsScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [showBottomSheet, setShowBottomSheet] = useState(false);
   const [currentDocumentType, setCurrentDocumentType] = useState<string>('');
+  
+  // Dialog states
+  const [showErrorDialog, setShowErrorDialog] = useState(false);
+  const [showSuccessDialog, setShowSuccessDialog] = useState(false);
+  const [dialogMessage, setDialogMessage] = useState('');
+  const [dialogTitle, setDialogTitle] = useState('');
+
+  const showError = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setShowErrorDialog(true);
+  };
+
+  const showSuccess = (title: string, message: string) => {
+    setDialogTitle(title);
+    setDialogMessage(message);
+    setShowSuccessDialog(true);
+  };
 
   const requestPermissions = async (type: 'camera' | 'gallery') => {
     if (type === 'camera') {
       const { status } = await ImagePicker.requestCameraPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant camera permissions to take photos.');
+        showError('Permission Required', 'Please grant camera permissions to take photos.');
         return false;
       }
     } else {
       const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (status !== 'granted') {
-        Alert.alert('Permission Required', 'Please grant gallery permissions to upload documents.');
+        showError('Permission Required', 'Please grant gallery permissions to upload documents.');
         return false;
       }
     }
@@ -80,8 +98,8 @@ const UploadDocumentsScreen = () => {
       }
     } catch (error: any) {
       console.error('Camera error:', error);
-      Alert.alert(
-        'Camera Error', 
+      showError(
+        'Camera Error',
         Platform.OS === 'android' 
           ? 'Camera not available. If using an emulator, please use "Choose from Gallery" instead.'
           : 'Failed to open camera. Please try again.'
@@ -115,16 +133,32 @@ const UploadDocumentsScreen = () => {
       }
     } catch (error: any) {
       console.error('Gallery error:', error);
-      Alert.alert('Error', 'Failed to open gallery. Please try again.');
+      showError('Error', 'Failed to open gallery. Please try again.');
     }
   };
 
   const handleSubmit = async () => {
-    if (!nationalId) return Alert.alert('Required', 'Please upload your National ID');
-    if (!carPlateNumber.trim()) return Alert.alert('Required', 'Please enter car plate number');
-    if (!carSequenceNumber.trim()) return Alert.alert('Required', 'Please enter car sequence number');
-    if (!drivingLicense) return Alert.alert('Required', 'Please upload your driving license');
-    if (!vehicleRegistration) return Alert.alert('Required', 'Please upload vehicle registration');
+    // Validation with dialog errors
+    if (!nationalId) {
+      showError('Required', 'Please upload your National ID');
+      return;
+    }
+    if (!carPlateNumber.trim()) {
+      showError('Required', 'Please enter car plate number');
+      return;
+    }
+    if (!carSequenceNumber.trim()) {
+      showError('Required', 'Please enter car sequence number');
+      return;
+    }
+    if (!drivingLicense) {
+      showError('Required', 'Please upload your driving license');
+      return;
+    }
+    if (!vehicleRegistration) {
+      showError('Required', 'Please upload vehicle registration');
+      return;
+    }
 
     setIsLoading(true);
     const formdata = new FormData();
@@ -155,17 +189,37 @@ const UploadDocumentsScreen = () => {
       const body = await response.json();
 
       if (response.ok) {
-        Alert.alert('Success', 'Documents uploaded successfully!');
-        router.replace('/pending-verification');
+        showSuccess('Success', 'Documents uploaded successfully!');
       } else {
-        Alert.alert('Error', body.message || 'Documents not uploaded!');
+        showError('Error', body.message || 'Documents not uploaded!');
       }
-    } catch (error) {
-      console.error(error);
-      Alert.alert('Error', 'Something went wrong while uploading.');
+    } catch (error: any) {
+      console.error('Upload error:', error);
+      let errorMessage = 'Something went wrong while uploading.';
+      
+      if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      }
+      
+      showError('Error', errorMessage);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const handleSuccessDialogClose = () => {
+    setShowSuccessDialog(false);
+    router.replace('/pending-verification');
+  };
+
+  const isFormValid = () => {
+    return nationalId && 
+           carPlateNumber.trim() && 
+           carSequenceNumber.trim() && 
+           drivingLicense && 
+           vehicleRegistration;
   };
 
   return (
@@ -175,6 +229,9 @@ const UploadDocumentsScreen = () => {
       {/* ---------- keyboard avoiding wrapper ---------- */}
       <View className="px-6 mt-5 py-4 bg-white border-b border-gray-200">
         <Text className="text-2xl font-bold text-gray-900">Upload Documents</Text>
+        <Text className="text-sm text-gray-600 mt-1">
+          All fields marked with * are required
+        </Text>
       </View>
 
       {/* ---------- keyboard avoiding wrapper ---------- */}
@@ -199,7 +256,9 @@ const UploadDocumentsScreen = () => {
         >
           {/* National ID */}
           <View className="mb-6">
-            <Text className="text-base font-semibold text-gray-900 mb-2">National ID</Text>
+            <Text className="text-base font-semibold text-gray-900 mb-2">
+              National ID <Text className="text-red-500">*</Text>
+            </Text>
             <TextInput
               value={nationalIdnum}
               onChangeText={setNationalIdnum}
@@ -207,7 +266,9 @@ const UploadDocumentsScreen = () => {
               className="border border-gray-300 mb-2 rounded-lg px-4 py-3 text-gray-900"
               placeholderTextColor="#9ca3af"
             />
-            <Text className="text-sm text-gray-600 mb-3">Upload National ID</Text>
+            <Text className="text-sm text-gray-600 mb-3">
+              Upload National ID <Text className="text-red-500">*</Text>
+            </Text>
             {nationalId ? (
               <View className="relative">
                 <Image source={{ uri: nationalId.uri }} className="w-full h-48 rounded-lg" resizeMode="cover" />
@@ -216,40 +277,57 @@ const UploadDocumentsScreen = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={() => openBottomSheet('nationalId')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
-                <Ionicons name="camera-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 mt-2">Tap to upload</Text>
+              <TouchableOpacity 
+                onPress={() => openBottomSheet('nationalId')} 
+                className={`border-2 border-dashed rounded-lg p-8 items-center ${
+                  !nationalId ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+              >
+                <Ionicons name="camera-outline" size={48} color={!nationalId ? "#ef4444" : "#9ca3af"} />
+                <Text className={`mt-2 ${!nationalId ? 'text-red-500' : 'text-gray-500'}`}>
+                  Tap to upload (Required)
+                </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Car Plate Number */}
           <View className="mb-6">
-            <Text className="text-base font-semibold text-gray-900 mb-2">Car Plate Number</Text>
+            <Text className="text-base font-semibold text-gray-900 mb-2">
+              Car Plate Number <Text className="text-red-500">*</Text>
+            </Text>
             <TextInput
               value={carPlateNumber}
               onChangeText={setCarPlateNumber}
               placeholder="Enter Here"
-              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+              className={`border rounded-lg px-4 py-3 text-gray-900 ${
+                !carPlateNumber.trim() ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholderTextColor="#9ca3af"
             />
           </View>
 
           {/* Car Sequence Number */}
           <View className="mb-6">
-            <Text className="text-base font-semibold text-gray-900 mb-2">Car Sequence Number</Text>
+            <Text className="text-base font-semibold text-gray-900 mb-2">
+              Car Sequence Number <Text className="text-red-500">*</Text>
+            </Text>
             <TextInput
               value={carSequenceNumber}
               onChangeText={setCarSequenceNumber}
               placeholder="Enter Here"
-              className="border border-gray-300 rounded-lg px-4 py-3 text-gray-900"
+              className={`border rounded-lg px-4 py-3 text-gray-900 ${
+                !carSequenceNumber.trim() ? 'border-red-300' : 'border-gray-300'
+              }`}
               placeholderTextColor="#9ca3af"
             />
           </View>
 
           {/* Driving License */}
           <View className="mb-6">
-            <Text className="text-base font-semibold text-gray-900 mb-3">Upload Driving License</Text>
+            <Text className="text-base font-semibold text-gray-900 mb-3">
+              Upload Driving License <Text className="text-red-500">*</Text>
+            </Text>
             {drivingLicense ? (
               <View className="relative">
                 <Image source={{ uri: drivingLicense.uri }} className="w-full h-48 rounded-lg" resizeMode="cover" />
@@ -258,16 +336,25 @@ const UploadDocumentsScreen = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={() => openBottomSheet('drivingLicense')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
-                <Ionicons name="camera-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 mt-2">Tap to upload</Text>
+              <TouchableOpacity 
+                onPress={() => openBottomSheet('drivingLicense')} 
+                className={`border-2 border-dashed rounded-lg p-8 items-center ${
+                  !drivingLicense ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+              >
+                <Ionicons name="camera-outline" size={48} color={!drivingLicense ? "#ef4444" : "#9ca3af"} />
+                <Text className={`mt-2 ${!drivingLicense ? 'text-red-500' : 'text-gray-500'}`}>
+                  Tap to upload (Required)
+                </Text>
               </TouchableOpacity>
             )}
           </View>
 
           {/* Vehicle Registration */}
           <View className="mb-8">
-            <Text className="text-base font-semibold text-gray-900 mb-3">Upload Vehicle Registration</Text>
+            <Text className="text-base font-semibold text-gray-900 mb-3">
+              Upload Vehicle Registration <Text className="text-red-500">*</Text>
+            </Text>
             {vehicleRegistration ? (
               <View className="relative">
                 <Image source={{ uri: vehicleRegistration.uri }} className="w-full h-48 rounded-lg" resizeMode="cover" />
@@ -276,9 +363,16 @@ const UploadDocumentsScreen = () => {
                 </TouchableOpacity>
               </View>
             ) : (
-              <TouchableOpacity onPress={() => openBottomSheet('vehicleRegistration')} className="border-2 border-dashed border-gray-300 rounded-lg p-8 items-center">
-                <Ionicons name="camera-outline" size={48} color="#9ca3af" />
-                <Text className="text-gray-500 mt-2">Tap to upload</Text>
+              <TouchableOpacity 
+                onPress={() => openBottomSheet('vehicleRegistration')} 
+                className={`border-2 border-dashed rounded-lg p-8 items-center ${
+                  !vehicleRegistration ? 'border-red-300 bg-red-50' : 'border-gray-300'
+                }`}
+              >
+                <Ionicons name="camera-outline" size={48} color={!vehicleRegistration ? "#ef4444" : "#9ca3af"} />
+                <Text className={`mt-2 ${!vehicleRegistration ? 'text-red-500' : 'text-gray-500'}`}>
+                  Tap to upload (Required)
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -289,8 +383,10 @@ const UploadDocumentsScreen = () => {
       <View className="px-6 py-4 bg-white border-t border-gray-200">
         <TouchableOpacity
           onPress={handleSubmit}
-          disabled={isLoading}
-          className={`${isLoading ? 'bg-red-300' : 'bg-red-500'} rounded-full py-4 px-8`}
+          disabled={isLoading || !isFormValid()}
+          className={`rounded-full py-4 px-8 ${
+            isLoading || !isFormValid() ? 'bg-gray-400' : 'bg-red-500'
+          }`}
         >
           {isLoading ? (
             <ActivityIndicator color="white" />
@@ -349,6 +445,34 @@ const UploadDocumentsScreen = () => {
           </View>
         </Pressable>
       </Modal>
+
+      {/* Success Dialog */}
+      <Dialog
+        visible={showSuccessDialog}
+        onClose={handleSuccessDialogClose}
+        title={dialogTitle}
+        showButtons={true}
+        confirmText="OK"
+        onConfirm={handleSuccessDialogClose}
+      >
+        <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 text-center">
+          {dialogMessage}
+        </Text>
+      </Dialog>
+
+      {/* Error Dialog */}
+      <Dialog
+        visible={showErrorDialog}
+        onClose={() => setShowErrorDialog(false)}
+        title={dialogTitle}
+        showButtons={true}
+        confirmText="OK"
+        onConfirm={() => setShowErrorDialog(false)}
+      >
+        <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 text-center">
+          {dialogMessage}
+        </Text>
+      </Dialog>
     </SafeAreaView>
   );
 };

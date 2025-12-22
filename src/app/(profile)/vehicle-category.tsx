@@ -40,6 +40,7 @@ export default function SelectCategoryPage() {
         // Set first category as default if none selected
         if (response.data.length > 0 && !selected) {
           setSelected(response.data[0].id.toString());
+          setVehicle(vehicle.brand_id, response.data[0].id.toString());
         }
       }
     } catch (error) {
@@ -87,7 +88,7 @@ export default function SelectCategoryPage() {
           {categories.map((category) => {
             const isSelected = selected === category.id.toString();
             const categorySlug = category.slug?.toLowerCase() || "";
-            
+
             // Use API image if available, otherwise fallback to local
             const imageSource = category.image
               ? { uri: category.image }
@@ -101,9 +102,8 @@ export default function SelectCategoryPage() {
                   setVehicle(vehicle.brand_id, category.id.toString());
                   setSelected(category.id.toString());
                 }}
-                className={`border ${
-                  isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
-                } rounded-2xl mb-4`}
+                className={`border ${isSelected ? "border-green-400 bg-green-50" : "border-gray-200"
+                  } rounded-2xl mb-4`}
                 style={{
                   width: "100%",
                   height: 217,
@@ -123,9 +123,8 @@ export default function SelectCategoryPage() {
                     {category.name}
                   </Text>
                   <View
-                    className={`w-8 h-8 rounded-full border ${
-                      isSelected ? "border-transparent" : "border-gray-300"
-                    } items-center justify-center`}
+                    className={`w-8 h-8 rounded-full border ${isSelected ? "border-transparent" : "border-gray-300"
+                      } items-center justify-center`}
                   >
                     {isSelected && <CheckGreen width={24} height={24} />}
                   </View>

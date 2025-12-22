@@ -131,7 +131,7 @@ function BookingApproval() {
                         fontSize={14}
                         className="text-[14px] text-black mb-1 px-2 font-[Kanit-Regular]"
                       >
-                        {rideDetail?.passengers?.[1].name || rideDetail?.passengers?.[0].name}
+                        {rideDetail?.user?.name}
                       </Text>
                       <Verified width={15} height={15} />
                     </View>
@@ -141,7 +141,7 @@ function BookingApproval() {
                   <TouchableOpacity
                     className="rounded-full size-[38px] border border-[#EBEBEB] flex-row items-center justify-center"
                     activeOpacity={0.8}
-                    onPress={() => router.push({pathname:"/(inbox)/chat",params:{driver_id:rideDetail?.passengers?.[1].id || rideDetail?.passengers?.[0].id,driver_name:rideDetail?.passengers?.[1].name || rideDetail?.passengers?.[0].name}})}
+                    onPress={() => router.push({pathname:"/(inbox)/chat",params:{driver_id:rideDetail?.user?.id,driver_name:rideDetail?.user?.name}})}
                   >
                     <Chat width={15} height={15} />
                   </TouchableOpacity>

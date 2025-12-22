@@ -20,7 +20,9 @@ export async function sendMessage(chatId: string, fromId: string, toId: string, 
         lastMessage: text,
         lastMessageAt: serverTimestamp(),
         from_name,
-        to_name
+        to_name,
+        from_id: fromId,
+        to_id: toId
     }, { merge: true });
 
     await batch.commit();

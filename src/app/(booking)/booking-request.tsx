@@ -18,6 +18,7 @@ export default function BookingRequest() {
       try {
         const res = await useGetAllBooking('published', 'requested');
         setBookingList(res?.data?.length ? res.data : []);
+        console.log("response===========",res?.data)
       } catch (e: any) {
         Alert.alert('Error', e?.message ?? 'Failed to load data');
         setBookingList([]);
@@ -70,7 +71,7 @@ export default function BookingRequest() {
             <Text style={{ textAlign: 'center', marginTop: 40 }}>No requests</Text>
           ) : (
             bookingList.map((item) => {
-              const passenger = item.passengers?.[0] ?? {};
+              const bookedUser = item.user ?? {};
               return (
                 <Pressable
                 onPress={()=>{
@@ -89,7 +90,7 @@ export default function BookingRequest() {
                   />
                   <View style={styles.card}>
                     <Text style={styles.name}>
-                      {passenger.name || '—'} {passenger.lastName || ''}
+                      {bookedUser.name || '—'}
                     </Text>
                     <Text style={styles.route}>
                       {item.pickupAddress} → {item.dropAddress}

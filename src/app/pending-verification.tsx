@@ -15,22 +15,27 @@ const PendingVerification = () => {
     try {
       const json: UserStatusResp = await getUserStatus();
       const d = json.data;
-      const stored = await useAsyncStorage("userDetails").getItem()
-      const userDetails = stored ? JSON.parse(stored) : null
+      const stored = await useAsyncStorage("userDetails").getItem();
+      const userDetails = stored ? JSON.parse(stored) : null;
+      
       if (userDetails?.type === "login") {
-        if (d.id_verification.completed) {/* 3. No vehicles (for driver flow) */
-        if (d.account.is_driver && !d.vehicles.has_vehicles) {
-          setPath("/(tabs)/pickup")
-          router.replace('/add-vehicles');
-          return;
-        }else{
-          router.replace("/(tabs)/book")
+        // If verification is completed, proceed with next steps
+        if (d.id_verification.completed) {
+          // Check if user needs to add vehicles (for drivers)
+          if (d.account.is_driver && !d.vehicles.has_vehicles) {
+            setPath("/(tabs)/pickup");
+            router.replace('/add-vehicles');
+            return;
+          } else {
+            // All requirements met, go to pickup for publish flow
+            router.replace("/(tabs)/pickup");
+          }
         }
-        }
+        // If still pending, stay on this screen (polling will continue)
       }
 
     } catch (e) {
-      console.log('Status check failed', e);      /* optionally send to login */
+      console.log('Status check failed', e);
     }
   }
 

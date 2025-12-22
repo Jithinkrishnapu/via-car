@@ -1,6 +1,7 @@
 import Text from "@/components/common/text";
 import PhoneInput from "@/components/inputs/phone-input";
 import { Checkbox } from "@/components/ui/checkbox";
+import AlertDialog from "@/components/ui/alert-dialog";
 import {
   Dimensions,
   Image,
@@ -19,6 +20,67 @@ function Login() {
   const { t } = useTranslation("index")
   const [phoneNumber,setPhoneNumber]=useState<string>("")
   const [isChecked,setIsChecked] = useState(false)
+  const [phoneError, setPhoneError] = useState<string>("")
+  const [errorDialog, setErrorDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "error" | "success";
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "error",
+  });
+
+  const validatePhoneNumber = (phone: string): boolean => {
+    // Remove all non-digit characters
+    const digitsOnly = phone.replace(/\D/g, '');
+    
+    if (digitsOnly.length < 8) {
+      setPhoneError("Phone number must be at least 8 digits");
+      return false;
+    }
+    
+    if (digitsOnly.length > 15) {
+      setPhoneError("Phone number cannot exceed 15 digits");
+      return false;
+    }
+    
+    setPhoneError("");
+    return true;
+  };
+
+  const handlePhoneChange = (phone: string, countryCode: string) => {
+    const cleanPhone = phone?.startsWith("0") ? phone.slice(1) : phone;
+    setPhoneNumber(cleanPhone);
+    
+    // Validate phone number on change
+    if (cleanPhone) {
+      validatePhoneNumber(cleanPhone);
+    } else {
+      setPhoneError("");
+    }
+  };
+
+  const showError = (title: string, message: string, type: "info" | "warning" | "error" | "success" = "error") => {
+    setErrorDialog({
+      visible: true,
+      title,
+      message,
+      type,
+    });
+  };
+
+  const closeErrorDialog = () => {
+    setErrorDialog({
+      ...errorDialog,
+      visible: false,
+    });
+  };
+
+  // Check if form is valid
+  const isFormValid = isChecked && phoneNumber.trim().length > 0 && !phoneError;
 
   return (
     <KeyboardAwareScrollView 
@@ -51,8 +113,8 @@ function Login() {
             defaultCountryCode="SA"
             className="mb-7"
             value={phoneNumber}
-            onChange={(phone, countryCode) => {
-              setPhoneNumber(phone?.startsWith("0") ? phone.slice(1) : phone)}}
+            onChange={handlePhoneChange}
+            error={phoneError}
           />
           <View className="flex flex-row gap-4 mb-7">
             <Checkbox
@@ -73,9 +135,23 @@ function Login() {
           >
             {t("agreement_text")}
           </Text>
-          <VerifyOtp phoneNumber={phoneNumber!} />
+          <VerifyOtp 
+            phoneNumber={phoneNumber!} 
+            disabled={!isFormValid} 
+            onError={showError}
+          />
         </View>
       </View>
+
+      {/* Error Dialog */}
+      <AlertDialog
+        visible={errorDialog.visible}
+        onClose={closeErrorDialog}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        type={errorDialog.type}
+        confirmText="OK"
+      />
     </KeyboardAwareScrollView>
   );
 }

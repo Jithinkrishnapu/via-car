@@ -2,9 +2,11 @@ import { router } from "expo-router";
 import { Check, Circle, CirclePlus } from "lucide-react-native";
 import LocationSearchSelected from "@/components/common/location-search-selected";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
+import { useNetworkError } from "@/hooks/use-network-error";
 import { FlatList, Modal, Pressable, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Text from "@/components/common/text";
+import Snackbar from "@/components/ui/snackbar";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useState, useEffect } from "react";
@@ -33,6 +35,7 @@ function DropoffSelected() {
   const [selectedVehicle, setVehhicleSelected] = useState<number | null>(null)
   const [loadingVehicles, setLoadingVehicles] = useState(false)
   const {setPath} = useStore()
+  const { showSnackbar, snackbarMessage, showNetworkError, hideSnackbar, setRetryAction } = useNetworkError()
 
   // Set default vehicle if ride already has vehicle_id
   useEffect(() => {
@@ -66,6 +69,8 @@ function DropoffSelected() {
       }
     } catch (error) {
       console.error("Error fetching vehicles:", error);
+      showNetworkError('Failed to load vehicles. Please check your connection and try again.');
+      setRetryAction(() => handleGetVehicles);
     } finally {
       setLoadingVehicles(false);
     }
@@ -73,7 +78,7 @@ function DropoffSelected() {
 
   if (!loaded) return null;
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <View className="flex-1">
         <LocationSearchSelected
           initialRegion={{
@@ -104,11 +109,11 @@ function DropoffSelected() {
           onPress={() => setModalVisible(false)}
         >
           <Pressable 
-            className="bg-white h-fit px-4 py-2 rounded-t-3xl overflow-hidden"
+            className="bg-white h-fit px-6 pt-4 pb-8 rounded-t-3xl overflow-hidden"
             onPress={(e) => e.stopPropagation()} // Prevent modal close when tapping inside
           >
-            <View className="flex-row justify-between items-center my-4">
-              <Text className="text-[16px] font-[Kanit-Medium]">{t("profile.Select Vehicle")}</Text>
+            <View className="flex-row justify-between items-center mb-6">
+              <Text className="text-[16px] font-[Kanit-Medium]">{t("Select Vehicle")}</Text>
               <TouchableOpacity
                 onPress={() => setModalVisible(false)}
                 className="p-2"
@@ -126,7 +131,7 @@ function DropoffSelected() {
               </View>
             ) : vehicleList.length > 0 ? (
               <FlatList
-                contentContainerClassName="gap-3 mb-4"
+                contentContainerClassName="gap-4 mb-6"
                 data={vehicleList}
                 scrollEnabled={true}
                 contentInsetAdjustmentBehavior="automatic"
@@ -140,7 +145,7 @@ function DropoffSelected() {
                         setVehhicleSelected(item?.id);
                       }}  
                       key={index} 
-                      className={`flex-row p-3 rounded-lg justify-between items-center ${
+                      className={`flex-row p-4 rounded-xl justify-between items-center ${
                         isSelected ? 'border-2 border-[#FF4848] bg-red-50' : 'border border-gray-300'
                       }`}
                     >
@@ -179,12 +184,12 @@ function DropoffSelected() {
             ) : !loadingVehicles ? (
               <View className="py-8 items-center">
                 <Text className="text-gray-400 font-[Kanit-Light] mb-4">
-                  {t("profile.No vehicles added yet")}
+                  {t("No vehicles added yet")}
                 </Text>
               </View>
             ) : null}
             
-            <Separator className="border-gray-200 my-4" />
+            <Separator className="border-gray-200 my-6" />
             
             {/* Continue Button - shown when vehicle is selected */}
             {selectedVehicle ? (
@@ -196,7 +201,7 @@ function DropoffSelected() {
                     router.push("/(publish)/route");
                   }, 100);
                 }}
-                className="flex-row items-center justify-center h-14 rounded-full bg-[#FF4848] mb-3"
+                className="flex-row items-center justify-center h-14 rounded-full bg-[#FF4848] mb-4"
                 activeOpacity={0.8}
               >
                 <Text
@@ -240,6 +245,15 @@ function DropoffSelected() {
           </Pressable>
         </Pressable>
       </Modal>
+
+      {/* Network Error Snackbar */}
+      <Snackbar
+        visible={showSnackbar}
+        message={snackbarMessage}
+        type="error"
+        onDismiss={hideSnackbar}
+        duration={5000}
+      />
     </SafeAreaView>
   );
 }

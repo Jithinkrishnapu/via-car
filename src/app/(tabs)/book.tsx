@@ -20,32 +20,33 @@ function Book() {
   return (
     <ScrollView 
       bounces={false} 
-      className="flex-col bg-white"
-      contentInsetAdjustmentBehavior="automatic"
+      className="flex-1 bg-white"
+      contentInsetAdjustmentBehavior="never"
       automaticallyAdjustsScrollIndicatorInsets={false}
+      showsVerticalScrollIndicator={false}
     >
-       
-      <ImageBackground
-        source={require("../../../public/hero.png")}
-        resizeMode="cover"
-        className="justify-center items-center pb-24 pt-32"
-      >
-          <View 
-            style={{
-              position: 'absolute',
-              top: 40,
-              flexDirection: 'row',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              height: 50,
-              width: '100%',
-              paddingHorizontal: 15,
-              backgroundColor: 'transparent',
-            }}
-          >
-            <HambergIocn onPress={()=>setOpen(true)} />
-            <BellIocn onPress={()=>router.push("/(tabs)/inbox")} />
-          </View>
+     
+    <ImageBackground
+      source={require("../../../public/hero.png")}
+      resizeMode="cover"
+      className="justify-center items-center pb-24 pt-32"
+    >
+        <View 
+          style={{
+            position: 'absolute',
+            top: 60,
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            height: 50,
+            width: '100%',
+            paddingHorizontal: 15,
+            backgroundColor: 'transparent',
+          }}
+        >
+          <HambergIocn onPress={()=>setOpen(true)} />
+          <BellIocn onPress={()=>router.push("/(tabs)/inbox")} />
+        </View>
         <View className="w-full max-w-[645px] items-center px-6">
           <Text
             fontSize={34}
@@ -63,8 +64,8 @@ function Book() {
           <CarAnimation />
         </View>
       </ImageBackground>
-      <SearchRide />
-      <Drawer visible={open} onClose={() => setOpen(false)} />
+    <SearchRide />
+    <Drawer visible={open} onClose={() => setOpen(false)} />
     </ScrollView>
   );
 }
