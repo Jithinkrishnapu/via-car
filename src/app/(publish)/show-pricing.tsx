@@ -6,7 +6,6 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 
@@ -24,6 +23,8 @@ import { useCreateRide } from "@/service/ride-booking";
 import { RideDetails } from "@/types/ride-types";
 import { useGetProfileDetails } from "@/service/auth";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { snackbarManager } from "@/utils/snackbar-manager";
+import AlertDialog from "@/components/ui/alert-dialog";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -36,6 +37,33 @@ function ShowPricing() {
 
   const [userDetails, setUserDetails] = useState<any>();
   const [loading, setLoading] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "error" | "success";
+    showRetry: boolean;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "error",
+    showRetry: false,
+  });
+
+  const showErrorDialog = (title: string, message: string, type: "info" | "warning" | "error" | "success" = "error", showRetry: boolean = false) => {
+    setErrorDialog({
+      visible: true,
+      title,
+      message,
+      type,
+      showRetry,
+    });
+  };
+
+  const closeErrorDialog = () => {
+    setErrorDialog(prev => ({ ...prev, visible: false }));
+  };
 
   const handleProfileDetails = async () => {
     const response = await useGetProfileDetails();
@@ -61,7 +89,7 @@ function ShowPricing() {
   const numSegments = Math.max(0, fullRoute.length - 1);
   // Only store prices for intermediate segments (not the full trip)
   const [segmentPrices, setSegmentPrices] = useState<number[]>(Array(numSegments).fill(10));
-  
+
   // Initialize segment prices
   useEffect(() => {
     if (numSegments <= 0) { setSegmentPrices([]); return; }
@@ -74,7 +102,7 @@ function ShowPricing() {
   }, [numSegments, ride.segmentPrices]);
 
   const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
-  
+
   const updateSegmentPrice = (idx: number, delta: number) =>
     setSegmentPrices((p) => {
       const copy = [...p];
@@ -95,11 +123,11 @@ function ShowPricing() {
       /* ---- build stops --------------------------------------------- */
       const stops = fullRoute.map((pt, i) => ({
         address: pt.address,
-        lat    : pt.lat,
-        lng    : pt.lng,
-        order  : i + 1,
+        lat: pt.lat,
+        lng: pt.lng,
+        order: i + 1,
       }));
-  
+
       /* ---- build price matrix -------------------------------------- */
       const n = fullRoute.length;
       const prices: any[] = [];
@@ -107,66 +135,112 @@ function ShowPricing() {
         // FIRST: Add the full trip price (pickup to final drop) - this is the fixed price_per_seat
         prices.push({
           pickup_order: 1,
-          drop_order  : n,
-          amount      : ride.price_per_seat || 10,
+          drop_order: n,
+          amount: ride.price_per_seat || 10,
         });
-  
+
         // THEN: Add prices for intermediate segments (stopovers)
         // Build prefix sum array using segmentPrices for intermediate stops
         const prefix = [0];
         for (let i = 0; i < segmentPrices.length; i++) {
           prefix.push(prefix[i] + segmentPrices[i]);
         }
-  
+
         // Generate all other possible pickup-drop combinations (excluding full trip)
         for (let i = 0; i < n; i++) {
           for (let j = i + 1; j < n; j++) {
             // Skip the full trip as we already added it first
             if (i === 0 && j === n - 1) continue;
-            
+
             prices.push({
               pickup_order: i + 1,
-              drop_order  : j + 1,
-              amount      : prefix[j] - prefix[i],
+              drop_order: j + 1,
+              amount: prefix[j] - prefix[i],
             });
           }
         }
       }
-  
+
       /* ---- assemble payload ---------------------------------------- */
       const postData: RideDetails = {
-        vehicle_id   : ride.vehicle_id,
-        pickup_lat   : ride.pickup_lat,
-        pickup_lng   : ride.pickup_lng,
+        vehicle_id: ride.vehicle_id,
+        pickup_lat: ride.pickup_lat,
+        pickup_lng: ride.pickup_lng,
         pickup_address: ride.pickup_address,
-        drop_lat     : ride.destination_lat,
-        drop_lng     : ride.destination_lng,
-        drop_address : ride.destination_address,
-        date         : ride.date,
-        pickup_time  : ride.time,
-        drop_time    : ride.time,
-        passengers   : ride.available_seats,
-        ride_route   : polyline,
+        drop_lat: ride.destination_lat,
+        drop_lng: ride.destination_lng,
+        drop_address: ride.destination_address,
+        date: ride.date,
+        pickup_time: ride.time,
+        drop_time: ride.time,
+        passengers: ride.available_seats,
+        ride_route: polyline,
         max_2_in_back: ride.max_2_in_back,
         stops,
         prices,
       };
-  
+
+      console.log(postData, "=====================postdata")
+      
       /* ---- hit the endpoint ---------------------------------------- */
-      const { ok, data } = await useCreateRide(postData);
-  
+      const { ok, data, status } = await useCreateRide(postData);
+
       if (ok && data?.data?.id) {
         router.push({
           pathname: '/(publish)/return',
-          params  : {
-            ride_id       : data.data.id,
+          params: {
+            ride_id: data.data.id,
             ride_amount_id: data.data.rideAmounts?.[0]?.pickup_id,
           },
         });
+      } else {
+        // Handle API errors with proper error messages
+        const errorMessage = data?.message || data?.error || data?.msg || 'Failed to create ride';
+
+        if (status >= 400 && status < 500) {
+          // Client errors (400-499) - show in dialog
+          showErrorDialog(
+            t("error.rideCreationFailed") || "Ride Creation Failed",
+            errorMessage,
+            "error"
+          );
+        } else if (status >= 500) {
+          // Server errors (500+) - show in dialog with retry
+          showErrorDialog(
+            t("error.serverError") || "Server Error",
+            t("error.serverErrorMessage") || "Something went wrong on our end. Please try again later.",
+            "error",
+            true
+          );
+        } else {
+          // Unknown error - show in dialog
+          showErrorDialog(
+            t("error.unknownError") || "Error",
+            errorMessage,
+            "error"
+          );
+        }
       }
-      /* ---- error already shown by useCreateRide -------------------- */
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong');
+      console.error('Ride creation error:', err);
+
+      // Check if it's a network error
+      if (err.name === 'TypeError' || err.message?.includes('Network') || err.message?.includes('fetch')) {
+        // Network errors - show in snackbar
+        snackbarManager.showNetworkError(
+          t("error.networkError") || "Network error. Please check your connection and try again.",
+          handleContinue
+        );
+      } else {
+        // Other errors - show in dialog with retry
+        const errorMessage = err?.message || err?.error || err?.msg || 'Something went wrong';
+        showErrorDialog(
+          t("error.unexpectedError") || "Unexpected Error",
+          errorMessage,
+          "error",
+          true
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -217,7 +291,7 @@ function ShowPricing() {
                   {t("showPricing.rideDetails")}
                 </Text>
               </View>
-              
+
               <View className="flex-row items-start gap-3 md:gap-4">
                 <Direction4 width={32} height={32} className="mt-1" />
                 <View className="flex-1">
@@ -298,14 +372,30 @@ function ShowPricing() {
         <TouchableOpacity
           onPress={handleContinue}
           disabled={loading}
-          className="rounded-full h-14 md:h-[55px] bg-[#FF4848] items-center justify-center shadow-lg flex-row gap-2"
+          className={`rounded-full h-14 md:h-[55px] items-center justify-center shadow-lg flex-row gap-2 ${
+            loading ? 'bg-[#FF4848]/60' : 'bg-[#FF4848]'
+          }`}
+          activeOpacity={loading ? 1 : 0.8}
         >
           {loading && <ActivityIndicator size="small" color="#fff" />}
-          <Text className="text-base md:text-xl text-white font-[Kanit-Medium]">
-            {t("common.continue")}
+          <Text className={`text-base md:text-xl font-[Kanit-Medium] ${
+            loading ? 'text-white/80' : 'text-white'
+          }`}>
+            {loading ? t("common.processing") || "Processing..." : t("common.continue")}
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Error Dialog */}
+      <AlertDialog
+        visible={errorDialog.visible}
+        onClose={closeErrorDialog}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        type={errorDialog.type}
+        confirmText={errorDialog.showRetry ? t("common.retry") || "Retry" : t("common.ok") || "OK"}
+        onConfirm={errorDialog.showRetry ? handleContinue : closeErrorDialog}
+      />
     </SafeAreaView>
   );
 }

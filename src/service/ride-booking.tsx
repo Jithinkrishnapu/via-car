@@ -31,14 +31,7 @@ export const useCreateRide = async (postData: RideDetails) => {
   try   { data = JSON.parse(raw); }
   catch { data = { message: raw || 'Server returned non-JSON response' }; }
 
-  /* 3️⃣  Surface the error to the caller & UI ----------------------- */
-  if (!res.ok) {
-    Alert.alert(
-      `Ride creation failed (${res.status})`,
-      data.message || data.error || data.msg || 'Unknown server error'
-    );
-  }
-
+  /* 3️⃣  Return the response without showing Alert - let caller handle it */
   return { ok: res.ok, status: res.status, data };
 };
 

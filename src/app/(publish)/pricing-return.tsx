@@ -115,15 +115,22 @@ function PricingReturn() {
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           onPress={() => {
-            setRideField("price_per_seat", amount);
-            router.push("/(publish)/show-pricing-return");
+            if (amount > 0) {
+              setRideField("price_per_seat", amount);
+              router.push("/(publish)/show-pricing-return");
+            }
           }}
-          activeOpacity={0.8}
-          className="flex-1 rounded-full h-[55px] bg-[#FF4848] items-center justify-center"
+          activeOpacity={amount > 0 ? 0.8 : 1}
+          disabled={amount === 0}
+          className={`flex-1 rounded-full h-[55px] items-center justify-center ${
+            amount > 0 ? "bg-[#FF4848]" : "bg-[#FF4848]/30"
+          }`}
         >
           <Text
             fontSize={20}
-            className="text-xl text-white font-[Kanit-Regular]"
+            className={`text-xl font-[Kanit-Regular] ${
+              amount > 0 ? "text-white" : "text-white/50"
+            }`}
           >
             {t("common.continue")}
           </Text>

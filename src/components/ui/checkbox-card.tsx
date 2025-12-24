@@ -27,10 +27,11 @@ interface Option {
 }
 
 interface Props {
-  setCheckedItem: (items: Record<string, boolean>) => void
+  setCheckedItem: (items: Record<string, boolean>) => void;
+  checkedItems?: Record<string, boolean>;
 }
 
-const CheckboxCard = ({ setCheckedItem }: Props) => {
+const CheckboxCard = ({ setCheckedItem, checkedItems: externalCheckedItems }: Props) => {
   const { t } = useTranslation("components");
   const options: Option[] = [
     {
@@ -101,9 +102,19 @@ const CheckboxCard = ({ setCheckedItem }: Props) => {
       )
   );
 
+  // Update internal state when external state changes (for clearing)
+  React.useEffect(() => {
+    if (externalCheckedItems) {
+      setCheckedItems(externalCheckedItems);
+    }
+  }, [externalCheckedItems]);
+
   const toggleCheckbox = (value: string) => {
-    setCheckedItems((prev) => ({ ...prev, [value]: !prev[value] }));
-    setCheckedItem({ ...checkedItems, [value]: !checkedItems[value] });
+    setCheckedItems((prev) => {
+      const newState = { ...prev, [value]: !prev[value] };
+      setCheckedItem(newState);
+      return newState;
+    });
   };
 
   return (

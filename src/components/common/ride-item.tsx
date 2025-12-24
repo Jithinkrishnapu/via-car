@@ -29,69 +29,102 @@ function RideItem({ ride,passengers }: RideItemProps) {
   return (
     <Pressable onPress={() =>{
       router.push({ pathname: "/(booking)/ride-details", params: {rideId: ride?.rideId,ride_amount_id:ride?.rideAmount?.id,passengers:passengers} })}}>
-      <View className="p-4 rounded-2xl shadow-sm bg-white">
-        <View className="flex-row justify-between items-start gap-4 flex-wrap">
+      <View className="p-5 rounded-2xl shadow-sm bg-white">
+        {/* Header with Price */}
+        <View className="flex-row justify-between items-start mb-4">
           <View className="flex-1">
-            <View className="flex-row items-center gap-12 mb-2">
-              <View className="relative">
-                <Text
-                  fontSize={14}
-                  className="text-[14px] font-[Kanit-Regular]"
-                >
-                  {ride?.pickup_stop?.time ? ride.pickup_stop.time.slice(0, 5) : "--:--"}
-                </Text>
-                <View className="w-max h-[70px] absolute top-[-5%] right-[-110%]">
-                  <Direction className="object-contain" />
-                </View>
-              </View>
+            <Text fontSize={12} className="text-[#666666] font-[Kanit-Light] mb-1">
+              {formatDuration(ride?.rideAmount?.duration_minutes)}
+            </Text>
+          </View>
+          <Text
+            fontSize={20}
+            className="text-[#00665A] font-[Kanit-Medium]"
+          >
+            {ride?.rideAmount.amount ? `SR ${ride?.rideAmount.amount}` : "--"}
+          </Text>
+        </View>
+
+        {/* Route Section with Better Alignment */}
+        <View className="flex-row items-start gap-4 mb-4">
+          {/* Time Column */}
+          <View className="items-center min-w-[50px]">
+            <Text fontSize={16} className="text-[#263238] font-[Kanit-Medium] mb-1">
+              {ride?.pickup_stop?.time ? ride.pickup_stop.time.slice(0, 5) : "--:--"}
+            </Text>
+            <View className="w-[2px] h-8 bg-[#E0E0E0] my-1" />
+            <Text fontSize={16} className="text-[#263238] font-[Kanit-Medium]">
+              {ride?.drop_stop?.time ? ride.drop_stop.time.slice(0, 5) : "--:--"}
+            </Text>
+          </View>
+
+          {/* Direction Icon */}
+          <View className="items-center justify-center pt-2">
+            <Direction width={24} height={60} />
+          </View>
+
+          {/* Address Column */}
+          <View className="flex-1">
+            <View className="mb-3">
+              <Text fontSize={12} className="text-[#939393] font-[Kanit-Light] uppercase tracking-wide mb-1">
+                {t("booking.rideItem.pickup") || "PICKUP"}
+              </Text>
               <Text
-                fontSize={14}
-                className="text-[14px] font-[Kanit-Regular] flex-1"
+                fontSize={15}
+                className="text-[#263238] font-[Kanit-Regular] leading-5"
+                numberOfLines={2}
               >
-                {ride?.pickup_stop?.address}
+                {ride?.pickup_stop?.address || "Pickup location"}
               </Text>
             </View>
-            <View className="flex-row items-center gap-12">
-              <Text fontSize={14} className="text-[14px] font-[Kanit-Regular]">
-                {ride?.drop_stop?.time ? ride.drop_stop.time.slice(0, 5) : "--:--"}
+            
+            <View>
+              <Text fontSize={12} className="text-[#939393] font-[Kanit-Light] uppercase tracking-wide mb-1">
+                {t("booking.rideItem.drop") || "DROP"}
               </Text>
               <Text
-                fontSize={14}
-                className="text-[14px] font-[Kanit-Regular] flex-1"
+                fontSize={15}
+                className="text-[#263238] font-[Kanit-Regular] leading-5"
+                numberOfLines={2}
               >
-                {ride?.drop_stop?.address}
+                {ride?.drop_stop?.address || "Drop location"}
               </Text>
             </View>
           </View>
-          <Text
-            fontSize={18}
-            className="text-lg text-[#00665A] font-[Kanit-Medium]"
-          >
-            {ride?.rideAmount.amount ? `SR ${ride?.rideAmount.amount}`  :"--"}
-          </Text>
         </View>
-        <Text
-              fontSize={12}
-              className="text-[14px] text-[#666666] font-[Kanit-Regular] my-2"
-            >
-              {formatDuration(ride?.rideAmount?.duration_minutes)}
+
+        {/* Divider */}
+        <View className="border-t border-dashed border-[#CDCDCD] my-4" />
+
+        {/* Driver Info */}
+        <View className="flex-row items-center justify-between">
+          <View className="flex-row items-center gap-3">
+            <Avatar
+              source={require(`../../../public/profile-img.png`)}
+              size={32}
+              initials="CN"
+              className="bg-blue-500"
+              textClassName="text-white text-sm"
+            />
+            <View>
+              <Text fontSize={15} className="text-[#263238] font-[Kanit-Medium]">
+                {ride?.driver?.name || "Driver"}
+              </Text>
+              <View className="flex-row items-center gap-1">
+                <Star size={14} fill="#FF9C00" strokeWidth={0} />
+                <Text fontSize={13} className="text-[#666666] font-[Kanit-Regular]">
+                  {t("booking.rideItem.rating") || "4.8"}
+                </Text>
+              </View>
+            </View>
+          </View>
+          
+          {/* Additional Info */}
+          <View className="items-end">
+            <Text fontSize={12} className="text-[#666666] font-[Kanit-Light]">
+              {passengers} {t("booking.rideItem.passengers")}
             </Text>
-        <View className="border-t border-dashed border-[#CDCDCD] my-3" />
-        <View className="flex-row items-center gap-2 py-1">
-          <Avatar
-            source={require(`../../../public/profile-img.png`)}
-            size={25}
-            initials="CN"
-            className="bg-blue-500"
-            textClassName="text-white text-lg"
-          />
-          <Text fontSize={14} className="text-[14px] px-2 font-[Kanit-Regular]">
-            {ride?.driver?.name}
-          </Text>
-          <Star size={16} fill="#FF9C00" strokeWidth={0} />
-          <Text fontSize={14} className="text-[14px] font-[Kanit-Regular]">
-            {t("booking.rideItem.rating")}
-          </Text>
+          </View>
         </View>
       </View>
     </Pressable>

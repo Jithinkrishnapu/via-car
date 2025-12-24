@@ -190,6 +190,9 @@ function Register() {
       formdata.append("gender", category);
       formdata.append("fcm_token", "test");
 
+
+      console.log(formdata,"=========================",isPublish)
+
       const response = await handleRegister(formdata);
       
       if (response) {

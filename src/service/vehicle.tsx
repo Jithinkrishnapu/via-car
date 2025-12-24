@@ -1,5 +1,6 @@
 import { API_URL } from "@/constants/constants";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
+import { handleApiError } from "@/utils/api-error-handler";
 
 export const getBrandList = async (search: string): Promise<any> => {
     const userDetailsString = await useAsyncStorage("userDetails").getItem()
@@ -75,12 +76,15 @@ export const getVehicleList = async (): Promise<any> => {
         const data = await response.json();
         
         if (!response.ok) {
-            throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+            const error: any = new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+            error.response = { status: response.status, data };
+            throw error;
         }
 
         return data;
     } catch (error: any) {
         console.error("Get vehicle list API error:", error);
+        handleApiError(error, () => getVehicleList());
         throw error;
     }
 };
@@ -129,13 +133,38 @@ export const addVehicle = async (postData: FormData): Promise<Response> => {
         
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({ message: 'Unknown error' }));
-            throw new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+            
+            // Create an axios-like error structure for consistent error handling
+            const error: any = new Error(errorData?.message || `HTTP ${response.status}: ${response.statusText}`);
+            error.response = {
+                status: response.status,
+                statusText: response.statusText,
+                data: errorData
+            };
+            error.status = response.status;
+            throw error;
         }
         
         return response;
     } catch (error: any) {
         console.error("Add vehicle API error:", error);
-        throw error;
+        
+        // If it's already our custom error, just re-throw it
+        if (error.response) {
+            throw error;
+        }
+        
+        // For network errors or other issues, create a consistent structure
+        const networkError: any = new Error(error.message || 'Network error occurred');
+        networkError.response = {
+            status: 0,
+            statusText: 'Network Error',
+            data: {
+                message: error.message || 'Failed to connect to server',
+                error: 'NETWORK_ERROR'
+            }
+        };
+        throw networkError;
     }
 }
 
@@ -143,6 +172,8 @@ export const updateVehicle = async (payload: { vehicle_id: number; model_id: num
     const userDetailsString = await useAsyncStorage("userDetails").getItem()
     const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
     const token = userDetails ? userDetails?.token : ""
+    
+    try {
         const response = await fetch(`${API_URL}/api/vehicle/update`, {
             body: JSON.stringify(payload),
             method: 'POST',
@@ -155,42 +186,92 @@ export const updateVehicle = async (payload: { vehicle_id: number; model_id: num
         const body = await response.json().catch(() => ({}));
         
         if (!response.ok) {
-            const err: any = new Error(body.message || response.statusText);
-            err.status = response.status;
-            err.body = body;
-            throw err;
+            // Create an axios-like error structure for consistent error handling
+            const error: any = new Error(body.message || response.statusText);
+            error.response = {
+                status: response.status,
+                statusText: response.statusText,
+                data: body
+            };
+            error.status = response.status;
+            error.body = body; // Keep for backward compatibility
+            throw error;
         }
         
-        return { res: response, body }
+        return { res: response, body };
+    } catch (error: any) {
+        console.error("Update vehicle API error:", error);
+        
+        // If it's already our custom error, just re-throw it
+        if (error.response) {
+            throw error;
+        }
+        
+        // For network errors or other issues, create a consistent structure
+        const networkError: any = new Error(error.message || 'Network error occurred');
+        networkError.response = {
+            status: 0,
+            statusText: 'Network Error',
+            data: {
+                message: error.message || 'Failed to connect to server',
+                error: 'NETWORK_ERROR'
+            }
+        };
+        throw networkError;
+    }
 }
 
 export const deleteVehicle = async (vehicleId: number): Promise<{ res: Response; body: any }> => {
     const userDetailsString = await useAsyncStorage("userDetails").getItem()
     const userDetails = userDetailsString ? JSON.parse(userDetailsString) : null
     const token = userDetails ? userDetails?.token : ""
+
+    console.log(token)
     
     try {
         const response = await fetch(`${API_URL}/api/vehicle/delete`, {
-            method: 'POST',
+            method: 'DELETE',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,
             },
-            body: JSON.stringify({ id: vehicleId })
+            body: JSON.stringify({ vehicle_id: vehicleId })
         });
         
         const body = await response.json().catch(() => ({}));
         
         if (!response.ok) {
-            const err: any = new Error(body.message || response.statusText);
-            err.status = response.status;
-            err.body = body;
-            throw err;
+            // Create an axios-like error structure for consistent error handling
+            const error: any = new Error(body.message || response.statusText);
+            error.response = {
+                status: response.status,
+                statusText: response.statusText,
+                data: body
+            };
+            error.status = response.status;
+            error.body = body; // Keep for backward compatibility
+            throw error;
         }
         
         return { res: response, body };
     } catch (error: any) {
         console.error("Delete vehicle API error:", error);
-        throw error;
+        
+        // If it's already our custom error, just re-throw it
+        if (error.response) {
+            throw error;
+        }
+        
+        // For network errors or other issues, create a consistent structure
+        const networkError: any = new Error(error.message || 'Network error occurred');
+        networkError.response = {
+            status: 0,
+            statusText: 'Network Error',
+            data: {
+                message: error.message || 'Failed to connect to server',
+                error: 'NETWORK_ERROR'
+            }
+        };
+        throw networkError;
     }
 }

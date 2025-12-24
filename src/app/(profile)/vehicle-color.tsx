@@ -17,7 +17,7 @@ export default function VehiclePage() {
   const router = useRouter();
   const { t } = useTranslation();
   const { isRTL, swap } = useDirection();
-  const { vehicle_model_id, path } = useStore();
+  const { vehicle_model_id, path,setPath } = useStore();
   const [selectedColor, setSelectedColor] = useState("");
   const [loading, setLoading] = useState(false);
   
@@ -46,8 +46,10 @@ export default function VehiclePage() {
     // Navigate to the specified path or default to pickup for publish flow
     if (typeof path === "string" && path.startsWith("/")) {
       router.replace(path as any);
+      setPath("")
     } else {
       // Default to pickup for publish users
+      setPath("")
       router.replace("/(tabs)/pickup");
     }
   };

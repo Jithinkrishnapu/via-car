@@ -19,6 +19,31 @@ export default function TabLayout() {
     return !!token;
   };
 
+  /* ---------- helper to create tab button with auth check ---------- */
+  const createTabButton = (tabName: string, requiresAuth: boolean = true) => {
+    return (props: any) => (
+      <PlatformPressable
+        {...props}
+        android_ripple={{ color: "transparent" }}
+        onPress={async (e) => {
+          console.log('Tab pressed:', tabName, 'requiresAuth:', requiresAuth);
+          
+          if (requiresAuth) {
+            const authenticated = await isAuthenticated();
+            if (!authenticated) {
+              e.preventDefault();
+              router.replace("/login");
+              return;
+            }
+          }
+          
+          // Allow default navigation
+          props.onPress?.(e);
+        }}
+      />
+    );
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -26,29 +51,6 @@ export default function TabLayout() {
         tabBarStyle: styles.container,
         tabBarLabelStyle: styles.label,
         animation: "shift",
-        tabBarButton: (props) => (
-          <PlatformPressable
-            {...props}
-            android_ripple={{ color: "transparent" }}
-            onPress={async (e) => {
-              /* which tab was pressed? */
-              const target = (props.children as any)?.props?.name;
-
-              /* protect all tabs except home (book) - they require authentication */
-              if (target !== "book") {
-                const authenticated = await isAuthenticated();
-                if (!authenticated) {
-                  e.preventDefault(); // Prevent default navigation only if not authenticated
-                  router.replace("/login");
-                  return;
-                }
-              }
-              
-              // If authenticated or home tab, allow default navigation
-              props.onPress?.(e);
-            }}
-          />
-        ),
       }}
     >
       <Tabs.Screen
@@ -56,6 +58,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.home"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("book", false), // No auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -72,6 +75,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.publish"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("pickup", false), // No auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -88,6 +92,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.yourRides"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("your-rides", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -104,6 +109,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.inbox"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("inbox", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -120,6 +126,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("user-profile", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -145,7 +152,6 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.1,
     shadowRadius: 5,
     elevation: 10,
-    paddingBottom: 5,
     paddingBottom: Platform.OS === 'ios' ? 5 : 5,
   },
   tabWrapper: {

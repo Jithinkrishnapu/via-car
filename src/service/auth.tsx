@@ -1,6 +1,6 @@
 import { API_URL } from "@/constants/constants";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
-import { apiRequest, handleApiError, ApiResponse } from "@/utils/apiErrorHandler";
+import { handleApiError } from "@/utils/api-error-handler";
 
 export const handleSendOtp = async (postData: FormData): Promise<any> => {
   try {
@@ -275,12 +275,15 @@ export async function getUserStatus(): Promise<any> {
     const data = await response.json();
     
     if (!response.ok) {
-      throw new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+      const error: any = new Error(data?.message || data?.error || `HTTP ${response.status}: ${response.statusText}`);
+      error.response = { status: response.status, data };
+      throw error;
     }
     
     return data;
   } catch (error: any) {
     console.error("Get user status API error:", error);
+    handleApiError(error, () => getUserStatus());
     throw error;
   }
 }

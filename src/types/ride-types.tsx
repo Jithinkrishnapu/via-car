@@ -6,12 +6,18 @@ export interface SearchRideRequest {
     date: string; // ISO date string (e.g., "2025-07-25")
     passengers: number;
     max_walking_distance_km: number;
-    max_2_in_back?:boolean,
-    include_total?:boolean,
-    sort_by?:number,
-    "stops_filter"?:string,
-    verified_drivers_only?:boolean
-  }
+    max_2_in_back?: boolean;
+    include_total?: boolean;
+    sort_by?: number;
+    stops_filter?: string;
+    verified_drivers_only?: boolean;
+    instant_booking?: boolean;
+    smoking_allowed?: boolean;
+    pets_allowed?: boolean;
+    power_outlets?: boolean;
+    air_conditioning?: boolean;
+    accessible_for_disabled?: boolean;
+}
 
 
 interface Stop {
@@ -165,6 +171,19 @@ export interface Rides {
 }
 
 
+export interface Passenger {
+  id: number;
+  user: {
+    id: number;
+    first_name: string;
+    last_name: string;
+    name: string;
+    profile_image: string | null;
+  };
+  pickup_address?: string;
+  drop_address?: string;
+}
+
 export interface RideDetail {
   rideId: {
     status: string; // e.g., "Active"
@@ -221,7 +240,7 @@ export interface RideDetail {
       };
     };
   };
-  passengers: unknown[]; // or define Passenger type if known
+  passengers: Passenger[];
   serviceAmount: number; // e.g., 210
   vatPercentage: number; // e.g., 10
   platformFeePercentage: number; // e.g., 10
@@ -235,7 +254,7 @@ export interface BookingPaymentData {
   payment_brand: string; // e.g., "VISA", "MASTERCARD"
   card_number: string; // masked or full (handle securely!)
   card_holder_name: string;
-  card_expiration_month: number; // 1–12
+  card_expiration_month: string; // 1-12
   card_expiration_year: number; // e.g., 2025
   card_cvv: string; // usually 3 or 4 digits as string
   customer_email: string;

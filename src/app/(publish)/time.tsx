@@ -73,118 +73,113 @@ function Time() {
   };
 
   return (
-    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+    <SafeAreaView className="flex-1 bg-white" edges={['top']}>
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
+        keyboardVerticalOffset={Platform.OS === "ios" ? 90 : 20}
       >
-        <ScrollView 
-          className="flex-1"
-          contentContainerStyle={{ flexGrow: 1 }}
-          keyboardShouldPersistTaps="handled"
-        >
-          <View className="flex-1 px-6 pt-6 pb-12">
-            {/* Header */}
-            <View className="flex-row items-center gap-4 mb-6">
-              <TouchableOpacity
-                className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-                onPress={() => router.back()}
-                activeOpacity={0.8}
+        <View className="flex-1 px-6 pt-6">
+          {/* Header */}
+          <View className="flex-row items-center gap-4 mb-6">
+            <TouchableOpacity
+              className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+              onPress={() => router.back()}
+              activeOpacity={0.8}
+            >
+              {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
+            </TouchableOpacity>
+            <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+              {t("time.title")}
+            </Text>
+          </View>
+          
+          {/* Spacer to center the time inputs */}
+          <View className="flex-1 justify-start">
+            {/* Time Inputs */}
+            <View className="flex-row items-center justify-center gap-2">
+              {/* Hour */}
+              <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
+                <TextInput
+                  value={hour}
+                  onChangeText={onChangeHour}
+                  onBlur={onBlurHour}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
+                  style={{
+                    textAlignVertical: 'center',
+                    includeFontPadding: false,
+                    lineHeight: Platform.OS === 'ios' ? 84 : 59,
+                  }}
+                />
+              </View>
+
+              {/* Colon */}
+              <Text
+                fontSize={59}
+                className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E]"
               >
-                {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
-              </TouchableOpacity>
-              <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
-                {t("time.title")}
+                :
               </Text>
-            </View>
-            
-            {/* Spacer to center the time inputs */}
-            <View className="flex-1r">
-              {/* Time Inputs */}
-              <View className="flex-row items-center justify-center gap-2">
-                {/* Hour */}
-                <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
-                  <TextInput
-                    value={hour}
-                    onChangeText={onChangeHour}
-                    onBlur={onBlurHour}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
-                    style={{
-                      textAlignVertical: 'center',
-                      includeFontPadding: false,
-                      lineHeight: Platform.OS === 'ios' ? 84 : 59,
-                    }}
-                  />
-                </View>
 
-                {/* Colon */}
-                <Text
-                  fontSize={59}
-                  className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E]"
-                >
-                  :
-                </Text>
+              {/* Minute */}
+              <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
+                <TextInput
+                  value={minute}
+                  onChangeText={onChangeMinute}
+                  onBlur={onBlurMinute}
+                  keyboardType="number-pad"
+                  maxLength={2}
+                  className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
+                  style={{
+                    textAlignVertical: 'center',
+                    includeFontPadding: false,
+                    lineHeight: Platform.OS === 'ios' ? 84 : 59,
+                  }}
+                />
+              </View>
 
-                {/* Minute */}
-                <View className="bg-[#F5F5F5] w-[100px] h-[84px] rounded-lg items-center justify-center">
-                  <TextInput
-                    value={minute}
-                    onChangeText={onChangeMinute}
-                    onBlur={onBlurMinute}
-                    keyboardType="number-pad"
-                    maxLength={2}
-                    className="text-[59px] font-[Kanit-Regular] text-[#3C3F4E] text-center w-full h-full"
-                    style={{
-                      textAlignVertical: 'center',
-                      includeFontPadding: false,
-                      lineHeight: Platform.OS === 'ios' ? 84 : 59,
-                    }}
-                  />
-                </View>
-
-                {/* AM/PM Toggle */}
-                <View className="ml-2 h-[84px] w-[55px] rounded-lg overflow-hidden border border-[#00665A]">
-                  {(["AM", "PM"] as const).map((p, i) => {
-                    const isSel = period === p;
-                    return (
-                      <TouchableOpacity
-                        key={p}
-                        onPress={() => setPeriod(p)}
-                        activeOpacity={0.8}
-                        className={`flex-1 items-center justify-center ${
-                          isSel ? "bg-[#00665A]" : "bg-white"
+              {/* AM/PM Toggle */}
+              <View className="ml-2 h-[84px] w-[55px] rounded-lg overflow-hidden border border-[#00665A]">
+                {(["AM", "PM"] as const).map((p, i) => {
+                  const isSel = period === p;
+                  return (
+                    <TouchableOpacity
+                      key={p}
+                      onPress={() => setPeriod(p)}
+                      activeOpacity={0.8}
+                      className={`flex-1 items-center justify-center ${
+                        isSel ? "bg-[#00665A]" : "bg-white"
+                      }`}
+                      style={
+                        i === 0
+                          ? { borderBottomWidth: 1, borderBottomColor: "#00665A" }
+                          : {}
+                      }
+                    >
+                      <Text
+                        fontSize={15}
+                        className={`text-[15px] font-[Kanit-Medium] ${
+                          isSel ? "text-white" : "text-[#5F6368]"
                         }`}
-                        style={
-                          i === 0
-                            ? { borderBottomWidth: 1, borderBottomColor: "#00665A" }
-                            : {}
-                        }
                       >
-                        <Text
-                          fontSize={15}
-                          className={`text-[15px] font-[Kanit-Medium] ${
-                            isSel ? "text-white" : "text-[#5F6368]"
-                          }`}
-                        >
-                          {p === "AM" ? t("time.am") : t("time.pm")}
-                        </Text>
-                      </TouchableOpacity>
-                    );
-                  })}
-                </View>
+                        {p === "AM" ? t("time.am") : t("time.pm")}
+                      </Text>
+                    </TouchableOpacity>
+                  );
+                })}
               </View>
             </View>
           </View>
-        </ScrollView>
+        </View>
 
-        {/* Continue Button */}
-        <View className="px-6 pb-6">
+        {/* Continue Button - stays above keyboard */}
+        <View className="px-6 pb-8 bg-white border-t border-gray-100">
           <TouchableOpacity
             onPress={handleContinue}
             activeOpacity={0.8}
-            className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
+            className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center mt-4"
           >
             <Text
               fontSize={20}

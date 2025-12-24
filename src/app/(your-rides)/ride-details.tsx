@@ -58,10 +58,10 @@ function RideDetails() {
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
   const { isPublish } = useStore()
-  const route = useRoute();
+  const route = useRoute<any>();
   const [rideDetail, setRideDetail] = useState<RideDetail>()
   const [routes, setRoutes] = useState()
-  const { setPolyline,polyline:EncodedLine } = useCreateRideStore();
+  const { setPolyline, polyline: EncodedLine } = useCreateRideStore();
 
 
   const handleBookNow = async () => {
@@ -101,11 +101,11 @@ function RideDetails() {
       notes: 'Please wait at the main entrance',
       ride_amount_id: rideDetail?.rideAmount?.id,
     };
-  
+
     try {
       const res = await useCreateBooking(postData);
       console.log('success ===========', res);
-      router.push({ pathname: '/(booking)/payment', params: {booking_id:res?.data?.booking?.id, amount:res?.data?.booking?.totalAmount} });
+      router.push({ pathname: '/(booking)/payment', params: { booking_id: res?.data?.booking?.id, amount: res?.data?.booking?.totalAmount } });
     } catch (err: any) {
       // pick the best text to show
       const msg =
@@ -116,7 +116,7 @@ function RideDetails() {
     }
   };
 
-  const [userDetails, setUserDetails] = useState(null);
+  const [userDetails, setUserDetails] = useState<any>(null);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -133,101 +133,108 @@ function RideDetails() {
 
   useEffect(() => {
     handleGetRideDetails()
-  }, [route,EncodedLine])
+  }, [route, EncodedLine])
 
   if (!loaded) return null;
   return (
-    <ScrollView>
-      <View className="bg-[#F5F5F5] font-[Kanit-Regular]">
-        <ImageBackground
-          source={require("../../../public/hero.png")}
-          className="flex-col h-[260px]"
-        >
-          <View className="z-10 w-full h-max mx-auto px-6 pt-[60px] flex-col">
-            <View className="flex-row items-center gap-6 mb-8">
-              <TouchableOpacity
-                className="bg-white/20 rounded-full size-[45px] border-0 flex items-center justify-center"
-                activeOpacity={0.8}
-                onPress={() => router.replace("..")}
-              >
-                {swap(
-                  <ChevronLeft color="#ffffff" />,
-                  <ChevronRight color="#ffffff" />
-                )}
-              </TouchableOpacity>
+    <View className="bg-[#F5F5F5] font-[Kanit-Regular] flex-1">
+      {/* Sticky Hero Section */}
+      <ImageBackground
+        source={require("../../../public/hero.png")}
+        className="flex-col h-[260px]"
+      >
+        <View className="z-10 w-full h-max mx-auto px-6 pt-[60px] flex-col">
+          <View className="flex-row items-center gap-6 mb-8">
+            <TouchableOpacity
+              className="bg-white/20 rounded-full size-[45px] border-0 flex items-center justify-center"
+              activeOpacity={0.8}
+              onPress={() => router.replace("..")}
+            >
+              {swap(
+                <ChevronLeft color="#ffffff" />,
+                <ChevronRight color="#ffffff" />
+              )}
+            </TouchableOpacity>
+            <Text
+              fontSize={22}
+              className="text-[22px] text-white font-[Kanit-Medium]"
+            >
+              {t("rideDetails.rideDetails")}
+            </Text>
+          </View>
+          <View className="flex-row items-center gap-4 mb-5">
+            <Direction />
+            <View className="flex flex-col">
               <Text
-                fontSize={22}
-                className="text-[22px] text-white font-[Kanit-Medium]"
+                fontSize={14}
+                className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
               >
-                {t("rideDetails.rideDetails")}
+                {t("rideDetails.pickup")}
+              </Text>
+              <Text
+                fontSize={16}
+                className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
+              >
+                {rideDetail?.pickUpStop.address}
+              </Text>
+              <Text
+                fontSize={14}
+                className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
+              >
+                {t("rideDetails.drop")}
+                Drop
+              </Text>
+              <Text
+                fontSize={16}
+                className="text-base lg:text-lg text-white font-[Kanit-Regular]"
+              >
+                {rideDetail?.dropOffStop?.address}
               </Text>
             </View>
-            <View className="flex-row items-center gap-4 mb-5">
-              <Direction />
-              <View className="flex flex-col">
-                <Text
-                  fontSize={14}
-                  className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
-                >
-                  {t("rideDetails.pickup")}
-                </Text>
-                <Text
-                  fontSize={16}
-                  className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
-                >
-                  {rideDetail?.pickUpStop.address}
-                </Text>
-                <Text
-                  fontSize={14}
-                  className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
-                >
-                  {t("rideDetails.drop")}
-                  Drop
-                </Text>
-                <Text
-                  fontSize={16}
-                  className="text-base lg:text-lg text-white font-[Kanit-Regular]"
-                >
-                  {rideDetail?.dropOffStop?.address}
-                </Text>
-              </View>
-              {rideDetail?.pickUpStop?.time && <View
-                className={swap(
-                  "flex flex-col text-end ml-auto",
-                  "flex flex-col text-start mr-auto"
-                )}
+            {(rideDetail?.pickUpStop as any)?.time && <View
+              className={swap(
+                "flex flex-col text-end ml-auto",
+                "flex flex-col text-start mr-auto"
+              )}
+            >
+              <Text
+                fontSize={14}
+                className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
               >
-                <Text
-                  fontSize={14}
-                  className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
-                >
-                  {t("rideDetails.pickupTime")}
-                </Text>
-                <Text
-                  fontSize={16}
-                  className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
-                >
-                  {rideDetail?.pickUpStop?.time?.slice(0, 5)}
-                </Text>
-                <Text
-                  fontSize={14}
-                  className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
-                >
-                  {t("rideDetails.dropTime")}
-                </Text>
-                <Text
-                  fontSize={16}
-                  className="text-base lg:text-lg text-white font-[Kanit-Regular]"
-                >
-                  17:40
-                </Text>
-              </View>}
-            </View>
+                {t("rideDetails.pickupTime")}
+              </Text>
+              <Text
+                fontSize={16}
+                className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
+              >
+                {(rideDetail?.pickUpStop as any)?.time?.slice(0, 5)}
+              </Text>
+              <Text
+                fontSize={14}
+                className="text-sm lg:text-base text-[#DEDEDE] font-[Kanit-Light]"
+              >
+                {t("rideDetails.dropTime")}
+              </Text>
+              <Text
+                fontSize={16}
+                className="text-base lg:text-lg text-white font-[Kanit-Regular]"
+              >
+                17:40
+              </Text>
+            </View>}
           </View>
-        </ImageBackground>
+        </View>
+      </ImageBackground>
+
+      {/* Scrollable Content Area */}
+      <ScrollView 
+        className="flex-1 bg-[#F5F5F5]" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 20 }}
+      >
         <View className="max-w-[1410px] w-full mx-auto">
           <View className="flex-col gap-2">
-           {EncodedLine && <View className="h-[280px] bg-white p-4" >
+            {EncodedLine && <View className="h-[280px] bg-white p-4" >
               <MapComponent markers={[]} />
             </View>}
             <View className="px-8 py-6 rounded-none border-none bg-white">
@@ -261,7 +268,7 @@ function RideDetails() {
                 <Link href={`/(tabs)/user-profile`} className="flex-row items-start">
                   <View className="w-[40px]">
                     <Avatar
-                      source={require(`../../../public/profile-img.png`)}
+                      source={rideDetail?.driver?.profile_image !== null ? { uri: rideDetail?.driver?.profile_image } : require(`../../../public/profile-image.jpg.webp`)}
                       size={40}
                       initials="CN"
                     />
@@ -297,7 +304,7 @@ function RideDetails() {
                   <TouchableOpacity
                     className="rounded-full size-[38px] border border-[#EBEBEB] flex-row items-center justify-center"
                     activeOpacity={0.8}
-                    onPress={() => router.push({pathname:"/(inbox)/chat",params:{driver_id:rideDetail?.driver?.id,driver_name:rideDetail?.driver?.first_name}})}
+                    onPress={() => router.push({ pathname: "/(inbox)/chat", params: { driver_id: rideDetail?.driver?.id, driver_name: rideDetail?.driver?.first_name } })}
                   >
                     <Chat width={15} height={15} />
                   </TouchableOpacity>
@@ -313,18 +320,18 @@ function RideDetails() {
                   {t("rideDetails.details")}
                 </Text>
                 <View className="flex-wrap flex-row gap-[15px]">
-                {userDetails?.travel_preferences?.[0]          // take the first (and only) string
-                  ?.split(',')                                 // break it into real tags
-                  .map((text: string) => (
-                    <View
-                      key={text}
-                      className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
-                    >
-                      <ChatIcon width={21} height={21} />
-                      <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
-                    </View>
-                  ))}
-              </View>
+                  {userDetails?.travel_preferences?.[0]          // take the first (and only) string
+                    ?.split(',')                                 // break it into real tags
+                    .map((text: string) => (
+                      <View
+                        key={text}
+                        className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
+                      >
+                        <ChatIcon width={21} height={21} />
+                        <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
+                      </View>
+                    ))}
+                </View>
               </View>
             </View>
             <View className="px-8 py-4 gap-4 rounded-none bg-white">
@@ -341,16 +348,16 @@ function RideDetails() {
                   >
                     <View className="flex-row items-center gap-4">
                       <Avatar
-                        source={require(`../../../public/profile-img.png`)}
+                        source={item?.user?.profile_image !== null ? { uri: item?.user?.profile_image } : require(`../../../public/profile-image.jpg.webp`)}
                         size={40}
-                        initials="CN"
+                        initials={item?.user?.name?.substring(0,2)?.toUpperCase()}
                       />
                       <View className="flex flex-col">
                         <Text
                           fontSize={14}
                           className="text-[14px] mb-1 font-[Kanit-Regular]"
                         >
-                          {t("rideDetails.karthik")}
+                           {item?.user?.name}
                         </Text>
                         <View className="flex-row items-center justify-between gap-1">
                           <Text
@@ -380,7 +387,7 @@ function RideDetails() {
                     </View>
                   </TouchableOpacity>
                 }}
-                ListEmptyComponent={()=><View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}
+                ListEmptyComponent={() => <View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}
                 ItemSeparatorComponent={() => <Separator className="my-1 border-t !border-dashed !border-[#CDCDCD] bg-transparent" />}
               />
             </View>
@@ -401,7 +408,7 @@ function RideDetails() {
                   </Text>
                   <Text fontSize={15} className="ml-2 font-[Kanit-Regular]">
                     {" "}
-                   {rideDetail?.rideAmount?.amount}
+                    {rideDetail?.rideAmount?.amount}
                   </Text>
                 </Text>
               </View>
@@ -503,8 +510,8 @@ function RideDetails() {
             </View>
           </View>
         </View>
-      </View>
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 

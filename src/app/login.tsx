@@ -7,17 +7,20 @@ import {
   Image,
   View,
   Platform,
+  TouchableOpacity,
 } from "react-native";
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import VerifyOtp from "@/components/login/verify-otp";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
+import { useRouter } from "expo-router";
 
 const { height } = Dimensions.get("window");
 
 function Login() {
   
   const { t } = useTranslation("index")
+  const router = useRouter()
   const [phoneNumber,setPhoneNumber]=useState<string>("")
   const [isChecked,setIsChecked] = useState(false)
   const [phoneError, setPhoneError] = useState<string>("")
@@ -82,6 +85,10 @@ function Login() {
   // Check if form is valid
   const isFormValid = isChecked && phoneNumber.trim().length > 0 && !phoneError;
 
+  const handleGuestAccess = () => {
+    router.replace("/(tabs)/book");
+  };
+
   return (
     <KeyboardAwareScrollView 
       style={{ flex: 1,backgroundColor:'white' }}
@@ -140,6 +147,22 @@ function Login() {
             disabled={!isFormValid} 
             onError={showError}
           />
+          
+          {/* Guest Access Button */}
+          <View className="mt-6 items-center">
+            <TouchableOpacity
+              onPress={handleGuestAccess}
+              activeOpacity={0.8}
+              className="py-3 px-6"
+            >
+              <Text
+                fontSize={16}
+                className="text-[16px] text-[#FF4848] font-[Kanit-Regular] underline"
+              >
+                {t("continue_as_guest")}
+              </Text>
+            </TouchableOpacity>
+          </View>
         </View>
       </View>
 

@@ -16,7 +16,11 @@ import { useStore } from "@/store/useStore";
 import { useState, useRef, useEffect } from "react";
 import { useSearchRideStore } from "@/store/useSearchRideStore";
 
-function SearchRide() {
+interface SearchRideProps {
+  onModalStateChange?: (isOpen: boolean) => void;
+}
+
+function SearchRide({ onModalStateChange }: SearchRideProps) {
   const { t } = useTranslation("components");
   const { setIsPublish} = useStore();
   const { to,from} = useSearchRideStore();
@@ -24,6 +28,12 @@ function SearchRide() {
   const defaultDate = new Date();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(defaultDate);
   const [selectedPassenger, setSelectedPassenger] = useState("1");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleModalStateChange = (isOpen: boolean) => {
+    setIsModalOpen(isOpen);
+    onModalStateChange?.(isOpen);
+  };
 
   /* -------- neat error banner state -------- */
   const [error, setError] = useState("");
@@ -111,10 +121,12 @@ function SearchRide() {
       <LocationSelect
         name="from"
         placeholder={t("searchRide.pickupPlaceholder")}
+        onModalStateChange={handleModalStateChange}
       />
       <LocationSelect
         name="to"
         placeholder={t("searchRide.dropPlaceholder")}
+        onModalStateChange={handleModalStateChange}
       />
       <DatePicker onSelect={(date) => setSelectedDate(date)} />
       <PassengerSelect

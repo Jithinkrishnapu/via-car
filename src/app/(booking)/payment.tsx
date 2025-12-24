@@ -1,7 +1,6 @@
 import { ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
-import { Separator } from "@/components/ui/separator";
 import ApprovedAnimation from "@/components/animated/approved-animation";
 import { useEffect, useState } from "react";
 import {
@@ -12,12 +11,17 @@ import {
   ScrollView,
   TouchableOpacity,
   View,
+  TextInput,
 } from "react-native";
 import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
 import { useTranslation } from "react-i18next";
-import { getCards, KEY } from "@/store/card-store";
+import { getCards, SavedCardMeta } from "@/store/card-store";
 import { useRoute } from "@react-navigation/native";
+import { useAuthorizePayment, getPaymentStatus } from "@/service/payment";
+import { BookingPaymentData } from "@/types/ride-types";
+import AlertDialog from "@/components/ui/alert-dialog";
+import Dialog from "@/components/ui/dialog";
 
 type Status = "idle" | "waiting" | "approved";
 
@@ -34,63 +38,265 @@ interface Options {
   title: string;
   description?: string;
   img: ImageSourcePropType;
+  cardData?: SavedCardMeta;
+}
+
+interface RouteParams {
+  booking_id: string;
+  amount: string;
+}
+
+interface ErrorState {
+  visible: boolean;
+  title: string;
+  message: string;
+  type: "info" | "warning" | "error" | "success";
+}
+
+interface CVVDialogState {
+  visible: boolean;
+  cvv: string;
+  loading: boolean;
 }
 
 function Payment() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
-  const route = useRoute()
+  const route = useRoute();
+  const routeParams = route.params as RouteParams;
 
-  const fetchSavedCards = async()=>{
-    const data = await getCards()
-    console?.log(data,"===================cards")
-    if(data?.length){
-      const iterateData = data?.map((val,index)=> {
-        return  {
-          id: index,
+  const [selectedId, setSelectedId] = useState<string>("0");
+  const [cardsData, setCardsData] = useState<Options[]>([]);
+  const [status, setStatus] = useState<Status>("idle");
+  const [loading, setLoading] = useState(false);
+  const [errorDialog, setErrorDialog] = useState<ErrorState>({
+    visible: false,
+    title: '',
+    message: '',
+    type: 'error'
+  });
+  const [cvvDialog, setCvvDialog] = useState<CVVDialogState>({
+    visible: false,
+    cvv: '',
+    loading: false
+  });
+
+  const showError = (title: string, message: string, type: "error" | "warning" | "info" = "error") => {
+    setErrorDialog({
+      visible: true,
+      title,
+      message,
+      type
+    });
+  };
+
+  const closeErrorDialog = () => {
+    setErrorDialog({
+      ...errorDialog,
+      visible: false
+    });
+  };
+
+  const closeCVVDialog = () => {
+    setCvvDialog({ visible: false, cvv: '', loading: false });
+  };
+
+  const fetchSavedCards = async () => {
+    const data = await getCards();
+    console.log(data, "===================cards");
+    if (data?.length) {
+      const iterateData: Options[] = data.map((val, index) => {
+        return {
+          id: index.toString(),
           title: `${val?.brand} ending in ${val?.last4}`,
-          description: `Ex.date ${val?.expMonth}/${val?.expYear?.toString()?.slice(2,4)}`,
+          description: `Ex.date ${val?.expMonth.toString().padStart(2, '0')}/${val?.expYear?.toString()?.slice(2, 4)}`,
           img: require("../../../public/visa.png"),
-        }
-      }  )   
-      setCardsData(iterateData)
+          cardData: val,
+        };
+      });
+      setCardsData(iterateData);
+      if (iterateData.length > 0) {
+        setSelectedId("0");
+      }
+    }
+  };
+
+  const handleFetchPaymentStatus = async () => {
+    if (!routeParams?.booking_id) return false;
+    
+    try {
+      const response = await getPaymentStatus(Number(routeParams.booking_id));
+      console.log(response, "====================response", response.data?.paymentStatus);
+      if (response.data?.paymentStatus === 2) {
+        setStatus("approved");
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error("Error fetching payment status:", error);
+      // Don't show error for polling failures, just log them
+      return false;
+    }
+  };
+
+  const handlePayWithSavedCard = async () => {
+    if (!routeParams?.booking_id || cardsData.length === 0) {
+      showError('Payment Error', 'No booking ID or saved cards available');
+      return;
     }
 
-  }
+    const selectedCard = cardsData.find(card => card.id === selectedId);
+    if (!selectedCard?.cardData) {
+      showError('Payment Error', 'Please select a payment method');
+      return;
+    }
 
-  useEffect(()=>{
-    fetchSavedCards()
-  },[])
+    // Show CVV dialog for saved cards
+    setCvvDialog({
+      visible: true,
+      cvv: '',
+      loading: false
+    });
+  };
 
-  const cards: Options[] = [
-    {
-      id: "1",
-      title: t("payment.visa"),
-      description: t("payment.expiry"),
-      img: require("../../../public/visa.png"),
-    },
-    {
-      id: "2",
-      title: t("payment.mastercard"),
-      description: t("payment.expiry"),
-      img: require("../../../public/mastercard.png"),
-    },
-  ];
-  const upi: Options[] = [
-    {
-      id: "3",
-      title: t("payment.applePay"),
-      img: require("../../../public/applepay.png"),
-    },
-    {
-      id: "4",
-      title: t("payment.samsungPay"),
-      img: require("../../../public/samsungpay.png"),
-    },
-  ];
-  const [selectedId, setSelectedId] = useState<string>("1");
-  const [cardsData, setCardsData] = useState();
-  const [status, setStatus] = useState<Status>("idle");
+  const handleCVVSubmit = async () => {
+    if (!cvvDialog.cvv || cvvDialog.cvv.length < 3) {
+      showError('Validation Error', 'Please enter a valid CVV');
+      return;
+    }
+
+    const selectedCard = cardsData.find(card => card.id === selectedId);
+    if (!selectedCard?.cardData) {
+      showError('Payment Error', 'Please select a payment method');
+      return;
+    }
+
+    setCvvDialog(prev => ({ ...prev, loading: true }));
+    setLoading(true);
+    setStatus("waiting");
+
+    const postData: BookingPaymentData = {
+      booking_id: Number(routeParams.booking_id),
+      payment_brand: selectedCard.cardData.brand,
+      card_number: selectedCard.cardData.cardNumber, // Use stored full card number
+      card_holder_name: selectedCard.cardData.cardHolderName,
+      card_expiration_month: Number(selectedCard.cardData.expMonth.toString().padStart(2, '0')),
+      card_expiration_year: selectedCard.cardData.expYear,
+      card_cvv: cvvDialog.cvv, // Use entered CVV
+      customer_email: selectedCard.cardData.email,
+      billing_street: selectedCard.cardData.billingStreet,
+      billing_city: selectedCard.cardData.billingCity,
+      billing_state: selectedCard.cardData.billingState,
+      billing_post_code: selectedCard.cardData.billingPostCode,
+      billing_country: selectedCard.cardData.billingCountry,
+      given_name: selectedCard.cardData.cardHolderName.split(' ')[0] || '',
+      sur_name: selectedCard.cardData.cardHolderName.split(' ').slice(1).join(' ') || '',
+      alias: selectedCard.cardData.alias,
+    };
+
+    console.log("Saved card payment payload:", postData);
+
+    // Close CVV dialog
+    setCvvDialog({ visible: false, cvv: '', loading: false });
+
+    try {
+      const response = await useAuthorizePayment(postData);
+      console.log('Payment authorization response:', response);
+
+      // Check for API error responses
+      if (response?.error || response?.status === 'error') {
+        const errorMessage = response?.message || response?.error || 'Payment authorization failed';
+        showError('Payment Error', errorMessage);
+        setStatus("idle");
+        return;
+      }
+
+      // Check for validation errors
+      if (response?.errors && Array.isArray(response.errors)) {
+        const errorMessages = response.errors.map((error: any) => error.message || error).join('\n');
+        showError('Validation Error', errorMessages);
+        setStatus("idle");
+        return;
+      }
+
+      // Check for specific payment failures
+      if (response?.result?.code && response.result.code !== '000.100.110') {
+        const errorMessage = response?.result?.description || 'Payment processing failed';
+        showError('Payment Failed', errorMessage);
+        setStatus("idle");
+        return;
+      }
+
+      // Start polling for payment status
+      const pollInterval = setInterval(async () => {
+        await handleFetchPaymentStatus();
+      }, 3000);
+
+      // Clear interval after 2 minutes
+      setTimeout(() => {
+        clearInterval(pollInterval);
+        if (status === "waiting") {
+          setStatus("idle");
+          showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
+        }
+      }, 120000);
+
+    } catch (err: any) {
+      console.error('Payment failed:', err);
+      setStatus("idle");
+      
+      // Handle network errors
+      if (err.name === 'TypeError' && err.message.includes('Network request failed')) {
+        showError('Network Error', 'Please check your internet connection and try again.');
+        return;
+      }
+      
+      // Handle timeout errors
+      if (err.name === 'AbortError' || err.message.includes('timeout')) {
+        showError('Timeout Error', 'Request timed out. Please try again.');
+        return;
+      }
+      
+      // Generic error handling
+      const errorMessage = err?.response?.data?.message || 
+                         err?.message || 
+                         'Failed to authorize payment. Please try again.';
+      showError('Payment Error', errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    fetchSavedCards();
+  }, []);
+
+  useEffect(() => {
+    if (status === "waiting") {
+      // Start polling when payment is initiated
+      const pollInterval = setInterval(async () => {
+        const isApproved = await handleFetchPaymentStatus();
+        if (isApproved) {
+          clearInterval(pollInterval);
+        }
+      }, 3000);
+
+      // Clear interval after 2 minutes to prevent infinite polling
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (status === "waiting") {
+          setStatus("idle");
+          showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
+        }
+      }, 120000);
+      
+      // Cleanup interval when component unmounts or status changes
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeoutId);
+      };
+    }
+  }, [status, routeParams?.booking_id]);
 
   if (!loaded) return null;
 
@@ -168,7 +374,10 @@ function Payment() {
           />
 
           <TouchableOpacity
-            onPress={()=>router.push({pathname:"/(booking)/add-new-card",params:{booking_id:route?.params?.booking_id}})}
+            onPress={() => router.push({
+              pathname: "/(booking)/add-new-card",
+              params: { booking_id: routeParams?.booking_id }
+            })}
             className="rounded-full w-max mx-auto border border-[#EBEBEB] px-[16px] py-[8px]"
             activeOpacity={0.8}
           >
@@ -223,25 +432,21 @@ function Payment() {
             {t("payment.amount")}
           </Text>
           <Text fontSize={25} className="text-[25px] font-[Kanit-Regular]">
-            {t("payment.currency")} {route?.params?.amount}
+            {t("payment.currency")} {routeParams?.amount}
           </Text>
         </View>
         <View className="flex-1">
           <TouchableOpacity
             className="bg-[#FF4848] rounded-full w-max h-[55px] cursor-pointer items-center justify-center"
-            onPress={() => {
-              setStatus("waiting");
-              setTimeout(() => {
-                setStatus("approved");
-              }, 3000);
-            }}
+            onPress={handlePayWithSavedCard}
             activeOpacity={0.8}
+            disabled={loading || cardsData.length === 0}
           >
             <Text
               fontSize={18}
               className="text-[18px] text-center text-white font-[Kanit-Medium] uppercase"
             >
-              {t("payment.pay")}
+              {loading ? t("payment.processing") || "Processing..." : t("payment.pay")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -281,7 +486,7 @@ function Payment() {
                 activeOpacity={0.8}
                 onPress={() => {
                   setStatus("idle");
-                  router.push("/book");
+                  router.push("/(tabs)/book");
                 }}
               >
                 <Text
@@ -295,6 +500,47 @@ function Payment() {
           </View>
         </View>
       </Modal>
+
+      {/* Error Dialog */}
+      <AlertDialog
+        visible={errorDialog.visible}
+        onClose={closeErrorDialog}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        type={errorDialog.type}
+        confirmText="OK"
+      />
+
+      {/* CVV Dialog for Saved Cards */}
+      <Dialog
+        visible={cvvDialog.visible}
+        onClose={closeCVVDialog}
+        title="Enter CVV"
+        showButtons={true}
+        confirmText="Pay"
+        cancelText="Cancel"
+        onConfirm={handleCVVSubmit}
+        onCancel={closeCVVDialog}
+        confirmDisabled={cvvDialog.loading || cvvDialog.cvv.length < 3}
+      >
+        <View className="py-4">
+          <Text className="text-[16px] font-[Kanit-Regular] text-gray-700 mb-4 text-center">
+            Please enter your CVV to complete the payment
+          </Text>
+          <TextInput
+            value={cvvDialog.cvv}
+            onChangeText={(text) => setCvvDialog(prev => ({ ...prev, cvv: text.replace(/\D/g, '') }))}
+            placeholder="CVV"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="numeric"
+            maxLength={4}
+            secureTextEntry
+            className="bg-gray-50 border border-gray-200 rounded-lg px-4 py-3 text-gray-800 text-center text-lg"
+            editable={!cvvDialog.loading}
+            autoFocus
+          />
+        </View>
+      </Dialog>
     </View>
   );
 }

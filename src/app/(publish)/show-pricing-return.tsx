@@ -6,7 +6,6 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
-  Alert,
   ActivityIndicator,
 } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
@@ -22,6 +21,7 @@ import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useCreateRide } from "@/service/ride-booking";
 import { RideDetails } from "@/types/ride-types";
+import AlertDialog from "@/components/ui/alert-dialog";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -31,6 +31,33 @@ function ShowPricingReturn() {
   const { isRTL, swap } = useDirection();
   const { setRideField, ride, selectedPlaces, polyline } = useCreateRideStore();
   const [isLoading,setIsLoading] = useState<boolean>(false)
+  const [errorDialog, setErrorDialog] = useState<{
+    visible: boolean;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "error" | "success";
+    showRetry: boolean;
+  }>({
+    visible: false,
+    title: "",
+    message: "",
+    type: "error",
+    showRetry: false,
+  });
+
+  const showErrorDialog = (title: string, message: string, type: "info" | "warning" | "error" | "success" = "error", showRetry: boolean = false) => {
+    setErrorDialog({
+      visible: true,
+      title,
+      message,
+      type,
+      showRetry,
+    });
+  };
+
+  const closeErrorDialog = () => {
+    setErrorDialog(prev => ({ ...prev, visible: false }));
+  };
 
   /* -------------------------------------------------
    * 1.  BUILD THE RETURN ROUTE  (reversed outbound)
@@ -246,7 +273,7 @@ function ShowPricingReturn() {
         stops,
         prices,
       };
-  
+        console.log(postData, "=====================postdata")
       /* ---- hit the endpoint ---------------------------------------- */
       const { ok, data } = await useCreateRide(postData);
   
@@ -258,9 +285,56 @@ function ShowPricingReturn() {
             ride_amount_id: data?.data?.rideAmounts[0].pickup_id
           }
         });
+      } else {
+        // Handle API response errors
+        const errorMessage = data?.message || data?.error || 'Failed to create ride';
+        const status = data?.status;
+        
+        if (status >= 400 && status < 500) {
+          // Client errors (400-499)
+          showErrorDialog(
+            "Ride Creation Failed",
+            errorMessage,
+            "error"
+          );
+        } else if (status >= 500) {
+          // Server errors (500+) - show with retry option
+          showErrorDialog(
+            "Server Error",
+            "Something went wrong on our end. Please try again later.",
+            "error",
+            true
+          );
+        } else {
+          // Unknown error
+          showErrorDialog(
+            "Error",
+            errorMessage,
+            "error"
+          );
+        }
       }
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong');
+      console.error('Error creating ride:', err);
+      
+      // Handle network and other errors
+      const errorMessage = err?.message || err?.error || err?.msg || 'Something went wrong';
+      
+      if (err?.code === 'NETWORK_ERROR' || err?.message?.includes('network')) {
+        showErrorDialog(
+          "Network Error",
+          "Please check your internet connection and try again.",
+          "warning",
+          true
+        );
+      } else {
+        showErrorDialog(
+          "Unexpected Error",
+          errorMessage,
+          "error",
+          true
+        );
+      }
     } finally {
       setIsLoading(false);
     }
@@ -442,6 +516,17 @@ function ShowPricingReturn() {
           </Text>
         </TouchableOpacity>
       </View>
+
+      {/* Error Dialog */}
+      <AlertDialog
+        visible={errorDialog.visible}
+        onClose={closeErrorDialog}
+        title={errorDialog.title}
+        message={errorDialog.message}
+        type={errorDialog.type}
+        confirmText={errorDialog.showRetry ? "Retry" : "OK"}
+        onConfirm={errorDialog.showRetry ? handleContinue : closeErrorDialog}
+      />
     </SafeAreaView>
   );
 }

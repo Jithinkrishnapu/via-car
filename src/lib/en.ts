@@ -48,6 +48,11 @@ const en = {
     vehicleModel: "Vehicle Model",
     vehicleColor: "Vehicle Color",
     add: "Add",
+    adding: "Adding",
+    pleaseSelectColor: "Please select a color",
+    vehicleModelRequired: "Vehicle model is required",
+    vehicleAddedSuccessfully: "Vehicle added successfully",
+    failedToAddVehicle: "Failed to add vehicle",
     changePassword: "Change Password",
     passwordRequirements:
       "It must have at least 8 characters, 1 letter, 1 number and 1 special character.",
@@ -88,7 +93,19 @@ const en = {
     "Select Language": "Select Language",
     "Current Language": "Current Language",
     "App needs to restart to apply language changes": "App needs to restart to apply language changes",
+    "Logout": "Logout",
+    "Are you sure you want to logout?": "Are you sure you want to logout?",
+    "ok": "OK",
   },
+  "Something went wrong": "Something went wrong",
+  "Add about you here": "Add about you here",
+  "Preferences": "Preferences",
+  "Enter travel preferences": "Enter travel preferences",
+  "Loading...": "Loading...",
+  "No preferences added yet": "No preferences added yet",
+  "ok": "OK",
+  "error": "Error",
+  "success": "Success",
   login: {
     verify_phone_number: "Verify your phone number",
     no_special_offers:
@@ -96,6 +113,7 @@ const en = {
     agreement_text:
       "By entering your phone number, you agree to receive promotional SMS, WhatsApp messages and calls from BlaBlaCar. Opt out now by checking the box above or at any time in your profile settings.",
     do_it_later: "I'll do it later",
+    continue_as_guest: "Continue as Guest",
   },
   components: {
     // phone-input
@@ -112,6 +130,10 @@ const en = {
     common: {
       continue: "Continue",
       save: "Save",
+      back: "Back",
+      ok: "OK",
+      retry: "Retry",
+      processing: "Processing...",
     },
     yourRides: {
       title: "Your Rides",
@@ -249,8 +271,10 @@ const en = {
       addNew: "+ ADD NEW",
       amount: "Amount",
       pay: "PAY",
-      waitingApproval: "Waiting for Driver approval",
-      bookingConfirmed: "Your booking has been successfully confirmed!",
+      waitingApproval: "Waiting for payment approval...",
+      waitingSubtext: "Please wait while we verify your payment",
+      bookingConfirmed: "Booking Confirmed",
+      paymentSuccessMessage: "Your payment has been processed successfully and your booking is confirmed.",
       ok: "OK",
       visa: "Visa ending in 5775",
       mastercard: "Master ending in 5775",
@@ -258,6 +282,57 @@ const en = {
       applePay: "Apple Pay",
       samsungPay: "Samsung Pay",
       currency: "SR",
+      timeout: "Payment Timeout",
+      timeoutMessage: "Payment verification timed out. Please check your booking status or try again.",
+      authFailed: "Authentication Failed",
+      authFailedMessage: "Payment authentication failed or was cancelled.",
+      authCancelled: "Authentication Cancelled",
+      authCancelledMessage: "Payment authentication was cancelled.",
+      processing: "Processing...",
+      // Form labels and placeholders
+      addNewCardTitle: "Add New Card",
+      selectCardType: "Select Type of Card",
+      cardHolderName: "Card Holder Name",
+      cardHolderNamePlaceholder: "Enter cardholder name",
+      cardNumber: "Card Number",
+      cardNumberPlaceholder: "1234 5678 9012 3456",
+      expiryDate: "Expiry Date",
+      expiryDatePlaceholder: "MM/YY",
+      cvv: "CVV",
+      cvvPlaceholder: "123",
+      billingDetails: "Billing Details",
+      email: "Email",
+      emailPlaceholder: "Enter email",
+      billingStreet: "Billing Street",
+      billingStreetPlaceholder: "Enter street",
+      billingCity: "Billing City",
+      billingCityPlaceholder: "Enter city",
+      billingState: "Billing State",
+      billingStatePlaceholder: "Enter state",
+      billingPostCode: "Billing Post Code",
+      billingPostCodePlaceholder: "Enter post code",
+      save: "Save",
+      secureAuthentication: "Secure Authentication",
+      done: "Done",
+      redirectingToAuth: "Redirecting to authentication...",
+      // Validation messages
+      validationError: "Validation Error",
+      enterCardholderName: "Please enter cardholder name.",
+      enterValidCardNumber: "Please enter a valid card number (16 digits).",
+      enterValidExpiryDate: "Please enter a valid expiry date (MM/YY).",
+      enterValidCVV: "Please enter a valid CVV.",
+      enterValidEmail: "Please enter a valid email address.",
+      // Payment errors
+      paymentError: "Payment Error",
+      paymentAuthorizationFailed: "Payment authorization failed",
+      paymentProcessingFailed: "Payment processing failed",
+      networkError: "Network Error",
+      checkInternetConnection: "Please check your internet connection and try again.",
+      timeoutError: "Timeout Error",
+      requestTimedOut: "Request timed out. Please try again.",
+      serverError: "Server Error",
+      invalidServerResponse: "Invalid response from server. Please try again later.",
+      failedToAuthorizePayment: "Failed to authorize payment. Please try again.",
     },
     chat: {
       abhimanyu: "Abhimanyu",
@@ -386,6 +461,7 @@ const en = {
       alKhobar: "Al Khobar, Saudi Arabia",
       riyadh: "Riyadh, Saudi Arabia",
       heritageVillage: "Heritage Village, Dammam, Saudi Arabia",
+      insufficientRouteData: "Insufficient route data. Please go back and complete your ride details.",
     },
     returnRide: {
       title: "Coming back as well?\nPublish your return ride now!",
@@ -474,6 +550,7 @@ const en = {
       todayPassenger: "Today, 1 passenger",
       filters: "Filters",
       today: "Today",
+      passengers: "Passengers",
       noRides: "No rides available for your search criteria.",
       createAlert: "Create a Ride Alert",
       enterEmail: "Enter your email ID, and we'll notify you.",
@@ -492,6 +569,7 @@ const en = {
     },
     rideItem: {
       departureTime: "13:00",
+      passengers: "passengers",
       departureLocation: "Al Khobar, Saudi Arabia",
       duration: "4h 40m",
       arrivalTime: "17:40",
@@ -499,8 +577,21 @@ const en = {
       price: "SR 560.00",
       driverName: "Abhimanyu",
       rating: "4.5",
+      pickup: "PICKUP",
+      drop: "DROP",
     },
   },
 };
 
-export default en;
+const error = {
+  rideCreationFailed: "Ride Creation Failed",
+  serverError: "Server Error", 
+  serverErrorMessage: "Something went wrong on our end. Please try again later.",
+  unknownError: "Error",
+  unexpectedError: "Unexpected Error",
+  networkError: "Network error. Please check your connection and try again.",
+};
+
+const enWithError = { ...en, error };
+
+export default enWithError;

@@ -16,7 +16,7 @@ interface Props {
     sortOption: number;
     numberOfStops: string;
     verifiedProfile: boolean;
-    aminities:Record<string, boolean>
+    amenities: Record<string, boolean>;
   }) => void;
   onDismiss: () => void;
 }
@@ -28,7 +28,7 @@ const RideFilters = ({ close, onDismiss }: Props) => {
   );
   const [numberOfStops, setNumberOfStops] = useState("0");
   const [verifiedProfile, setVerifiedProfile] = useState(true);
-  const [checkedItems, setCheckedIds] = useState<Record<string, boolean>>();
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
   const [carModel, setCarModel] = useState(t("rideFilter.lastThreeYears"));
 
   const anim = useRef(new Animated.Value(0)).current;
@@ -132,9 +132,9 @@ const RideFilters = ({ close, onDismiss }: Props) => {
           <TouchableOpacity onPress={() =>
             close({
               sortOption: 1,         // Default sort (earliestDeparture)
-              numberOfStops: "direct_only", // Default stops (update based on your logic)
-              verifiedProfile,
-              aminities:checkedItems!
+              numberOfStops: "direct_only", // Default stops
+              verifiedProfile: false,
+              amenities: {}
             })
           }>
             <Text
@@ -154,7 +154,10 @@ const RideFilters = ({ close, onDismiss }: Props) => {
           >
             {t("rideFilter.sortBy")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setSortOption(t("rideFilter.earliestDeparture"))}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -201,7 +204,10 @@ const RideFilters = ({ close, onDismiss }: Props) => {
           >
             {t("rideFilter.numberOfStops")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setNumberOfStops("0")}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -299,7 +305,10 @@ const RideFilters = ({ close, onDismiss }: Props) => {
           >
             {t("rideFilter.amenities")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setCheckedItems({})}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -308,7 +317,10 @@ const RideFilters = ({ close, onDismiss }: Props) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <CheckboxCard setCheckedItem={setCheckedIds} />
+        <CheckboxCard 
+          setCheckedItem={setCheckedItems} 
+          checkedItems={checkedItems}
+        />
 
         <View className="border-t border-dashed border-gray-300 my-4" />
 
@@ -368,7 +380,7 @@ const RideFilters = ({ close, onDismiss }: Props) => {
               sortOption: toSortCode(sortOption), // 1-5
               numberOfStops: toStopCode(numberOfStops),
               verifiedProfile,
-              aminities:checkedItems!
+              amenities: checkedItems
             })
           }
           activeOpacity={0.8}

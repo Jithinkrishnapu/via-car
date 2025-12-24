@@ -1,5 +1,5 @@
 
-import PreferencesModal from "@/components/modals/PrefereceModal"
+import PreferencesModal from "@/components/modals/PreferencesModal"
 
 const Preferences =()=>{
     return <PreferencesModal />

@@ -10,6 +10,7 @@ import {
   Keyboard,
   Platform,
 } from "react-native";
+
 import { Check, Search } from "lucide-react-native";
 import Text from "../common/text";
 import { cn } from "@/lib/utils";
@@ -31,6 +32,7 @@ type Props<T extends string> = {
   isLoading?: boolean;
   emptyMessage?: string;
   placeholder?: string;
+  onModalStateChange?: (isOpen: boolean) => void;
 };
 
 export function AutoComplete<T extends string>({
@@ -40,11 +42,11 @@ export function AutoComplete<T extends string>({
   onSearchValueChange,
   items,
   placeholder = "Search...",
-  handleItemSelect
+  handleItemSelect,
+  onModalStateChange
 }: Props<T>) {
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
-  const [keyboardHeight, setKeyboardHeight] = useState(0);
   const translateY = useRef(new Animated.Value(height)).current;
 
   const labels = useMemo(
@@ -56,29 +58,9 @@ export function AutoComplete<T extends string>({
     [items]
   );
 
-  useEffect(() => {
-    const keyboardWillShow = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow",
-      (e) => {
-        setKeyboardHeight(e.endCoordinates.height);
-      }
-    );
-
-    const keyboardWillHide = Keyboard.addListener(
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide",
-      () => {
-        setKeyboardHeight(0);
-      }
-    );
-
-    return () => {
-      keyboardWillShow.remove();
-      keyboardWillHide.remove();
-    };
-  }, []);
-
   const openSheet = () => {
     setVisible(true);
+    onModalStateChange?.(true);
     Animated.timing(translateY, {
       toValue: 0,
       duration: 300,
@@ -87,14 +69,13 @@ export function AutoComplete<T extends string>({
   };
 
   const closeSheet = () => {
-    Keyboard.dismiss();
     Animated.timing(translateY, {
       toValue: height,
       duration: 300,
       useNativeDriver: true,
     }).start(() => {
       setVisible(false);
-      setKeyboardHeight(0);
+      onModalStateChange?.(false);
     });
   };
 
@@ -104,17 +85,22 @@ export function AutoComplete<T extends string>({
   };
 
   const handleSelect = (value: T) => {
-    if (value === selectedValue) {
-      reset();
-    } else {
-      onSelectedValueChange(value);
-      onSearchValueChange(labels[value] ?? "");
-    }
-    closeSheet();
+    // Dismiss keyboard first, then handle selection
+    Keyboard.dismiss();
+    
+    setTimeout(() => {
+      if (value === selectedValue) {
+        reset();
+      } else {
+        onSelectedValueChange(value);
+        onSearchValueChange(labels[value] ?? "");
+      }
+      closeSheet();
+    }, 100);
   };
 
-  // Calculate max height: total height minus keyboard height minus some padding
-  const maxSheetHeight = height - keyboardHeight - 100;
+  // Calculate max height: total height minus some padding
+  const maxSheetHeight = height - 150;
 
   return (
     <View>
@@ -140,22 +126,31 @@ export function AutoComplete<T extends string>({
       </TouchableOpacity>
 
       {visible && (
-        <Modal visible={visible} transparent animationType="fade">
-          <TouchableOpacity
-            onPress={closeSheet}
-            activeOpacity={1}
-            className="flex-1 bg-black/50"
-            style={{ justifyContent: 'flex-end' }}
-          >
-            <TouchableOpacity activeOpacity={1}>
-              <Animated.View
-                style={{
-                  transform: [{ translateY }],
-                  paddingBottom: keyboardHeight,
-                  maxHeight: maxSheetHeight,
-                }}
-                className="bg-white rounded-t-3xl"
-              >
+        <Modal 
+          visible={visible} 
+          transparent 
+          animationType="fade"
+        >
+          <View style={{ 
+            flex: 1, 
+            justifyContent: 'flex-end',
+            backgroundColor: 'rgba(0,0,0,0.5)'
+          }}>
+            <TouchableOpacity
+              onPress={() => {
+                Keyboard.dismiss();
+                closeSheet();
+              }}
+              activeOpacity={1}
+              style={{ flex: 1 }}
+            />
+            <Animated.View
+              style={{
+                transform: [{ translateY }],
+                maxHeight: maxSheetHeight,
+              }}
+              className="bg-white rounded-t-3xl"
+            >
                 <View className="p-6">
                   <View className="relative mb-4">
                     <TextInput
@@ -171,15 +166,19 @@ export function AutoComplete<T extends string>({
                   <FlatList
                     data={items}
                     keyExtractor={(item, i) => i.toString()}
-                    keyboardShouldPersistTaps="handled"
+                    keyboardShouldPersistTaps="always"
                     showsVerticalScrollIndicator={true}
-                    style={{ maxHeight: maxSheetHeight - 150 }}
+                    style={{ 
+                      maxHeight: maxSheetHeight - 150
+                    }}
+                    contentContainerStyle={{ paddingBottom: 20 }}
                     renderItem={({ item }) => (
                       <TouchableOpacity
                         onPress={() => {
                           handleItemSelect?.(item);
                           handleSelect(item.value);
                         }}
+                        activeOpacity={0.7}
                         className="flex-row items-start py-3 border-b border-gray-200"
                       >
                         <Check
@@ -207,10 +206,9 @@ export function AutoComplete<T extends string>({
                   />
                 </View>
               </Animated.View>
-            </TouchableOpacity>
-          </TouchableOpacity>
-        </Modal>
-      )}
+            </View>
+          </Modal>
+        )}
     </View>
   );
 }

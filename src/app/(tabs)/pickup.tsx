@@ -1,9 +1,7 @@
 import LocationSearch from "@/components/common/location-search";
 import Text from "@/components/common/text";
 import Dialog from "@/components/ui/dialog";
-import Snackbar from "@/components/ui/snackbar";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
-import { useNetworkError } from "@/hooks/use-network-error";
 import { router } from "expo-router";
 import { ScrollView, TouchableOpacity } from "react-native";
 import { useTranslation } from "react-i18next";
@@ -22,20 +20,33 @@ function Pickup() {
   const [showErrorDialog, setShowErrorDialog] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
   const [selectedLocation, setSelectedLocation] = useState<LocationData | null>(null);
-  const { showSnackbar, snackbarMessage, showNetworkError, hideSnackbar, setRetryAction } = useNetworkError();
 
   const showError = (message: string) => {
     setErrorMessage(message);
     setShowErrorDialog(true);
   };
 
-  async function enforceProfileCompleteness() {
+  useFocusEffect(
+    useCallback(() => {
+      // Reset location selection when screen is focused
+      setSelectedLocation(null);
+    }, [])
+  )
+
+
+  const handleBookNow = async () => {
+    setIsPublish(true);
+    if (!selectedLocation) {
+      showError('Please select a pickup location to continue.');
+      return;
+    }
+
+    // Check profile completeness before proceeding
     try {
       const json: UserStatusResp = await getUserStatus();
       const d = json.data;
 
       // Set publish mode since user is trying to publish a ride
-      setIsPublish(true);
       
       const stored = await useAsyncStorage("userDetails").getItem();
       const userDetails = stored ? JSON.parse(stored) : null;
@@ -65,35 +76,16 @@ function Pickup() {
         }
         
         // All requirements met, user can proceed with publish flow
-        // Stay on pickup screen
+        router.push("/(publish)/pickup-selected");
       } else {
         // User not logged in, redirect to login
         router.push('/login');
       }
 
     } catch (e) {
-      console.log('Status check failed', e);
-      showNetworkError('Failed to verify profile status. Please check your connection and try again.');
-      setRetryAction(() => enforceProfileCompleteness);
+      router.push('/login');
+      console.log('Profile completeness check failed', e);
     }
-  }
-
-  useFocusEffect(
-    useCallback(() => {
-      // Reset location selection when screen is focused
-      setSelectedLocation(null);
-      // Then enforce profile completeness
-      enforceProfileCompleteness();
-    }, [])
-  )
-
-
-  const handleBookNow = async () => {
-    if (!selectedLocation) {
-      showError('Please select a pickup location to continue.');
-      return;
-    }
-    router.push("/(publish)/pickup-selected");
   };
 
   const handleLocationSelect = (value: LocationData) => {
@@ -116,9 +108,10 @@ function Pickup() {
     <>
       <ScrollView 
         bounces={false} 
-        className="w-full px-6 pt-8 pb-12 bg-white"
+        className="w-full px-6 pt-10 pb-12 bg-white"
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustsScrollIndicatorInsets={false}
+        keyboardShouldPersistTaps="handled"
       >
         <Text
           fontSize={25}
@@ -176,15 +169,6 @@ function Pickup() {
           {errorMessage}
         </Text>
       </Dialog>
-
-      {/* Network Error Snackbar */}
-      <Snackbar
-        visible={showSnackbar}
-        message={snackbarMessage}
-        type="error"
-        onDismiss={hideSnackbar}
-        duration={5000}
-      />
     </>
   );
 }

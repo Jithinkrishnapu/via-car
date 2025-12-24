@@ -14,10 +14,13 @@ export interface SavedCardMeta {
     billingState: string;        // "Riyadh Province"
     billingPostCode: string;     // "12345"
     addedAt: string;             // ISO date
-    cardHolderName:string
-    billingStreet:string
-    email:string
-  }
+    cardHolderName: string;
+    billingStreet: string;
+    email: string;
+    // For frontend-saved cards, we need to store the full card number
+    // Note: This is less secure but required if API needs full details
+    cardNumber: string;          // Full card number (encrypted in production)
+}
 
 
 export const saveCards =async(cardData:SavedCardMeta[])=>{

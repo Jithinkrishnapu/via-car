@@ -2,11 +2,9 @@ import { router } from "expo-router";
 import { Check, Circle, CirclePlus } from "lucide-react-native";
 import LocationSearchSelected from "@/components/common/location-search-selected";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
-import { useNetworkError } from "@/hooks/use-network-error";
 import { FlatList, Modal, Pressable, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import Text from "@/components/common/text";
-import Snackbar from "@/components/ui/snackbar";
 import { useTranslation } from "react-i18next";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useState, useEffect } from "react";
@@ -35,7 +33,6 @@ function DropoffSelected() {
   const [selectedVehicle, setVehhicleSelected] = useState<number | null>(null)
   const [loadingVehicles, setLoadingVehicles] = useState(false)
   const {setPath} = useStore()
-  const { showSnackbar, snackbarMessage, showNetworkError, hideSnackbar, setRetryAction } = useNetworkError()
 
   // Set default vehicle if ride already has vehicle_id
   useEffect(() => {
@@ -69,8 +66,7 @@ function DropoffSelected() {
       }
     } catch (error) {
       console.error("Error fetching vehicles:", error);
-      showNetworkError('Failed to load vehicles. Please check your connection and try again.');
-      setRetryAction(() => handleGetVehicles);
+      // Error will be handled by the global snackbar from the service layer
     } finally {
       setLoadingVehicles(false);
     }
@@ -245,15 +241,6 @@ function DropoffSelected() {
           </Pressable>
         </Pressable>
       </Modal>
-
-      {/* Network Error Snackbar */}
-      <Snackbar
-        visible={showSnackbar}
-        message={snackbarMessage}
-        type="error"
-        onDismiss={hideSnackbar}
-        duration={5000}
-      />
     </SafeAreaView>
   );
 }

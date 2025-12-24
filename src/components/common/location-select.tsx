@@ -9,12 +9,14 @@ interface Props {
   label?: string;
   name: string; // key in the store
   placeholder?: string;
+  onModalStateChange?: (isOpen: boolean) => void;
 }
 
 export default function LocationSelect({
   label = "",
   name,
   placeholder = "Search location...",
+  onModalStateChange,
 }: Props) {
   const { t } = useTranslation("components");
   const store = useSearchRideStore();
@@ -107,6 +109,7 @@ export default function LocationSelect({
       handleItemSelect={handleLocationSelect}
       searchValue={searchValue}
       onSearchValueChange={handleSearchValueChange}
+      onModalStateChange={onModalStateChange}
       items={locations.map((item) => ({
         value: item?.mainText || "",
         label: item?.mainText || "",

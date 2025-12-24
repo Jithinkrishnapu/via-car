@@ -8,7 +8,6 @@ import {
   useWindowDimensions,
   Modal,
   TextInput,
-  Alert,
   FlatList,
 } from "react-native";
 import { Href, useRouter } from "expo-router";
@@ -45,12 +44,15 @@ import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import EmailModal from "@/components/modals/EmailModal";
-import PreferencesModal from "@/components/modals/PrefereceModal";
+import PreferencesModal from "@/components/modals/PreferencesModal";
 import AboutModal from "@/components/modals/AboutModal";
 import { handleLogOut, useGetProfileDetails } from "@/service/auth";
-import { getVehicleList } from "@/service/vehicle";
+import { deleteVehicle, getVehicleList } from "@/service/vehicle";
 import ProfileModal from "@/components/modals/ProfileModal";
 import { changeLanguage, getCurrentLanguageName, getOppositeLanguageName } from "@/lib/languageUtils";
+import { useStore } from "@/store/useStore";
+import ConfirmDialog from "@/components/ui/confirm-dialog";
+import AlertDialog from "@/components/ui/alert-dialog";
 
 type ModalTypes = "email" | "preferences" | "about" | "profile"
 
@@ -67,43 +69,159 @@ export default function ProfilePage() {
   const tabWidth = (246 + 6) / tabKeys.length;
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalTtype] = useState<ModalTypes>()
-  const [vehicleList, setVehhicleList] = useState([])
+  const [vehicleList, setVehhicleList] = useState<any[]>([])
+
+  // Dialog states
+  const [deleteVehicleDialog, setDeleteVehicleDialog] = useState({
+    visible: false,
+    vehicleId: null as number | null,
+  });
+  const [languageDialog, setLanguageDialog] = useState({
+    visible: false,
+    newLang: "",
+    langName: "",
+  });
+  const [logoutDialog, setLogoutDialog] = useState({
+    visible: false,
+  });
+  const [alertDialog, setAlertDialog] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "warning" | "error" | "success",
+  });
 
   const handleGetVehicles = async () => {
-    const response = await getVehicleList()
-    if (response.data) {
-      setVehhicleList(response.data.vehicles)
+    try {
+      const response = await getVehicleList()
+      if (response.data) {
+        setVehhicleList(response.data.vehicles)
+        console.log(response.data.vehicles,"response.data.vehicles================")
+      }
+    } catch (error: any) {
+      console.error("Get vehicles error:", error);
+      
+      let errorMessage = t("Something went wrong");
+      
+      // Handle axios errors
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data) {
+        // If response.data is a string
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      // Optionally show error to user
+      setAlertDialog({
+        visible: true,
+        title: t("error"),
+        message: errorMessage,
+        type: "error",
+      });
     }
   }
 
   const handleDeleteVehicle = (vehicleId: number) => {
-    Alert.alert(
-      t("profile.Delete Vehicle"),
-      t("profile.Are you sure you want to delete this vehicle?"),
-      [
-        { text: t("profile.Cancel"), style: "cancel" },
-        {
-          text: t("profile.Delete"),
-          style: "destructive",
-          onPress: async () => {
-            try {
-              const { deleteVehicle } = await import("@/service/vehicle");
-              await deleteVehicle(vehicleId);
-              Alert.alert(t("profile.Success"), t("profile.Vehicle deleted successfully"));
-              handleGetVehicles(); // Refresh list
-            } catch (error: any) {
-              Alert.alert(t("profile.Error"), error?.body?.message || t("profile.Failed to delete vehicle"));
-            }
-          },
-        },
-      ]
-    );
+    setDeleteVehicleDialog({
+      visible: true,
+      vehicleId,
+    });
+  };
+
+  const confirmDeleteVehicle = async () => {
+    if (!deleteVehicleDialog.vehicleId) return;
+
+    try {
+      await deleteVehicle(deleteVehicleDialog.vehicleId);
+      setAlertDialog({
+        visible: true,
+        title: t("profile.Success"),
+        message: t("profile.Vehicle deleted successfully"),
+        type: "success",
+      });
+      handleGetVehicles(); // Refresh list
+    } catch (error: any) {
+      console.error("Delete vehicle error:", error);
+      
+      let errorMessage = t("profile.Failed to delete vehicle");
+      
+      // Handle axios errors
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data) {
+        // If response.data is a string
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      } else if (error?.body?.message) {
+        // Fallback for the original structure
+        errorMessage = error.body.message;
+      }
+      
+      setAlertDialog({
+        visible: true,
+        title: t("profile.Error"),
+        message: errorMessage,
+        type: "error",
+      });
+    } finally {
+      setDeleteVehicleDialog({ visible: false, vehicleId: null });
+    }
+  };
+
+  const confirmLanguageChange = async () => {
+    if (!languageDialog.newLang) return;
+
+    try {
+      await changeLanguage(languageDialog.newLang, () => {
+        refreshProfile();
+      });
+    } catch (error: any) {
+      console.error("Language change error:", error);
+      
+      let errorMessage = t("Something went wrong");
+      
+      // Handle axios errors
+      if (error?.response?.data?.message) {
+        errorMessage = error.response.data.message;
+      } else if (error?.response?.data?.error) {
+        errorMessage = error.response.data.error;
+      } else if (error?.response?.data) {
+        // If response.data is a string
+        if (typeof error.response.data === 'string') {
+          errorMessage = error.response.data;
+        }
+      } else if (error?.message) {
+        errorMessage = error.message;
+      }
+      
+      setAlertDialog({
+        visible: true,
+        title: t("error"),
+        message: errorMessage,
+        type: "error",
+      });
+    } finally {
+      setLanguageDialog({ visible: false, newLang: "", langName: "" });
+    }
   };
 
   const tabLabels = {
     about: t("About"),
     account: t("Account"),
   };
+
+   const { setIsPublish, setPath } = useStore();
 
   useEffect(() => {
     handleGetVehicles()
@@ -120,17 +238,47 @@ export default function ProfilePage() {
   }));
 
   const handleLogout = () => {
-    handleLogOut().then((res) => {
-      AsyncStorage.removeItem("userDetails");
-      router.replace("/login");
-    }).catch((err) => {
-      console.log("error===========", err)
-      Alert.alert("Something went wrong")
-    })
-
+    setLogoutDialog({
+      visible: true,
+    });
   };
 
-  const [userDetails, setUserDetails] = useState(null);
+  const confirmLogout = () => {
+    handleLogOut().then((res) => {
+      AsyncStorage.removeItem("userDetails");
+      setIsPublish(false)
+      router.replace("/login");
+    }).catch((err: any) => {
+      console.error("Logout error:", err);
+      
+      let errorMessage = t("Something went wrong");
+      
+      // Handle axios errors
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      } else if (err?.response?.data?.error) {
+        errorMessage = err.response.data.error;
+      } else if (err?.response?.data) {
+        // If response.data is a string
+        if (typeof err.response.data === 'string') {
+          errorMessage = err.response.data;
+        }
+      } else if (err?.message) {
+        errorMessage = err.message;
+      }
+      
+      setAlertDialog({
+        visible: true,
+        title: t("error"),
+        message: errorMessage,
+        type: "error",
+      });
+    }).finally(() => {
+      setLogoutDialog({ visible: false });
+    });
+  };
+
+  const [userDetails, setUserDetails] = useState<any>(null);
 
   const refreshProfile = useCallback(async () => {
     try {
@@ -139,8 +287,19 @@ export default function ProfilePage() {
       if (res?.data?.first_name !== "") {setUserDetails(res.data)}else{
       router.replace("/login")
       };
-    } catch {
-      /* optional toast / log */
+    } catch (error: any) {
+      console.error("Profile refresh error:", error);
+      
+      // Handle axios errors for debugging
+      if (error?.response?.data?.message) {
+        console.log("API Error:", error.response.data.message);
+      } else if (error?.response?.data?.error) {
+        console.log("API Error:", error.response.data.error);
+      } else if (error?.message) {
+        console.log("Error:", error.message);
+      }
+      
+      // Redirect to login on profile fetch failure
       router.replace("/login")
     }
   }, []);
@@ -172,133 +331,140 @@ export default function ProfilePage() {
   if (!loaded) return null;
 
   return (
-    <ScrollView className="font-[Kanit-Regular] bg-white">
-      <View className="pb-[40px]">
-        <ImageBackground
-          className="w-full h-max"
-          source={require("../../../public/hero.png")}
-          resizeMode="cover"
-        >
-          <View className="mx-auto w-full max-w-7xl p-6 pt-16">
-            <Text
-              fontSize={24}
-              className="text-2xl text-white font-[Kanit-Medium]"
-            >
-              {t("Profile")}
-            </Text>
-            <View className="mt-6 flex-col flex-wrap justify-between">
-              <View className="flex flex-row gap-[30px] items-center">
-                <Image
-                  source={userDetails?.profile_image_url ? {uri:userDetails?.profile_image_url} : require("../../../public/profile-img2.png")}
-                  className="size-[80px] rounded-2xl"
-                  resizeMode="cover"
-                />
-                <View className="flex-1">
-                  <View className="flex-row justify-between items-center">
+    <View className="font-[Kanit-Regular] bg-white flex-1">
+      {/* Sticky Hero Section */}
+      <ImageBackground
+        className="w-full h-max"
+        source={require("../../../public/hero.png")}
+        resizeMode="cover"
+      >
+        <View className="mx-auto w-full max-w-7xl p-6 pt-16">
+          <Text
+            fontSize={24}
+            className="text-2xl text-white font-[Kanit-Medium]"
+          >
+            {t("Profile")}
+          </Text>
+          <View className="mt-6 flex-col flex-wrap justify-between">
+            <View className="flex flex-row gap-[30px] items-center">
+              <Image
+                source={userDetails?.profile_image_url ? {uri:userDetails?.profile_image_url} : require(`../../../public/profile-image.jpg.webp`)}
+                className="size-[80px] rounded-2xl"
+                resizeMode="cover"
+              />
+              <View className="flex-1">
+                <View className="flex-row justify-between items-center">
+                  <Text
+                    fontSize={25}
+                    className="text-[25px] text-white font-[Kanit-Regular]"
+                  >
+                    {userDetails?.first_name}
+                  </Text>
+                  <TouchableOpacity
+                    onPress={() =>{
+                      setModalTtype("profile")
+                    setModalVisible(true)
+                    }}
+                    className="flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]"
+                  >
+                    <Pencil size={14} color="#FF4848" strokeWidth={1} />
                     <Text
-                      fontSize={25}
-                      className="text-[25px] text-white font-[Kanit-Regular]"
+                      fontSize={12}
+                      className="text-[12px] text-white font-[Kanit-Light] ml-1"
                     >
-                      {userDetails?.first_name}
+                      {t("Edit")}
                     </Text>
-                    <TouchableOpacity
-                      onPress={() =>{
-                        setModalTtype("profile")
-                      setModalVisible(true)
-                      }}
-                      className="flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]"
-                    >
-                      <Pencil size={14} color="#FF4848" strokeWidth={1} />
-                      <Text
-                        fontSize={12}
-                        className="text-[12px] text-white font-[Kanit-Light] ml-1"
-                      >
-                        {t("Edit")}
-                      </Text>
-                    </TouchableOpacity>
-                  </View>
-                  <View className="flex-row items-center mt-2 gap-[10px]">
-                    <Text
-                      fontSize={16}
-                      className="text-base text-white font-[Kanit-Regular]"
-                    >
-                      4.5
-                    </Text>
-                    <Star
-                      size={16}
-                      fill="#FF9C00"
-                      strokeWidth={0}
-                      className="ml-1"
-                    />
-                  </View>
+                  </TouchableOpacity>
+                </View>
+                <View className="flex-row items-center mt-2 gap-[10px]">
+                  <Text
+                    fontSize={16}
+                    className="text-base text-white font-[Kanit-Regular]"
+                  >
+                    {userDetails?.avg_rating}
+                  </Text>
+                  <Star
+                    size={16}
+                    fill="#FF9C00"
+                    strokeWidth={0}
+                    className="ml-1"
+                  />
                 </View>
               </View>
-              <View className="w-full text-white py-6">
-                {[
-                  [t("Phone Number"), userDetails?.mobile_number],
-                  [t("Mail"), userDetails?.email],
-                  [t("Age"), - + Number(userDetails?.calculated_age)],
-                  [t("Gender"), userDetails?.gender_name],
-                ].map(([label, value], idx) => (
-                  value && <View key={idx} className="flex-row py-1">
-                    <Text
-                      fontSize={14}
-                      className="flex-1 text-[14px] text-white font-[Kanit-Light]"
-                    >
-                      {label}
-                    </Text>
-                    <Text
-                      fontSize={14}
-                      className="w-[20px] text-center text-[14px] text-white font-[Kanit-Light]"
-                    >
-                      :
-                    </Text>
-                    <Text
-                      fontSize={14}
-                      className="flex-1 text-[14px] text-white font-[Kanit-Light] ml-1"
-                    >
-                      {value}
-                    </Text>
-                  </View>
-                ))}
-              </View>
+            </View>
+            <View className="w-full text-white py-6">
+              {[
+                [t("Phone Number"), userDetails?.mobile_number],
+                [t("Mail"), userDetails?.email],
+                [t("Age"), - + Number(userDetails?.calculated_age)],
+                [t("Gender"), userDetails?.gender_name],
+              ].map(([label, value], idx) => (
+                value && <View key={idx} className="flex-row py-1">
+                  <Text
+                    fontSize={14}
+                    className="flex-1 text-[14px] text-white font-[Kanit-Light]"
+                  >
+                    {label}
+                  </Text>
+                  <Text
+                    fontSize={14}
+                    className="w-[20px] text-center text-[14px] text-white font-[Kanit-Light]"
+                  >
+                    :
+                  </Text>
+                  <Text
+                    fontSize={14}
+                    className="flex-1 text-[14px] text-white font-[Kanit-Light] ml-1"
+                  >
+                    {value}
+                  </Text>
+                </View>
+              ))}
             </View>
           </View>
-        </ImageBackground>
+        </View>
+      </ImageBackground>
 
-        {/* Tab Switcher */}
-        <View className="flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto">
-          <Animated.View
-            style={animatedIndicatorStyle}
-            className="rounded-full bg-[#FF4848] h-[38px] absolute z-0"
-          />
-          {tabKeys.map((key) => {
-            const isActive = key === activeTab;
-            return (
-              <TouchableOpacity
-                key={key}
-                activeOpacity={0.8}
-                onPress={() => setActiveTab(key)}
+      {/* Tab Switcher - Also Sticky */}
+      <View className="flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto">
+        <Animated.View
+          style={animatedIndicatorStyle}
+          className="rounded-full bg-[#FF4848] h-[38px] absolute z-0"
+        />
+        {tabKeys.map((key) => {
+          const isActive = key === activeTab;
+          return (
+            <TouchableOpacity
+              key={key}
+              activeOpacity={0.8}
+              onPress={() => setActiveTab(key)}
+              className={cn(
+                "flex-1 items-center justify-center rounded-full",
+                !isActive && "z-10"
+              )}
+            >
+              <Text
+                fontSize={15}
                 className={cn(
-                  "flex-1 items-center justify-center rounded-full",
-                  !isActive && "z-10"
+                  "text-[15px] font-[Kanit-Regular] z-10 transition-all duration-700",
+                  isActive ? "text-white" : "text-[#666666]"
                 )}
               >
-                <Text
-                  fontSize={15}
-                  className={cn(
-                    "text-[15px] font-[Kanit-Regular] z-10 transition-all duration-700",
-                    isActive ? "text-white" : "text-[#666666]"
-                  )}
-                >
-                  {tabLabels[key]}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-        </View>
+                {tabLabels[key]}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
 
-        {activeTab === "about" ? (
+      {/* Scrollable Content Area */}
+      <ScrollView 
+        className="flex-1 bg-white" 
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 40 }}
+      >
+        <View>
+          {activeTab === "about" ? (
           <View className="mt-6 space-y-6">
             {/* Verification Section */}
             <View className="pb-6 px-6 border-b-[11px] border-[#F7F7F7]">
@@ -435,7 +601,7 @@ export default function ProfilePage() {
                 fontSize={14}
                 className="bg-gray-100 text-grey-500 rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
               >
-                Add about you here
+                {t("Add about you here")}
               </Text>}
             </View>
 
@@ -512,7 +678,9 @@ export default function ProfilePage() {
               )}
 
               <TouchableOpacity
-                onPress={() => router.push("/(profile)/add-vehicles")}
+                onPress={() => {
+                  setPath("/user-profile")
+                  router.push("/(profile)/add-vehicles")}}
                 className="flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2"
                 activeOpacity={0.8}
               >
@@ -564,24 +732,11 @@ export default function ProfilePage() {
                   const newLang = i18n.language === "en" ? "ar" : "en";
                   const langName = getOppositeLanguageName();
                   
-                  Alert.alert(
-                    t("profile.Select Language"),
-                    `${t("Change Language")} ${langName}?`,
-                    [
-                      {
-                        text: t("profile.Cancel"),
-                        style: "cancel"
-                      },
-                      {
-                        text: t("profile.ok"),
-                        onPress: async () => {
-                          await changeLanguage(newLang, () => {
-                            refreshProfile();
-                          });
-                        }
-                      }
-                    ]
-                  );
+                  setLanguageDialog({
+                    visible: true,
+                    newLang,
+                    langName,
+                  });
                 }}
                 className="flex-row items-center justify-between"
               >
@@ -635,14 +790,63 @@ export default function ProfilePage() {
             </View>
 
           </View>
-
         )}
-      </View>
+        </View>
+      </ScrollView>
+
       <Modal visible={modalVisible} transparent animationType="fade">
         <View className="flex-1 justify-end bg-black/30">
           {renderModalContent()}
         </View>
       </Modal>
-    </ScrollView>
+
+      {/* Delete Vehicle Confirmation Dialog */}
+      <ConfirmDialog
+        visible={deleteVehicleDialog.visible}
+        onClose={() => setDeleteVehicleDialog({ visible: false, vehicleId: null })}
+        title={t("profile.Delete Vehicle")}
+        message={t("profile.Are you sure you want to delete this vehicle?")}
+        confirmText={t("profile.Delete")}
+        cancelText={t("profile.Cancel")}
+        onConfirm={confirmDeleteVehicle}
+        onCancel={() => setDeleteVehicleDialog({ visible: false, vehicleId: null })}
+        type="destructive"
+      />
+
+      {/* Language Change Confirmation Dialog */}
+      <ConfirmDialog
+        visible={languageDialog.visible}
+        onClose={() => setLanguageDialog({ visible: false, newLang: "", langName: "" })}
+        title={t("profile.Select Language")}
+        message={`${t("Change Language")} ${languageDialog.langName}?`}
+        confirmText={t("profile.ok")}
+        cancelText={t("profile.Cancel")}
+        onConfirm={confirmLanguageChange}
+        onCancel={() => setLanguageDialog({ visible: false, newLang: "", langName: "" })}
+      />
+
+      {/* Logout Confirmation Dialog */}
+      <ConfirmDialog
+        visible={logoutDialog.visible}
+        onClose={() => setLogoutDialog({ visible: false })}
+        title={t("profile.Logout")}
+        message={t("profile.Are you sure you want to logout?")}
+        confirmText={t("profile.Logout")}
+        cancelText={t("profile.Cancel")}
+        onConfirm={confirmLogout}
+        onCancel={() => setLogoutDialog({ visible: false })}
+        type="destructive"
+      />
+
+      {/* Alert Dialog */}
+      <AlertDialog
+        visible={alertDialog.visible}
+        onClose={() => setAlertDialog({ visible: false, title: "", message: "", type: "info" })}
+        title={alertDialog.title}
+        message={alertDialog.message}
+        type={alertDialog.type}
+        confirmText={t("profile.ok")}
+      />
+    </View>
   );
 }

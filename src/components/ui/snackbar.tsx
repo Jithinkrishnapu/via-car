@@ -1,32 +1,35 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, Animated, TouchableOpacity } from 'react-native';
-import { X, Wifi, WifiOff } from 'lucide-react-native';
+import React, { useEffect, useRef, useState } from 'react';
+import { View, Text, Animated, TouchableOpacity, Platform } from 'react-native';
+import { X, Wifi, WifiOff, CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
+import { snackbarManager, SnackbarConfig } from '@/utils/snackbar-manager';
 
-interface SnackbarProps {
-  visible: boolean;
-  message: string;
-  type?: 'error' | 'success' | 'warning' | 'info';
-  duration?: number;
-  onDismiss: () => void;
-  action?: {
-    label: string;
-    onPress: () => void;
-  };
-}
-
-const Snackbar: React.FC<SnackbarProps> = ({
-  visible,
-  message,
-  type = 'error',
-  duration = 4000,
-  onDismiss,
-  action
-}) => {
+const GlobalSnackbar: React.FC = () => {
+  const [config, setConfig] = useState<SnackbarConfig | null>(null);
+  const [visible, setVisible] = useState(false);
   const translateY = useRef(new Animated.Value(100)).current;
   const opacity = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    if (visible) {
+    const showListener = (newConfig: SnackbarConfig) => {
+      setConfig(newConfig);
+      setVisible(true);
+    };
+
+    const hideListener = () => {
+      hideSnackbar();
+    };
+
+    snackbarManager.on('show', showListener);
+    snackbarManager.on('hide', hideListener);
+
+    return () => {
+      snackbarManager.off('show', showListener);
+      snackbarManager.off('hide', hideListener);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (visible && config) {
       // Show animation
       Animated.parallel([
         Animated.timing(translateY, {
@@ -44,13 +47,13 @@ const Snackbar: React.FC<SnackbarProps> = ({
       // Auto dismiss after duration
       const timer = setTimeout(() => {
         hideSnackbar();
-      }, duration);
+      }, config.duration || 4000);
 
       return () => clearTimeout(timer);
-    } else {
+    } else if (!visible) {
       hideSnackbar();
     }
-  }, [visible]);
+  }, [visible, config]);
 
   const hideSnackbar = () => {
     Animated.parallel([
@@ -65,12 +68,13 @@ const Snackbar: React.FC<SnackbarProps> = ({
         useNativeDriver: true,
       }),
     ]).start(() => {
-      onDismiss();
+      setVisible(false);
+      setConfig(null);
     });
   };
 
   const getBackgroundColor = () => {
-    switch (type) {
+    switch (config?.type) {
       case 'success':
         return 'bg-green-600';
       case 'warning':
@@ -84,39 +88,63 @@ const Snackbar: React.FC<SnackbarProps> = ({
   };
 
   const getIcon = () => {
-    if (message.toLowerCase().includes('network') || message.toLowerCase().includes('connection')) {
-      return <WifiOff size={20} color="#fff" />;
+    const iconSize = 20;
+    const iconColor = '#fff';
+
+    if (config?.message.toLowerCase().includes('network') || 
+        config?.message.toLowerCase().includes('connection')) {
+      return <WifiOff size={iconSize} color={iconColor} />;
     }
-    return null;
+
+    switch (config?.type) {
+      case 'success':
+        return <CheckCircle size={iconSize} color={iconColor} />;
+      case 'warning':
+        return <AlertTriangle size={iconSize} color={iconColor} />;
+      case 'info':
+        return <Info size={iconSize} color={iconColor} />;
+      case 'error':
+      default:
+        return <WifiOff size={iconSize} color={iconColor} />;
+    }
   };
 
-  if (!visible) return null;
+  if (!visible || !config) return null;
 
   return (
     <Animated.View
       style={{
         transform: [{ translateY }],
         opacity,
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 50 : 30,
+        left: 16,
+        right: 16,
+        zIndex: 9999,
+        elevation: 10, // Android shadow
       }}
-      className={`absolute bottom-0 left-0 right-0 mx-4 mb-8 ${getBackgroundColor()} rounded-lg shadow-lg z-50`}
+      className={`${getBackgroundColor()} rounded-lg shadow-lg`}
     >
       <View className="flex-row items-center justify-between p-4">
         <View className="flex-row items-center flex-1">
           {getIcon()}
-          <Text className="text-white font-[Kanit-Regular] text-[14px] flex-1 ml-2">
-            {message}
+          <Text className="text-white font-[Kanit-Regular] text-[14px] flex-1 ml-3">
+            {config.message}
           </Text>
         </View>
         
         <View className="flex-row items-center ml-2">
-          {action && (
+          {config.action && (
             <TouchableOpacity
-              onPress={action.onPress}
-              className="mr-3"
+              onPress={() => {
+                config.action?.onPress();
+                hideSnackbar();
+              }}
+              className="mr-3 px-2 py-1"
               activeOpacity={0.7}
             >
               <Text className="text-white font-[Kanit-Medium] text-[14px] underline">
-                {action.label}
+                {config.action.label}
               </Text>
             </TouchableOpacity>
           )}
@@ -134,4 +162,4 @@ const Snackbar: React.FC<SnackbarProps> = ({
   );
 };
 
-export default Snackbar;
+export default GlobalSnackbar;
