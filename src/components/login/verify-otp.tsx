@@ -18,10 +18,12 @@ import { router } from "expo-router";
 import Text from "../common/text";
 import AlertDialog from "../ui/alert-dialog";
 import { useTranslation } from "react-i18next";
+import { useDirection } from "@/hooks/useDirection";
 import { handleSendOtp, handleVerifyOtp } from "@/service/auth";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { NotificationService } from "@/services/notificationService";
 import { ApiError } from "@/utils/apiErrorHandler";
+import { cn } from "@/lib/utils";
 
 const { height } = Dimensions.get("window");
 
@@ -34,7 +36,8 @@ const VerifyOtp = ({
   disabled?: boolean;
   onError?: (title: string, message: string, type?: "info" | "warning" | "error" | "success") => void;
 }) => {
-  const { t } = useTranslation("components");
+  const { t } = useTranslation();
+  const { isRTL } = useDirection();
   const [visible, setVisible] = useState(false);
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const translateY = useRef(new Animated.Value(height)).current;
@@ -84,58 +87,58 @@ const VerifyOtp = ({
       switch (error.status) {
         case 400:
           return {
-            title: "Invalid Request",
-            message: error.message || "Please check your input and try again.",
+            title: t("components.common.error"),
+            message: error.message || t("components.common.retry"),
             type: "error"
           };
         case 401:
           return {
-            title: "Authentication Error",
-            message: "Invalid credentials. Please try again.",
+            title: t("components.common.error"),
+            message: t("components.common.retry"),
             type: "error"
           };
         case 403:
           return {
-            title: "Access Denied",
-            message: "You do not have permission to perform this action.",
+            title: t("components.common.error"),
+            message: t("components.common.retry"),
             type: "error"
           };
         case 404:
           return {
-            title: "Service Not Found",
-            message: "The service is temporarily unavailable. Please try again later.",
+            title: t("components.common.error"),
+            message: t("components.common.retry"),
             type: "error"
           };
         case 422:
           return {
-            title: "Validation Error",
-            message: error.message || "Please check your input and try again.",
+            title: t("components.common.error"),
+            message: error.message || t("components.common.retry"),
             type: "error"
           };
         case 429:
           return {
-            title: "Too Many Requests",
-            message: "Please wait a moment before trying again.",
+            title: t("components.common.warning"),
+            message: t("components.common.retry"),
             type: "warning"
           };
         case 500:
           return {
-            title: "Server Error",
-            message: "Something went wrong on our end. Please try again later.",
+            title: t("components.common.error"),
+            message: t("components.common.retry"),
             type: "error"
           };
         case 502:
         case 503:
         case 504:
           return {
-            title: "Service Unavailable",
-            message: "The service is temporarily unavailable. Please try again later.",
+            title: t("components.common.error"),
+            message: t("components.common.retry"),
             type: "error"
           };
         default:
           return {
-            title: `Error ${error.status}`,
-            message: error.message || "An unexpected error occurred.",
+            title: t("components.common.error"),
+            message: error.message || t("components.common.retry"),
             type: "error"
           };
       }
@@ -145,30 +148,30 @@ const VerifyOtp = ({
     if (error.message) {
       if (error.message.includes('Network') || error.message.includes('network')) {
         return {
-          title: "Connection Error",
-          message: "Please check your internet connection and try again.",
+          title: t("components.common.error"),
+          message: t("components.common.retry"),
           type: "error"
         };
       }
       
       if (error.message.includes('timeout') || error.message.includes('Timeout')) {
         return {
-          title: "Timeout Error",
-          message: "The request took too long. Please try again.",
+          title: t("components.common.error"),
+          message: t("components.common.retry"),
           type: "error"
         };
       }
       
       if (error.message.includes('Invalid') || error.message.includes('OTP')) {
         return {
-          title: "Invalid Code",
-          message: "The verification code is invalid. Please check and try again.",
+          title: t("components.common.error"),
+          message: t("components.common.retry"),
           type: "error"
         };
       }
       
       return {
-        title: "Error",
+        title: t("components.common.error"),
         message: error.message,
         type: "error"
       };
@@ -176,8 +179,8 @@ const VerifyOtp = ({
     
     // Default error
     return {
-      title: "Unexpected Error",
-      message: "Something went wrong. Please try again.",
+      title: t("components.common.error"),
+      message: t("components.common.retry"),
       type: "error"
     };
   };
@@ -281,7 +284,7 @@ const VerifyOtp = ({
     
     // Validate phone number
     if (!validatePhoneNumber(phoneNumber)) {
-      showError("Invalid Phone Number", "Please enter a valid phone number with at least 8 digits.");
+      showError(t("login.invalid_phone"), t("login.invalid_phone_message"));
       return;
     }
 
@@ -300,10 +303,10 @@ const VerifyOtp = ({
         setOtpId(response?.data?.otpId)
         useAsyncStorage("otp_id").setItem(response?.data?.otpId)
         openSheet()
-        showError("OTP Sent", "Verification code has been sent to your phone.", "success");
+        showError(t("login.otp_sent"), t("login.otp_sent_message"), "success");
       } else {
-        const errorMessage = response?.message || response?.error || "Failed to send OTP. Please try again.";
-        showError("OTP Failed", errorMessage);
+        const errorMessage = response?.message || response?.error || t("login.otp_failed") + ". Please try again.";
+        showError(t("login.otp_failed"), errorMessage);
       }
     } catch (error: any) {
       const errorInfo = getErrorMessage(error);
@@ -319,12 +322,12 @@ const VerifyOtp = ({
     // Validate OTP
     const otpString = otp.join('');
     if (otpString.length !== 6) {
-      showError("Invalid OTP", "Please enter the complete 6-digit verification code.");
+      showError(t("login.invalid_otp"), t("login.invalid_otp_message"));
       return;
     }
     
     if (!otpId) {
-      showError("Session Error", "OTP session expired. Please request a new code.");
+      showError(t("login.session_error"), t("login.session_error_message"));
       return;
     }
     
@@ -357,7 +360,7 @@ const VerifyOtp = ({
         }
       } else {
         const errorMessage = response?.message || response?.error || "Invalid OTP. Please try again.";
-        showError("Verification Failed", errorMessage);
+        showError(t("login.verification_failed"), errorMessage);
       }
     } catch (error: any) {
       const errorInfo = getErrorMessage(error);
@@ -387,6 +390,86 @@ const VerifyOtp = ({
     }).start(() => setVisible(false));
   };
 
+  const renderOtpContent = () => (
+    <View className="flex flex-col items-center relative">
+      <TouchableOpacity
+        activeOpacity={0.8}
+        onPress={closeSheet}
+        className={cn("absolute top-4 z-10", isRTL ? "left-4" : "right-4")}
+      >
+        <XIcon className="size-4" color="#666666" />
+      </TouchableOpacity>
+      <OtpAnimation />
+      <Text
+        fontSize={25}
+        className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
+        style={{ textAlign: isRTL ? 'right' : 'center' }}
+      >
+        {t("components.Please Verify Your Number")}
+      </Text>
+      <Text
+        fontSize={14}
+        className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
+        style={{ textAlign: isRTL ? 'right' : 'center' }}
+      >
+        {t("components.Please enter the six-digit verification code that we have sent to your mobile number ending in")}
+        <Text fontSize={14} className="text-[#FF4848]">
+          {t("components.endingDigits", { digits: "***"+phoneNumber?.slice(-3) })}
+        </Text>
+      </Text>
+      <View className={cn("flex-row justify-center", isRTL && "flex-row-reverse")}>
+        {Array.from({ length: 6 }).map((_, i) => (
+          <TextInput
+            key={i}
+            ref={(r) => { refs.current[i] = r!; }}
+            value={otp[i]}
+            onChangeText={(t) => handleChange(t, i)}
+            onKeyPress={(e) => handleKeyPress(e, i)}
+            maxLength={1}
+            keyboardType="number-pad"
+            className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
+            style={{ textAlign: 'center' }}
+          />
+        ))}
+      </View>
+
+      <TouchableOpacity
+        onPress={handleValidate}
+        disabled={isValidating || otp.join('').length !== 6}
+        className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
+          isValidating || otp.join('').length !== 6 
+            ? 'bg-gray-400' 
+            : 'bg-[#FF4848]'
+        }`}
+        activeOpacity={0.8}
+      >
+        <Text
+          fontSize={20}
+          className="text-white text-[20px] font-[Kanit-Regular]"
+        >
+          {isValidating ? t("login.verifying") : t("components.Verify")}
+        </Text>
+      </TouchableOpacity>
+
+      <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
+        <Text
+          fontSize={14}
+          className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
+          style={{ textAlign: isRTL ? 'right' : 'center' }}
+        >
+          {t("components.If you haven't received the code, please check your messages or")}
+          <Text
+            fontSize={14}
+            className="text-[#FF4848] font-[Kanit-Regular]"
+          >
+            {" "}
+            {t("components.request a new code.")}
+          </Text>
+        </Text>
+      </View>
+    </View>
+  );
+
   return (
     <View>
       <TouchableOpacity
@@ -401,7 +484,7 @@ const VerifyOtp = ({
           fontSize={20}
           className="my-auto text-[20px] text-white font-[Kanit-Regular]"
         >
-          {isSendingOtp ? "Sending..." : t("Verify")}
+          {isSendingOtp ? t("login.sending") : t("components.Verify")}
         </Text>
       </TouchableOpacity>
 
@@ -429,83 +512,7 @@ const VerifyOtp = ({
                       contentInsetAdjustmentBehavior="automatic"
                       automaticallyAdjustsScrollIndicatorInsets={false}
                     >
-                      <View className="flex flex-col items-center relative">
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={closeSheet}
-                          className="absolute top-4 right-4 z-10"
-                        >
-                          <XIcon className="size-4" color="#666666" />
-                        </TouchableOpacity>
-                        <OtpAnimation />
-                        <Text
-                          fontSize={25}
-                          className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
-                        >
-                          {t("Please Verify Your Number")}
-                        </Text>
-                        <Text
-                          fontSize={14}
-                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
-                        >
-                          {t(
-                            "Please enter the six-digit verification code that we have sent to your mobile number ending in"
-                          )}
-                          <Text fontSize={14} className="text-[#FF4848]">
-                            {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
-                          </Text>
-                        </Text>
-                        <View className="flex-row justify-center">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <TextInput
-                              key={i}
-                              ref={(r) => { refs.current[i] = r!; }}
-                              value={otp[i]}
-                              onChangeText={(t) => handleChange(t, i)}
-                              onKeyPress={(e) => handleKeyPress(e, i)}
-                              maxLength={1}
-                              keyboardType="number-pad"
-                              className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
-                            />
-                          ))}
-                        </View>
-
-                        <TouchableOpacity
-                          onPress={handleValidate}
-                          disabled={isValidating || otp.join('').length !== 6}
-                          className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
-                            isValidating || otp.join('').length !== 6 
-                              ? 'bg-gray-400' 
-                              : 'bg-[#FF4848]'
-                          }`}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            fontSize={20}
-                            className="text-white text-[20px] font-[Kanit-Regular]"
-                          >
-                            {isValidating ? "Verifying..." : t("Verify")}
-                          </Text>
-                        </TouchableOpacity>
-
-                        <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
-                          <Text
-                            fontSize={14}
-                            className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
-                          >
-                            {t(
-                              "If you haven't received the code, please check your messages or"
-                            )}
-                            <Text
-                              fontSize={14}
-                              className="text-[#FF4848] font-[Kanit-Regular]"
-                            >
-                              {" "}
-                              {t("request a new code.")}
-                            </Text>
-                          </Text>
-                        </View>
-                      </View>
+                      {renderOtpContent()}
                     </ScrollView>
                   ) : (
                     <KeyboardAwareScrollView
@@ -516,83 +523,7 @@ const VerifyOtp = ({
                       enableAutomaticScroll={true}
                       bounces={false}
                     >
-                      <View className="flex flex-col items-center relative">
-                        <TouchableOpacity
-                          activeOpacity={0.8}
-                          onPress={closeSheet}
-                          className="absolute top-4 right-4 z-10"
-                        >
-                          <XIcon className="size-4" color="#666666" />
-                        </TouchableOpacity>
-                        <OtpAnimation />
-                        <Text
-                          fontSize={25}
-                          className="text-[25px] mb-[25px] font-[Kanit-Regular] text-center"
-                        >
-                          {t("Please Verify Your Number")}
-                        </Text>
-                        <Text
-                          fontSize={14}
-                          className="text-[14px] text-center text-[#666666] font-[Kanit-Light] mb-7"
-                        >
-                          {t(
-                            "Please enter the six-digit verification code that we have sent to your mobile number ending in"
-                          )}
-                          <Text fontSize={14} className="text-[#FF4848]">
-                            {t("endingDigits", { ns: "components", digits: "***"+phoneNumber?.slice(-3) })}
-                          </Text>
-                        </Text>
-                        <View className="flex-row justify-center">
-                          {Array.from({ length: 6 }).map((_, i) => (
-                            <TextInput
-                              key={i}
-                              ref={(r) => { refs.current[i] = r!; }}
-                              value={otp[i]}
-                              onChangeText={(t) => handleChange(t, i)}
-                              onKeyPress={(e) => handleKeyPress(e, i)}
-                              maxLength={1}
-                              keyboardType="number-pad"
-                              className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
-                            />
-                          ))}
-                        </View>
-
-                        <TouchableOpacity
-                          onPress={handleValidate}
-                          disabled={isValidating || otp.join('').length !== 6}
-                          className={`rounded-full w-full max-w-[200px] h-[54px] mb-5 mt-10 justify-center items-center ${
-                            isValidating || otp.join('').length !== 6 
-                              ? 'bg-gray-400' 
-                              : 'bg-[#FF4848]'
-                          }`}
-                          activeOpacity={0.8}
-                        >
-                          <Text
-                            fontSize={20}
-                            className="text-white text-[20px] font-[Kanit-Regular]"
-                          >
-                            {isValidating ? "Verifying..." : t("Verify")}
-                          </Text>
-                        </TouchableOpacity>
-
-                        <View className="text-[14px] text-center text-[#666666] font-[Kanit-Light]">
-                          <Text
-                            fontSize={14}
-                            className="text-[14px] text-center text-[#666666] font-[Kanit-Light]"
-                          >
-                            {t(
-                              "If you haven't received the code, please check your messages or"
-                            )}
-                            <Text
-                              fontSize={14}
-                              className="text-[#FF4848] font-[Kanit-Regular]"
-                            >
-                              {" "}
-                              {t("request a new code.")}
-                            </Text>
-                          </Text>
-                        </View>
-                      </View>
+                      {renderOtpContent()}
                     </KeyboardAwareScrollView>
                   )}
                 </Animated.View>
@@ -609,7 +540,7 @@ const VerifyOtp = ({
           title={errorDialog.title}
           message={errorDialog.message}
           type={errorDialog.type}
-          confirmText="OK"
+          confirmText={t("components.common.ok")}
         />
       )}
     </View>

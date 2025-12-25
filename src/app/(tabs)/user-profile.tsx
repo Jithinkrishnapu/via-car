@@ -226,11 +226,14 @@ export default function ProfilePage() {
   useEffect(() => {
     handleGetVehicles()
     const index = tabKeys.indexOf(activeTab);
-    indicatorX.value = withSpring(index * tabWidth, {
+    const targetX = isRTL 
+      ? (tabKeys.length - 1 - index) * tabWidth  // Reverse for RTL
+      : index * tabWidth;
+    indicatorX.value = withSpring(targetX, {
       damping: 20,
       stiffness: 90,
     });
-  }, [activeTab, tabWidth]);
+  }, [activeTab, tabWidth, isRTL]);
 
   const animatedIndicatorStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: indicatorX.value }],
@@ -349,14 +352,14 @@ export default function ProfilePage() {
             {t("Profile")}
           </Text>
           <View className="mt-6 flex-col flex-wrap justify-between">
-            <View className="flex flex-row gap-[30px] items-center">
+            <View className={cn("flex flex-row gap-[30px] items-center", isRTL && "flex-row-reverse")}>
               <Image
                 source={userDetails?.profile_image_url ? { uri: userDetails?.profile_image_url } : require(`../../../public/profile-image.jpg.webp`)}
                 className="size-[80px] rounded-2xl"
                 resizeMode="cover"
               />
               <View className="flex-1">
-                <View className="flex-row justify-between items-center">
+                <View className={cn("flex-row justify-between items-center", isRTL && "flex-row-reverse")}>
                   <Text
                     fontSize={25}
                     fontWeight="regular"
@@ -369,19 +372,19 @@ export default function ProfilePage() {
                       setModalTtype("profile")
                       setModalVisible(true)
                     }}
-                    className="flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]"
+                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]", isRTL && "flex-row-reverse")}
                   >
                     <Pencil size={14} color="#FF4848" strokeWidth={1} />
                     <Text
                       fontSize={12}
                       fontWeight="light"
-                      className="text-[12px] text-white ml-1"
+                      className={cn("text-[12px] text-white", isRTL ? "mr-1" : "ml-1")}
                     >
                       {t("Edit")}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View className="flex-row items-center mt-2 gap-[10px]">
+                <View className={cn("flex-row items-center mt-2 gap-[10px]", isRTL && "flex-row-reverse")}>
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -393,7 +396,7 @@ export default function ProfilePage() {
                     size={16}
                     fill="#FF9C00"
                     strokeWidth={0}
-                    className="ml-1"
+                    className={isRTL ? "mr-1" : "ml-1"}
                   />
                 </View>
               </View>
@@ -405,11 +408,12 @@ export default function ProfilePage() {
                 [t("Age"), - + Number(userDetails?.calculated_age)],
                 [t("Gender"), userDetails?.gender_name],
               ].map(([label, value], idx) => (
-                value && <View key={idx} className="flex-row py-1">
+                value && <View key={idx} className={cn("flex-row py-1", isRTL && "flex-row-reverse")}>
                   <Text
                     fontSize={14}
                     fontWeight="light"
                     className="flex-1 text-[14px] text-white"
+                    style={{ textAlign: isRTL ? 'right' : 'left' }}
                   >
                     {label}
                   </Text>
@@ -423,7 +427,8 @@ export default function ProfilePage() {
                   <Text
                     fontSize={14}
                     fontWeight="light"
-                    className="flex-1 text-[14px] text-white ml-1"
+                    className={cn("flex-1 text-[14px] text-white", isRTL ? "mr-1" : "ml-1")}
+                    style={{ textAlign: isRTL ? 'left' : 'left' }}
                   >
                     {value}
                   </Text>
@@ -435,12 +440,12 @@ export default function ProfilePage() {
       </ImageBackground>
 
       {/* Tab Switcher - Also Sticky */}
-      <View className="flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto">
+      <View className={cn("flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto", isRTL && "flex-row-reverse")}>
         <Animated.View
           style={animatedIndicatorStyle}
           className="rounded-full bg-[#FF4848] h-[38px] absolute z-0"
         />
-        {tabKeys.map((key) => {
+        {(isRTL ? [...tabKeys].reverse() : tabKeys).map((key) => {
           const isActive = key === activeTab;
           return (
             <TouchableOpacity
@@ -550,7 +555,7 @@ export default function ProfilePage() {
 
               {/* Travel Preferences */}
               <View className="px-6 py-8">
-                <View className="flex-row justify-between items-center mb-[20px]">
+                <View className={cn("flex-row justify-between items-center mb-[20px]", isRTL && "flex-row-reverse")}>
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -560,10 +565,10 @@ export default function ProfilePage() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => { setModalTtype("preferences"), setModalVisible(true) }}
-                    className="flex-row items-center bg-transparent border border-gray-200 rounded-full h-max px-5 py-1.5"
+                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full h-max px-5 py-1.5", isRTL && "flex-row-reverse")}
                   >
                     <Pencil size={12} color="#FF4848" />
-                    <Text fontSize={14} className="text-sm ml-1">
+                    <Text fontSize={14} className={cn("text-sm", isRTL ? "mr-1" : "ml-1")}>
                       {userDetails?.travel_preferences?.[0] ? t("Edit") : t("Add Travel Preferences")}
                     </Text>
                   </TouchableOpacity>
@@ -575,10 +580,10 @@ export default function ProfilePage() {
                       .map((text: string) => (
                         <View
                           key={text}
-                          className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
+                          className={cn("border border-gray-200 rounded-full flex-row items-center px-4 py-2", isRTL && "flex-row-reverse")}
                         >
                           <ChatIcon width={21} height={21} />
-                          <Text className="ml-2 text-sm" fontWeight="light">{text.trim()}</Text>
+                          <Text className={cn("text-sm", isRTL ? "mr-2" : "ml-2")} fontWeight="light">{text.trim()}</Text>
                         </View>
                       ))}
                   </View>
@@ -587,6 +592,7 @@ export default function ProfilePage() {
                     fontSize={14}
                     fontWeight="light"
                     className="bg-gray-100 text-gray-500 rounded-2xl p-4 text-sm leading-relaxed"
+                    style={{ textAlign: isRTL ? 'right' : 'left' }}
                   >
                     {t("Add your travel preferences here")}
                   </Text>
@@ -595,7 +601,7 @@ export default function ProfilePage() {
 
               {/* About You */}
               <View className="px-6 mb-[30px]">
-                <View className="flex-row justify-between items-center mb-[20px]">
+                <View className={cn("flex-row justify-between items-center mb-[20px]", isRTL && "flex-row-reverse")}>
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -604,14 +610,14 @@ export default function ProfilePage() {
                     {t("About you")}
                   </Text>
                   <TouchableOpacity
-                    className="flex-row items-center bg-transparent border border-gray-200 rounded-full h-8 px-3"
+                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full h-8 px-3", isRTL && "flex-row-reverse")}
                     onPress={() => { setModalTtype("about"), setModalVisible(true) }}
                   >
                     <Pencil size={12} color="#FF4848" />
                     <Text
                       fontSize={14}
                       fontWeight="light"
-                      className="text-sm ml-1"
+                      className={cn("text-sm", isRTL ? "mr-1" : "ml-1")}
                     >
                       {userDetails?.about ? t("Edit") : t("Add About")}
                     </Text>
@@ -624,6 +630,7 @@ export default function ProfilePage() {
                       ? "bg-gray-100 text-black"
                       : "bg-gray-100 text-gray-500"
                     }`}
+                  style={{ textAlign: isRTL ? 'right' : 'left' }}
                 >
                   {userDetails?.about || t("Add about you here")}
                 </Text>
@@ -647,12 +654,13 @@ export default function ProfilePage() {
                         <Separator className="border-gray-200 my-5" />
                       )}
                       renderItem={({ item }) => (
-                        <View className="flex-row justify-between items-center py-2">
-                          <View className="flex-1 mr-4">
+                        <View className={cn("flex-row justify-between items-center py-2", isRTL && "flex-row-reverse")}>
+                          <View className={cn("flex-1", isRTL ? "ml-4" : "mr-4")}>
                             <Text
                               fontSize={16}
                               fontWeight="medium"
                               className="text-[16px] mb-1"
+                              style={{ textAlign: isRTL ? 'right' : 'left' }}
                             >
                               {item?.model?.name}
                             </Text>
@@ -660,6 +668,7 @@ export default function ProfilePage() {
                               fontSize={12}
                               fontWeight="light"
                               className="text-[12px] text-gray-600"
+                              style={{ textAlign: isRTL ? 'right' : 'left' }}
                             >
                               {item?.model?.category_name}, {item?.brand?.name}
                             </Text>
@@ -667,11 +676,12 @@ export default function ProfilePage() {
                               fontSize={11}
                               fontWeight="light"
                               className="text-[11px] text-gray-500 mt-1"
+                              style={{ textAlign: isRTL ? 'right' : 'left' }}
                             >
                               {item?.year}
                             </Text>
                           </View>
-                          <View className="flex-row gap-4">
+                          <View className={cn("flex-row gap-4", isRTL && "flex-row-reverse")}>
                             <TouchableOpacity
                               onPress={() =>
                                 router.push({
@@ -710,14 +720,14 @@ export default function ProfilePage() {
                     setPath("/user-profile")
                     router.push("/(profile)/add-vehicles")
                   }}
-                  className="flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2"
+                  className={cn("flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2", isRTL && "flex-row-reverse")}
                   activeOpacity={0.8}
                 >
                   <CirclePlus size={20} color="#fff" strokeWidth={1} />
                   <Text
                     fontSize={18}
                     fontWeight="regular"
-                    className="ml-2 text-lg text-white"
+                    className={cn("text-lg text-white", isRTL ? "mr-2" : "ml-2")}
                   >
                     {t("Add vehicle")}
                   </Text>
@@ -726,7 +736,7 @@ export default function ProfilePage() {
             </View>
           ) : (
             <View>
-              {/* Language Switcher */}
+              {/* Account Menu Items */}
               <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
                 {[
                   [t("profile.Bank Account"), "/(profile)/bank"],
@@ -738,6 +748,7 @@ export default function ProfilePage() {
                     onPress={() => router.push(route as Href)}
                     className={cn(
                       "flex-row items-center justify-between pt-4",
+                      isRTL && "flex-row-reverse",
                       idx !== 3 && "border-b border-dashed border-gray-200 pb-4"
                     )}
                   >
@@ -768,13 +779,13 @@ export default function ProfilePage() {
                       langName,
                     });
                   }}
-                  className="flex-row items-center justify-between"
+                  className={cn("flex-row items-center justify-between", isRTL && "flex-row-reverse")}
                 >
-                  <View className="flex-row items-center">
+                  <View className={cn("flex-row items-center", isRTL && "flex-row-reverse")}>
                     <Text fontSize={14} fontWeight="light" className="text-[14px]">
                       {t("profile.Language")}
                     </Text>
-                    <Text fontSize={12} fontWeight="light" className="text-[12px] text-gray-500 ml-2">
+                    <Text fontSize={12} fontWeight="light" className={cn("text-[12px] text-gray-500", isRTL ? "mr-2" : "ml-2")}>
                       ({getCurrentLanguageName()})
                     </Text>
                   </View>
@@ -799,6 +810,7 @@ export default function ProfilePage() {
                     onPress={() => router.push(route as Href)}
                     className={cn(
                       "flex-row items-center justify-between pt-4",
+                      isRTL && "flex-row-reverse",
                       idx !== 3 && "border-b border-dashed border-gray-200 pb-4"
                     )}
                   >

@@ -19,9 +19,10 @@ import Animated, {
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
-import { ChevronDown, ChevronRight } from 'lucide-react-native';
+import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react-native';
 
 import { useLoadFonts } from '@/hooks/use-load-fonts';
+import { useDirection } from '@/hooks/useDirection';
 import { useGetAllBooking, useGetAlRides, useUpdateBookingStatus, useUpdateRideStatus, useVerifyBooking } from '@/service/ride-booking';
 
 import RideStatusItem from '@/components/common/ride-status-item';
@@ -59,6 +60,7 @@ export default function RidesTabsScreen() {
   const { t } = useTranslation('components');
   const { width } = useWindowDimensions();
   const loaded = useLoadFonts();
+  const { isRTL, swap } = useDirection();
 
   /* --------------------- STATE  --------------------- */
   const [activeTab, setActiveTab] = useState<Tab>('Pending');
@@ -78,7 +80,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert("Ride Cancelled")
+      Alert.alert(t('yourRides.rideCancelled'))
     }
   }
   const handleCancelBooking = async (item: any) => {
@@ -88,7 +90,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateBookingStatus(req)
     if (response) {
-      Alert.alert("Booking Cancelled")
+      Alert.alert(t('yourRides.bookingCancelled'))
     }
   }
 
@@ -99,7 +101,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert("Ride Started")
+      Alert.alert(t('yourRides.rideStarted'))
     }
   }
 
@@ -110,7 +112,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert("Booking Completed")
+      Alert.alert(t('yourRides.bookingCompleted'))
     }
   }
 
@@ -121,7 +123,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useVerifyBooking(req)
     if (response) {
-      Alert.alert("Booking Verified")
+      Alert.alert(t('yourRides.bookingVerified'))
     }
   }
 
@@ -131,8 +133,11 @@ export default function RidesTabsScreen() {
 
   useEffect(() => {
     const idx = TABS.indexOf(activeTab);
-    indicatorX.value = withSpring(idx * tabWidth, { damping: 20, stiffness: 90 });
-  }, [activeTab, tabWidth]);
+    const targetX = isRTL 
+      ? (TABS.length - 1 - idx) * tabWidth  // Reverse for RTL
+      : idx * tabWidth;
+    indicatorX.value = withSpring(targetX, { damping: 20, stiffness: 90 });
+  }, [activeTab, tabWidth, isRTL]);
 
   const animatedIndicatorStyle = useAnimatedStyle(
     () => ({
@@ -209,17 +214,17 @@ export default function RidesTabsScreen() {
   return (
     <View className="flex-1 bg-[rgb(245,245,245)]">
       {/* ---------------- HEADER -------------- */}
-      <View className="px-6 flex-row justify-between pt-16 mb-[25px]">
+      <View className={cn("px-6 flex-row justify-between pt-16 mb-[25px]", isRTL && "flex-row-reverse")}>
         <Text fontSize={22} className="text-black font-[Kanit-Medium]">
           {t('yourRides.title')}
         </Text>
 
         <Pressable
           onPress={() => setSideModalVisible(true)}
-          className="border rounded-2xl flex-row px-2 py-1 mb-2 items-center"
+          className={cn("border rounded-2xl flex-row px-2 py-1 mb-2 items-center", isRTL && "flex-row-reverse")}
         >
           <Text className="text-[14px] text-black font-[Kanit-Light]">
-            {side} Side
+            {t(`yourRides.${side.toLowerCase()}Side`)}
           </Text>
           <ChevronDown size={14} />
         </Pressable>
@@ -227,13 +232,13 @@ export default function RidesTabsScreen() {
 
       {/* --------------- TABS ----------------- */}
       <View className="px-6">
-        <View className="flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden">
+        <View className={cn("flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden", isRTL && "flex-row-reverse")}>
           <Animated.View
             style={animatedIndicatorStyle}
             className="rounded-full bg-[#FF4848] h-[38px] absolute z-0"
           />
 
-          {TABS.map((tab) => {
+          {(isRTL ? [...TABS].reverse() : TABS).map((tab) => {
             const isActive = tab === activeTab;
             return (
               <TouchableOpacity
@@ -274,7 +279,7 @@ export default function RidesTabsScreen() {
           renderItem={side === 'User' ? renderUserItem : renderDriverItem}
           ListEmptyComponent={
             <View className="justify-center items-center pt-10">
-              <Text>No Bookings Found</Text>
+              <Text>{t('yourRides.noBookingsFound')}</Text>
             </View>
           }
           ListFooterComponent={() => <View className='w-full h-[100px] my-5' ></View>}
@@ -286,7 +291,7 @@ export default function RidesTabsScreen() {
               refreshing={refreshing} 
               onRefresh={() => fetchList(true)}
               tintColor={Platform.OS === 'ios' ? '#FF4848' : undefined}
-              title={Platform.OS === 'ios' ? 'Pull to refresh' : undefined}
+              title={Platform.OS === 'ios' ? t('yourRides.pullToRefresh') : undefined}
               titleColor={Platform.OS === 'ios' ? '#666' : undefined}
             />
           }
@@ -298,7 +303,7 @@ export default function RidesTabsScreen() {
         <View className="flex-1 justify-end bg-black/30">
           <View className="bg-white px-12 pt-12 rounded-t-3xl items-center">
             <Text className="text-[25px] font-[Kanit-Regular] text-black text-center mt-4">
-              Please choose how you'd like to view your ride dashboard
+              {t('yourRides.chooseDashboard')}
             </Text>
 
             <View className="flex-row items-center gap-4 justify-center">
@@ -311,7 +316,7 @@ export default function RidesTabsScreen() {
                 }}
               >
                 <Text className="text-[18px] text-white text-center font-[Kanit-Medium]">
-                  User Side
+                  {t('yourRides.userSide')}
                 </Text>
               </TouchableOpacity>
 
@@ -324,7 +329,7 @@ export default function RidesTabsScreen() {
                 }}
               >
                 <Text className="text-[18px] text-[#FF4848] text-center font-[Kanit-Medium]">
-                  Driver Side
+                  {t('yourRides.driverSide')}
                 </Text>
               </TouchableOpacity>
             </View>
@@ -337,8 +342,8 @@ export default function RidesTabsScreen() {
           className="flex-1 bg-black/30"
           onPress={() => setSideModalVisible(false)}
         >
-          <View className="flex-1 justify-start items-end">
-            <View className="bg-white px-4 pt-4 w-1/3 top-10 rounded">
+          <View className={cn("flex-1 justify-start", isRTL ? "items-start" : "items-end")}>
+            <View className={cn("bg-white px-4 pt-4 w-1/3 top-10 rounded", isRTL && "mr-6")}>
               <FlatList
                 contentContainerClassName="gap-2"
                 data={SIDES}
@@ -349,10 +354,10 @@ export default function RidesTabsScreen() {
                       setSide(item);
                       setSideModalVisible(false);
                     }}
-                    className="flex-row p-3 justify-between items-center"
+                    className={cn("flex-row p-3 justify-between items-center", isRTL && "flex-row-reverse")}
                   >
-                    <Text>{item}</Text>
-                    <ChevronRight size={14} />
+                    <Text>{t(`yourRides.${item.toLowerCase()}Side`)}</Text>
+                    {swap(<ChevronRight size={14} />, <ChevronLeft size={14} />)}
                   </Pressable>
                 )}
                 ItemSeparatorComponent={() => <DashedLine />}
@@ -369,10 +374,17 @@ export default function RidesTabsScreen() {
           <View className="flex-1 justify-end bg-black/30">
             <View className="bg-white px-12 rounded-t-3xl items-center">
               <Text className="text-[25px] font-[Kanit-Regular] text-black text-center my-4">
-                Please Verify Your Passenger
+                {t('yourRides.verifyPassenger')}
               </Text>
 
-              <TextInput onChangeText={(text) => setPin(text)} value={pin} placeholder='Enter PIN Number' placeholderClassName='font-[Kanin-Light]' className='w-full font-[Kanin-Bold] text-[18px] text-black h-[50px] pl-5 bg-slate-200 rounded-full' />
+              <TextInput 
+                onChangeText={(text) => setPin(text)} 
+                value={pin} 
+                placeholder={t('yourRides.enterPin')} 
+                placeholderClassName='font-[Kanin-Light]' 
+                className='w-full font-[Kanin-Bold] text-[18px] text-black h-[50px] pl-5 bg-slate-200 rounded-full'
+                style={{ textAlign: isRTL ? 'right' : 'left', paddingRight: isRTL ? 20 : 5 }}
+              />
 
               <View className="flex-row items-center gap-4 justify-center">
                 <TouchableOpacity
@@ -383,7 +395,7 @@ export default function RidesTabsScreen() {
                   }}
                 >
                   <Text className="text-[18px] text-white text-center font-[Kanit-Medium]">
-                    Verify
+                    {t('yourRides.verify')}
                   </Text>
                 </TouchableOpacity>
               </View>

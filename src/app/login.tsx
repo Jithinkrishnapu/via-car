@@ -14,13 +14,16 @@ import VerifyOtp from "@/components/login/verify-otp";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useRouter } from "expo-router";
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useDirection } from "@/hooks/useDirection";
+import { cn } from "@/lib/utils";
 
 const { height } = Dimensions.get("window");
 
 function Login() {
   
-  const { t } = useTranslation("index")
+  const { t } = useTranslation()
+  const { isRTL, swap } = useDirection()
   const router = useRouter()
   const [phoneNumber,setPhoneNumber]=useState<string>("")
   const [isChecked,setIsChecked] = useState(false)
@@ -42,12 +45,12 @@ function Login() {
     const digitsOnly = phone.replace(/\D/g, '');
     
     if (digitsOnly.length < 8) {
-      setPhoneError("Phone number must be at least 8 digits");
+      setPhoneError(t("login.phone_min_digits"));
       return false;
     }
     
     if (digitsOnly.length > 15) {
-      setPhoneError("Phone number cannot exceed 15 digits");
+      setPhoneError(t("login.phone_max_digits"));
       return false;
     }
     
@@ -103,13 +106,13 @@ function Login() {
       bounces={true}
     >
       {/* Back Button */}
-      <View className="absolute top-12 left-6 z-10">
+      <View className={cn("absolute top-12 z-10", isRTL ? "right-6" : "left-6")}>
         <TouchableOpacity
           className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
           activeOpacity={0.8}
           onPress={handleBack}
         >
-          <ChevronLeft color="#3C3F4E" />
+          {swap(<ChevronLeft color="#3C3F4E" />, <ChevronRight color="#3C3F4E" />)}
         </TouchableOpacity>
       </View>
 
@@ -124,8 +127,9 @@ function Login() {
           <Text
             fontSize={25}
             className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
+            style={{ textAlign: isRTL ? 'right' : 'left' }}
           >
-            {t("verify_phone_number")}
+            {t("login.verify_phone_number")}
           </Text>
           <PhoneInput
             label={t("mobile_number", { ns: "components" })}
@@ -135,7 +139,7 @@ function Login() {
             onChange={handlePhoneChange}
             error={phoneError}
           />
-          <View className="flex flex-row gap-4 mb-7">
+          <View className={cn("flex flex-row gap-4 mb-7", isRTL && "flex-row-reverse")}>
             <Checkbox
               onValueChange={(isChecked)=>setIsChecked(isChecked)}
               className="mt-0.5 border-[#EBEBEB] rounded-[1px] cursor-pointer"
@@ -144,15 +148,17 @@ function Login() {
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light] cursor-pointer leading-tight tracking-tight flex-1"
+              style={{ textAlign: isRTL ? 'right' : 'left' }}
             >
-              {t("no_special_offers")}
+              {t("login.no_special_offers")}
             </Text>
           </View>
           <Text
             fontSize={12}
             className="text-[12px] text-[#666666] font-[Kanit-Light] tracking-tight mb-8 flex-1"
+            style={{ textAlign: isRTL ? 'right' : 'left' }}
           >
-            {t("agreement_text")}
+            {t("login.agreement_text")}
           </Text>
           <VerifyOtp 
             phoneNumber={phoneNumber!} 
@@ -169,7 +175,7 @@ function Login() {
         title={errorDialog.title}
         message={errorDialog.message}
         type={errorDialog.type}
-        confirmText="OK"
+        confirmText={t("components.common.ok")}
       />
     </KeyboardAwareScrollView>
   );
