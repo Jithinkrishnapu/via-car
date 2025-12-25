@@ -40,7 +40,7 @@ function Ride() {
     numberOfStops: string;
     verifiedProfile: boolean;
     amenities: Record<string, boolean>;
-  }>();
+  } | null>(null);
   const [notify, setNotify] = useState(false);
   const [email, setEmail] = useState("");
   const [rides, setRides] = useState<Rides[]>([]);
@@ -81,8 +81,8 @@ function Ride() {
     });
   };
 
-  const handleSearch = async () => {
-    const requestData: SearchRideRequest = {
+  const handleSearch = async (applyFilters = false) => {
+    const baseRequest: SearchRideRequest = {
       user_lat: from_lat_long.lat,
       user_lng: from_lat_long.lon,
       destination_lat: to_lat_long.lat,
@@ -90,18 +90,23 @@ function Ride() {
       date: routeParams?.date || "",
       passengers: routeParams?.passengers || 1, 
       max_walking_distance_km: 10,
-      sort_by: filter?.sortOption || 1,
-      stops_filter: filter?.numberOfStops || "direct_only",
-      verified_drivers_only: filter?.verifiedProfile || false,
-      // Spread amenities with default values
-      max_2_in_back: filter?.amenities?.max_2_in_back || false,
-      instant_booking: filter?.amenities?.instant_booking || false,
-      smoking_allowed: filter?.amenities?.smoking_allowed || false,
-      pets_allowed: filter?.amenities?.pets_allowed || false,
-      power_outlets: filter?.amenities?.power_outlets || false,
-      air_conditioning: filter?.amenities?.air_conditioning || false,
-      accessible_for_disabled: filter?.amenities?.accessible_for_disabled || false,
     };
+
+    // Only add filter parameters if filters are applied and we want to use them
+    const requestData: SearchRideRequest = applyFilters && filter ? {
+      ...baseRequest,
+      sort_by: filter.sortOption,
+      stops_filter: filter.numberOfStops,
+      verified_drivers_only: filter.verifiedProfile,
+      // Spread amenities with default values
+      max_2_in_back: filter.amenities?.max_2_in_back || false,
+      instant_booking: filter.amenities?.instant_booking || false,
+      smoking_allowed: filter.amenities?.smoking_allowed || false,
+      pets_allowed: filter.amenities?.pets_allowed || false,
+      power_outlets: filter.amenities?.power_outlets || false,
+      air_conditioning: filter.amenities?.air_conditioning || false,
+      accessible_for_disabled: filter.amenities?.accessible_for_disabled || false,
+    } : baseRequest; // Send only base request when no filters applied
 
     console.log(requestData,"========================requestData")
 
@@ -208,7 +213,15 @@ function Ride() {
   };
 
   useEffect(() => {
-    handleSearch();
+    // Initial search without filters
+    handleSearch(false);
+  }, []);
+
+  useEffect(() => {
+    // Search with filters when filter state changes (but not on initial mount)
+    if (filter !== null) {
+      handleSearch(true);
+    }
   }, [filter]);
 
   if (!loaded) return null;
@@ -260,15 +273,31 @@ function Ride() {
                 </Text>
               </View>
 
-              <TouchableOpacity
-                className="flex-row items-center gap-[4px] px-[11px] py-[5px] rounded-full border border-[#FFBDBD]"
-                onPress={() => setFilterVisible(true)}
-              >
-                <SlidersHorizontal size={16} />
-                <Text fontSize={15} className="text-[#263238] font-[Kanit-Regular]">
-                  {t("booking.ride.filters")}
-                </Text>
-              </TouchableOpacity>
+              <View className="flex-row items-center gap-2">
+                {filter && (
+                  <TouchableOpacity
+                    className="w-8 h-8 rounded-full bg-[#FF4848]/10 items-center justify-center"
+                    onPress={() => {
+                      setFilter(null);
+                      handleSearch(false);
+                    }}
+                  >
+                    <XIcon size={16} color="#FF4848" />
+                  </TouchableOpacity>
+                )}
+                <TouchableOpacity
+                  className={`flex-row items-center gap-[4px] px-[11px] py-[5px] rounded-full border ${filter ? 'border-[#FF4848] bg-[#FF4848]/10' : 'border-[#FFBDBD]'}`}
+                  onPress={() => setFilterVisible(true)}
+                >
+                  <SlidersHorizontal size={16} color={filter ? "#FF4848" : "#000"} />
+                  <Text fontSize={15} className={`font-[Kanit-Regular] ${filter ? 'text-[#FF4848]' : 'text-[#263238]'}`}>
+                    {t("booking.ride.filters")}
+                  </Text>
+                  {filter && (
+                    <View className="w-2 h-2 bg-[#FF4848] rounded-full ml-1" />
+                  )}
+                </TouchableOpacity>
+              </View>
             </View>
 
             {/* Today Section */}
@@ -332,6 +361,7 @@ function Ride() {
             console.log(filters,"filters==================")
           }} 
           onDismiss={() => setFilterVisible(false)}
+          currentFilter={filter}
         />
       </Modal>
 

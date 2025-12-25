@@ -13,6 +13,8 @@ import {
   Platform,
   Modal,
   Pressable,
+  Linking,
+  Alert,
 } from 'react-native';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
@@ -50,24 +52,96 @@ const UploadDocumentsScreen = () => {
     setShowSuccessDialog(true);
   };
 
-  const requestPermissions = async (type: 'camera' | 'gallery') => {
-    if (type === 'camera') {
-      const { status } = await ImagePicker.requestCameraPermissionsAsync();
-      if (status !== 'granted') {
-        showError('Permission Required', 'Please grant camera permissions to take photos.');
-        return false;
-      }
+  const openAppSettings = () => {
+    if (Platform.OS === 'ios') {
+      Linking.openURL('app-settings:');
     } else {
-      const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (status !== 'granted') {
-        showError('Permission Required', 'Please grant gallery permissions to upload documents.');
-        return false;
-      }
+      Linking.openSettings();
     }
-    return true;
   };
 
-  const openBottomSheet = (documentType: string) => {
+  const showPermissionAlert = (type: 'camera' | 'gallery', status: string) => {
+    const permissionType = type === 'camera' ? 'Camera' : 'Photo Library';
+    const message = status === 'denied' 
+      ? `${permissionType} access is required to upload documents. Please grant permission and try again.`
+      : `${permissionType} access has been permanently denied. Please enable it in Settings > Privacy & Security > ${permissionType} > ViaCar.`;
+    
+    Alert.alert(
+      'Permission Required',
+      message,
+      [
+        { text: 'Cancel', style: 'cancel' },
+        { 
+          text: status === 'denied' ? 'Retry' : 'Open Settings', 
+          onPress: status === 'denied' ? () => requestPermissions(type) : openAppSettings 
+        }
+      ]
+    );
+  };
+
+  const requestPermissions = async (type: 'camera' | 'gallery'): Promise<boolean> => {
+    try {
+      if (type === 'camera') {
+        // Request permission directly
+        const { status, canAskAgain } = await ImagePicker.requestCameraPermissionsAsync();
+        
+        if (status === 'granted') {
+          return true;
+        }
+        
+        if (status === 'denied') {
+          if (canAskAgain) {
+            showPermissionAlert('camera', 'denied');
+          } else {
+            showPermissionAlert('camera', 'never_ask_again');
+          }
+        }
+        
+        return false;
+      } else {
+        // Request permission directly
+        const { status, canAskAgain } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        
+        if (status === 'granted') {
+          return true;
+        }
+        
+        if (status === 'denied') {
+          if (canAskAgain) {
+            showPermissionAlert('gallery', 'denied');
+          } else {
+            showPermissionAlert('gallery', 'never_ask_again');
+          }
+        }
+        
+        return false;
+      }
+    } catch (error) {
+      console.error('Permission request error:', error);
+      showError(
+        'Permission Error', 
+        `Failed to request ${type} permission. Please try again.`
+      );
+      return false;
+    }
+  };
+
+  const checkPermissionStatus = async (type: 'camera' | 'gallery'): Promise<boolean> => {
+    try {
+      if (type === 'camera') {
+        const { status } = await ImagePicker.getCameraPermissionsAsync();
+        return status === 'granted';
+      } else {
+        const { status } = await ImagePicker.getMediaLibraryPermissionsAsync();
+        return status === 'granted';
+      }
+    } catch (error) {
+      console.error('Permission check error:', error);
+      return false;
+    }
+  };
+
+  const openBottomSheet = async (documentType: string) => {
     setCurrentDocumentType(documentType);
     setShowBottomSheet(true);
   };
@@ -78,19 +152,25 @@ const UploadDocumentsScreen = () => {
     // Small delay to ensure modal is closed before camera opens
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const hasPermission = await requestPermissions('camera');
-    if (!hasPermission) {
-      return;
+    // Check current permission status
+    const currentStatus = await ImagePicker.getCameraPermissionsAsync();
+    
+    if (currentStatus.status !== 'granted') {
+      const hasPermission = await requestPermissions('camera');
+      if (!hasPermission) {
+        return;
+      }
     }
 
     try {
       const result = await ImagePicker.launchCameraAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
-        quality: 1,
+        quality: 0.8,
+        exif: false,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         if (currentDocumentType === 'nationalId') setNationalId(asset);
         else if (currentDocumentType === 'drivingLicense') setDrivingLicense(asset as any);
@@ -98,12 +178,22 @@ const UploadDocumentsScreen = () => {
       }
     } catch (error: any) {
       console.error('Camera error:', error);
-      showError(
-        'Camera Error',
-        Platform.OS === 'android' 
-          ? 'Camera not available. If using an emulator, please use "Choose from Gallery" instead.'
-          : 'Failed to open camera. Please try again.'
-      );
+      
+      let errorMessage = 'Failed to open camera. Please try again.';
+      
+      if (Platform.OS === 'android') {
+        if (error.message?.includes('No Activity found')) {
+          errorMessage = 'Camera not available. If using an emulator, please use "Choose from Gallery" instead.';
+        } else if (error.message?.includes('Camera permission')) {
+          errorMessage = 'Camera permission denied. Please enable camera access in settings.';
+        }
+      } else if (Platform.OS === 'ios') {
+        if (error.message?.includes('Camera access')) {
+          errorMessage = 'Camera access denied. Please enable camera access in Settings > Privacy & Security > Camera.';
+        }
+      }
+      
+      showError('Camera Error', errorMessage);
     }
   };
 
@@ -113,19 +203,25 @@ const UploadDocumentsScreen = () => {
     // Small delay to ensure modal is closed before gallery opens
     await new Promise(resolve => setTimeout(resolve, 300));
 
-    const hasPermission = await requestPermissions('gallery');
-    if (!hasPermission) {
-      return;
+    // Check current permission status
+    const currentStatus = await ImagePicker.getMediaLibraryPermissionsAsync();
+    
+    if (currentStatus.status !== 'granted') {
+      const hasPermission = await requestPermissions('gallery');
+      if (!hasPermission) {
+        return;
+      }
     }
 
     try {
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: false,
-        quality: 1,
+        quality: 0.8,
+        exif: false,
       });
 
-      if (!result.canceled) {
+      if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
         if (currentDocumentType === 'nationalId') setNationalId(asset);
         else if (currentDocumentType === 'drivingLicense') setDrivingLicense(asset as any);
@@ -133,7 +229,14 @@ const UploadDocumentsScreen = () => {
       }
     } catch (error: any) {
       console.error('Gallery error:', error);
-      showError('Error', 'Failed to open gallery. Please try again.');
+      
+      let errorMessage = 'Failed to open gallery. Please try again.';
+      
+      if (error.message?.includes('Photo library access')) {
+        errorMessage = 'Gallery access denied. Please enable photo library access in settings.';
+      }
+      
+      showError('Gallery Error', errorMessage);
     }
   };
 
@@ -287,6 +390,9 @@ const UploadDocumentsScreen = () => {
                 <Text className={`mt-2 ${!nationalId ? 'text-red-500' : 'text-gray-500'}`}>
                   Tap to upload (Required)
                 </Text>
+                <Text className="text-xs text-gray-400 mt-1">
+                  Camera or Gallery
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -346,6 +452,9 @@ const UploadDocumentsScreen = () => {
                 <Text className={`mt-2 ${!drivingLicense ? 'text-red-500' : 'text-gray-500'}`}>
                   Tap to upload (Required)
                 </Text>
+                <Text className="text-xs text-gray-400 mt-1">
+                  Camera or Gallery
+                </Text>
               </TouchableOpacity>
             )}
           </View>
@@ -372,6 +481,9 @@ const UploadDocumentsScreen = () => {
                 <Ionicons name="camera-outline" size={48} color={!vehicleRegistration ? "#ef4444" : "#9ca3af"} />
                 <Text className={`mt-2 ${!vehicleRegistration ? 'text-red-500' : 'text-gray-500'}`}>
                   Tap to upload (Required)
+                </Text>
+                <Text className="text-xs text-gray-400 mt-1">
+                  Camera or Gallery
                 </Text>
               </TouchableOpacity>
             )}

@@ -227,9 +227,9 @@ function Register() {
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={{ flex: 1 }}
-      keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+      keyboardVerticalOffset={0}
     >
       <ScrollView
         bounces={false}
@@ -237,6 +237,8 @@ function Register() {
         contentContainerStyle={{ flexGrow: 1 }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
+        nestedScrollEnabled={false}
+        overScrollMode="never"
       >
         <Image
           style={{ height: height / 2 }}
@@ -244,13 +246,13 @@ function Register() {
           source={require(`../../public/login.png`)}
           alt=""
         />
-        <View className="flex flex-col items-center justify-start p-5 w-full overflow-y-auto rounded-t-2xl -mt-[60px] bg-white">
-          <View className="max-w-[420px] w-full pt-4 lg:pt-20 pb-10">
+        <View className="flex flex-col items-center justify-start p-5 w-full rounded-t-2xl -mt-[60px] bg-white" style={{ minHeight: height / 2 + 60 }}>
+          <View className="max-w-[420px] w-full pt-4 pb-10" style={{ flex: 1 }}>
             <Text
               fontSize={25}
               className="text-[25px] font-[Kanit-Medium] text-start leading-tight tracking-tight mb-6 flex-1"
             >
-              {t("verify_phone_number")}
+              {t("verify_your_profile")}
             </Text>
 
             <InputComponent
@@ -299,19 +301,20 @@ function Register() {
             <TouchableOpacity
               onPress={handleRegistration}
               disabled={!isFormValid() || isLoading}
-              className={`flex items-center rounded-full w-full h-[54px] cursor-pointer mb-5 ${
+              className={`flex items-center justify-center rounded-full w-full h-[54px] mb-5 ${
                 !isFormValid() || isLoading 
                   ? 'bg-gray-400' 
                   : 'bg-[#FF4848]'
               }`}
               activeOpacity={0.8}
+              style={{ marginTop: 'auto' }}
             >
               {isLoading ? (
-                <ActivityIndicator color="white" size="small" style={{ marginTop: 'auto', marginBottom: 'auto' }} />
+                <ActivityIndicator color="white" size="small" />
               ) : (
                 <Text
                   fontSize={20}
-                  className="my-auto text-[20px] text-white font-[Kanit-Regular]"
+                  className="text-[20px] text-white font-[Kanit-Regular]"
                 >
                   {t("Verify")}
                 </Text>

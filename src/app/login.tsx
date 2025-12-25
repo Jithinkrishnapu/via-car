@@ -14,6 +14,7 @@ import VerifyOtp from "@/components/login/verify-otp";
 import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { useRouter } from "expo-router";
+import { ChevronLeft } from "lucide-react-native";
 
 const { height } = Dimensions.get("window");
 
@@ -85,7 +86,7 @@ function Login() {
   // Check if form is valid
   const isFormValid = isChecked && phoneNumber.trim().length > 0 && !phoneError;
 
-  const handleGuestAccess = () => {
+  const handleBack = () => {
     router.replace("/(tabs)/book");
   };
 
@@ -101,6 +102,17 @@ function Login() {
       extraHeight={Platform.OS === "ios" ? 150 : 180}
       bounces={true}
     >
+      {/* Back Button */}
+      <View className="absolute top-12 left-6 z-10">
+        <TouchableOpacity
+          className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
+          activeOpacity={0.8}
+          onPress={handleBack}
+        >
+          <ChevronLeft color="#3C3F4E" />
+        </TouchableOpacity>
+      </View>
+
       <Image
         style={{ height: height / 2.5 }}
         className="object-cover w-full"
@@ -147,22 +159,6 @@ function Login() {
             disabled={!isFormValid} 
             onError={showError}
           />
-          
-          {/* Guest Access Button */}
-          <View className="mt-6 items-center">
-            <TouchableOpacity
-              onPress={handleGuestAccess}
-              activeOpacity={0.8}
-              className="py-3 px-6"
-            >
-              <Text
-                fontSize={16}
-                className="text-[16px] text-[#FF4848] font-[Kanit-Regular] underline"
-              >
-                {t("continue_as_guest")}
-              </Text>
-            </TouchableOpacity>
-          </View>
         </View>
       </View>
 

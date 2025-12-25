@@ -30,15 +30,11 @@ function Book() {
   }, []);
 
   const handleDrawerPress = () => {
-    if (isAuthenticated) {
-      setOpen(true);
-    }
+    setOpen(true);
   };
 
   const handleBellPress = () => {
-    if (isAuthenticated) {
-      router.push("/(tabs)/inbox");
-    }
+    router.push("/(tabs)/inbox");
   };
   
   if (!loaded) return null;
@@ -75,22 +71,14 @@ function Book() {
         >
           <TouchableOpacity
             onPress={handleDrawerPress}
-            activeOpacity={isAuthenticated ? 0.7 : 1}
-            style={{
-              opacity: isAuthenticated ? 1 : 0.3,
-            }}
-            disabled={!isAuthenticated}
+            activeOpacity={0.7}
           >
             <HambergIocn />
           </TouchableOpacity>
           
           <TouchableOpacity
             onPress={handleBellPress}
-            activeOpacity={isAuthenticated ? 0.7 : 1}
-            style={{
-              opacity: isAuthenticated ? 1 : 0.3,
-            }}
-            disabled={!isAuthenticated}
+            activeOpacity={0.7}
           >
             <BellIocn />
           </TouchableOpacity>

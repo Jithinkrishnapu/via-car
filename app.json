@@ -11,6 +11,7 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.viacar",
+      "orientation": "portrait",
       "config": {
         "googleMapsApiKey": "AIzaSyD4KYXp4bh_CxCX24Q04Bk7iuBmnjYqz8g"
       },
@@ -24,6 +25,7 @@
     },
     "android": {
       "edgeToEdgeEnabled": true,
+      "orientation": "portrait",
       "adaptiveIcon": {
         "foregroundImage": "./src/assets/images/adaptive-icon.png",
         "backgroundColor": "#FF4848"

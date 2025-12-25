@@ -176,7 +176,7 @@ export const updateVehicle = async (payload: { vehicle_id: number; model_id: num
     try {
         const response = await fetch(`${API_URL}/api/vehicle/update`, {
             body: JSON.stringify(payload),
-            method: 'POST',
+            method: 'PUT',
             headers: {
                 'Content-Type': 'application/json',
                 Authorization: `Bearer ${token}`,

@@ -2,7 +2,7 @@ import { ChevronLeft } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import ApprovedAnimation from "@/components/animated/approved-animation";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -12,16 +12,19 @@ import {
   TouchableOpacity,
   View,
   TextInput,
+  RefreshControl,
 } from "react-native";
 import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
 import { useTranslation } from "react-i18next";
-import { getCards, SavedCardMeta } from "@/store/card-store";
+import { getCards, SavedCardMeta, saveCards } from "@/store/card-store";
 import { useRoute } from "@react-navigation/native";
 import { useAuthorizePayment, getPaymentStatus } from "@/service/payment";
 import { BookingPaymentData } from "@/types/ride-types";
 import AlertDialog from "@/components/ui/alert-dialog";
 import Dialog from "@/components/ui/dialog";
+import { MoreVertical, Edit, Trash2 } from "lucide-react-native";
+import { useFocusEffect } from "@react-navigation/native";
 
 type Status = "idle" | "waiting" | "approved";
 
@@ -59,6 +62,12 @@ interface CVVDialogState {
   loading: boolean;
 }
 
+interface CardMenuState {
+  visible: boolean;
+  cardId: string;
+  cardIndex: number;
+}
+
 function Payment() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
@@ -69,6 +78,8 @@ function Payment() {
   const [cardsData, setCardsData] = useState<Options[]>([]);
   const [status, setStatus] = useState<Status>("idle");
   const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [initialLoading, setInitialLoading] = useState(true);
   const [errorDialog, setErrorDialog] = useState<ErrorState>({
     visible: false,
     title: '',
@@ -80,8 +91,17 @@ function Payment() {
     cvv: '',
     loading: false
   });
+  const [cardMenu, setCardMenu] = useState<CardMenuState>({
+    visible: false,
+    cardId: '',
+    cardIndex: -1
+  });
+  const [deleteConfirmDialog, setDeleteConfirmDialog] = useState({
+    visible: false,
+    cardIndex: -1
+  });
 
-  const showError = (title: string, message: string, type: "error" | "warning" | "info" = "error") => {
+  const showError = (title: string, message: string, type: "error" | "warning" | "info" | "success" = "error") => {
     setErrorDialog({
       visible: true,
       title,
@@ -101,25 +121,86 @@ function Payment() {
     setCvvDialog({ visible: false, cvv: '', loading: false });
   };
 
-  const fetchSavedCards = async () => {
-    const data = await getCards();
-    console.log(data, "===================cards");
-    if (data?.length) {
-      const iterateData: Options[] = data.map((val, index) => {
-        return {
-          id: index.toString(),
-          title: `${val?.brand} ending in ${val?.last4}`,
-          description: `Ex.date ${val?.expMonth.toString().padStart(2, '0')}/${val?.expYear?.toString()?.slice(2, 4)}`,
-          img: require("../../../public/visa.png"),
-          cardData: val,
-        };
-      });
-      setCardsData(iterateData);
-      if (iterateData.length > 0) {
-        setSelectedId("0");
+  const closeCardMenu = () => {
+    setCardMenu({ visible: false, cardId: '', cardIndex: -1 });
+  };
+
+  const handleDeleteCard = async (cardIndex: number) => {
+    try {
+      const updatedCards = cardsData.filter((_, index) => index !== cardIndex);
+      const updatedCardsMeta = (await getCards()).filter((_, index) => index !== cardIndex);
+      
+      await saveCards(updatedCardsMeta);
+      
+      // Refresh the cards list to ensure consistency
+      await fetchSavedCards();
+      
+      setDeleteConfirmDialog({ visible: false, cardIndex: -1 });
+      showError('Success', 'Card deleted successfully', 'success');
+    } catch (error) {
+      console.error('Error deleting card:', error);
+      showError('Error', 'Failed to delete card');
+    }
+  };
+
+  const handleEditCard = (cardIndex: number) => {
+    closeCardMenu();
+    router.push({
+      pathname: "/(booking)/edit-card",
+      params: { 
+        booking_id: routeParams?.booking_id,
+        card_index: cardIndex.toString()
+      }
+    });
+  };
+
+  const fetchSavedCards = async (showRefreshIndicator = false, isInitialLoad = false) => {
+    if (showRefreshIndicator) {
+      setRefreshing(true);
+    }
+    if (isInitialLoad) {
+      setInitialLoading(true);
+    }
+    
+    try {
+      const data = await getCards();
+      console.log(data, "===================cards");
+      if (data?.length) {
+        const iterateData: Options[] = data.map((val, index) => {
+          return {
+            id: index.toString(),
+            title: `${val?.brand} ending in ${val?.last4}`,
+            description: `Ex.date ${val?.expMonth.toString().padStart(2, '0')}/${val?.expYear?.toString()?.slice(-2)}`,
+            img: require("../../../public/visa.png"),
+            cardData: val,
+          };
+        });
+        setCardsData(iterateData);
+        if (iterateData.length > 0 && (!selectedId || selectedId === "")) {
+          setSelectedId("0");
+        }
+      } else {
+        setCardsData([]);
+        setSelectedId("");
+      }
+    } catch (error) {
+      console.error('Error fetching cards:', error);
+      if (showRefreshIndicator || isInitialLoad) {
+        showError('Error', 'Failed to load cards');
+      }
+    } finally {
+      if (showRefreshIndicator) {
+        setRefreshing(false);
+      }
+      if (isInitialLoad) {
+        setInitialLoading(false);
       }
     }
   };
+
+  const onRefresh = useCallback(() => {
+    fetchSavedCards(true);
+  }, []);
 
   const handleFetchPaymentStatus = async () => {
     if (!routeParams?.booking_id) return false;
@@ -180,7 +261,7 @@ function Payment() {
       payment_brand: selectedCard.cardData.brand,
       card_number: selectedCard.cardData.cardNumber, // Use stored full card number
       card_holder_name: selectedCard.cardData.cardHolderName,
-      card_expiration_month: Number(selectedCard.cardData.expMonth.toString().padStart(2, '0')),
+      card_expiration_month: selectedCard.cardData.expMonth?.toString().padStart(2, '0'),
       card_expiration_year: selectedCard.cardData.expYear,
       card_cvv: cvvDialog.cvv, // Use entered CVV
       customer_email: selectedCard.cardData.email,
@@ -268,8 +349,18 @@ function Payment() {
   };
 
   useEffect(() => {
-    fetchSavedCards();
+    fetchSavedCards(false, true);
   }, []);
+
+  // Refetch cards when screen comes into focus (e.g., returning from add/edit card)
+  useFocusEffect(
+    useCallback(() => {
+      // Only refetch if not initial loading to avoid double loading
+      if (!initialLoading) {
+        fetchSavedCards();
+      }
+    }, [initialLoading])
+  );
 
   useEffect(() => {
     if (status === "waiting") {
@@ -311,7 +402,7 @@ function Payment() {
         className="border border-[#EBEBEB] p-[15px] rounded-2xl bg-[#F5F5F5] flex-row items-center gap-4"
       >
         <Image className="w-[74px] h-[45px]" source={img} alt={title} />
-        <View className="flex-col items-start">
+        <View className="flex-col items-start flex-1">
           <Text fontSize={18} className="text-[18px] font-[Kanit-Regular]">
             {title}
           </Text>
@@ -324,8 +415,21 @@ function Payment() {
             </Text>
           )}
         </View>
-        <View className="ml-auto size-[27px] aspect-square relative border border-gray-300 rounded-full flex-row items-center justify-center">
-          {isChecked && <CheckIcon />}
+        <View className="flex-row items-center gap-2">
+          <TouchableOpacity
+            onPress={() => setCardMenu({ 
+              visible: true, 
+              cardId: id, 
+              cardIndex: parseInt(id) 
+            })}
+            className="p-2"
+            activeOpacity={0.7}
+          >
+            <MoreVertical size={20} color="#666666" />
+          </TouchableOpacity>
+          <View className="size-[27px] aspect-square relative border border-gray-300 rounded-full flex-row items-center justify-center">
+            {isChecked && <CheckIcon />}
+          </View>
         </View>
       </TouchableOpacity>
     );
@@ -333,7 +437,18 @@ function Payment() {
 
   return (
     <View className="flex-1 relative pb-[100px]">
-      <ScrollView bounces={false} className="font-[Kanit-Regular] w-full bg-white">
+      <ScrollView 
+        bounces={false} 
+        className="font-[Kanit-Regular] w-full bg-white"
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            colors={['#FF4848']} // Android
+            tintColor="#FF4848" // iOS
+          />
+        }
+      >
         <View className="max-w-[1379px] w-full mx-auto px-6 pt-16 lg:pt-[80px] pb-10 lg:pb-[100px] flex flex-col gap-7">
           <View className="flex-row items-center gap-4 mb-6 w-full">
             <TouchableOpacity
@@ -368,9 +483,29 @@ function Payment() {
           {/* {cardsData.map(renderOption)} */}
 
           <FlatList
-          contentContainerClassName="gap-4"
-          data={cardsData}
-          renderItem={(({item})=>renderOption(item))}
+            contentContainerClassName="gap-4"
+            data={cardsData}
+            renderItem={({item}) => renderOption(item)}
+            refreshControl={
+              <RefreshControl
+                refreshing={refreshing}
+                onRefresh={onRefresh}
+                colors={['#FF4848']} // Android
+                tintColor="#FF4848" // iOS
+              />
+            }
+            ListEmptyComponent={() => (
+              <View className="py-8 items-center">
+                <Text className="text-[16px] font-[Kanit-Light] text-gray-500 text-center">
+                  {initialLoading ? 'Loading cards...' : refreshing ? 'Refreshing cards...' : 'No saved cards found'}
+                </Text>
+                {!refreshing && !initialLoading && (
+                  <Text className="text-[14px] font-[Kanit-Light] text-gray-400 text-center mt-2">
+                    Pull down to refresh or add a new card
+                  </Text>
+                )}
+              </View>
+            )}
           />
 
           <TouchableOpacity
@@ -440,13 +575,15 @@ function Payment() {
             className="bg-[#FF4848] rounded-full w-max h-[55px] cursor-pointer items-center justify-center"
             onPress={handlePayWithSavedCard}
             activeOpacity={0.8}
-            disabled={loading || cardsData.length === 0}
+            disabled={loading || cardsData.length === 0 || initialLoading}
           >
             <Text
               fontSize={18}
               className="text-[18px] text-center text-white font-[Kanit-Medium] uppercase"
             >
-              {loading ? t("payment.processing") || "Processing..." : t("payment.pay")}
+              {loading ? t("payment.processing") || "Processing..." : 
+               initialLoading ? "Loading..." : 
+               t("payment.pay")}
             </Text>
           </TouchableOpacity>
         </View>
@@ -539,6 +676,60 @@ function Payment() {
             editable={!cvvDialog.loading}
             autoFocus
           />
+        </View>
+      </Dialog>
+
+      {/* Card Menu Dialog */}
+      <Modal visible={cardMenu.visible} transparent animationType="fade">
+        <TouchableOpacity 
+          className="flex-1 bg-black/30 justify-center items-center"
+          activeOpacity={1}
+          onPress={closeCardMenu}
+        >
+          <View className="bg-white rounded-2xl mx-6 p-4 min-w-[200px]">
+            <TouchableOpacity
+              className="flex-row items-center py-3 px-2"
+              onPress={() => handleEditCard(cardMenu.cardIndex)}
+              activeOpacity={0.7}
+            >
+              <Edit size={20} color="#666666" />
+              <Text className="ml-3 text-[16px] font-[Kanit-Regular] text-gray-800">
+                {t("payment.editCard") || "Edit Card"}
+              </Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              className="flex-row items-center py-3 px-2"
+              onPress={() => {
+                closeCardMenu();
+                setDeleteConfirmDialog({ visible: true, cardIndex: cardMenu.cardIndex });
+              }}
+              activeOpacity={0.7}
+            >
+              <Trash2 size={20} color="#EF4444" />
+              <Text className="ml-3 text-[16px] font-[Kanit-Regular] text-red-500">
+                {t("payment.deleteCard") || "Delete Card"}
+              </Text>
+            </TouchableOpacity>
+          </View>
+        </TouchableOpacity>
+      </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog
+        visible={deleteConfirmDialog.visible}
+        onClose={() => setDeleteConfirmDialog({ visible: false, cardIndex: -1 })}
+        title={t("payment.deleteCardTitle") || "Delete Card"}
+        showButtons={true}
+        confirmText={t("payment.delete") || "Delete"}
+        cancelText={t("common.cancel") || "Cancel"}
+        onConfirm={() => handleDeleteCard(deleteConfirmDialog.cardIndex)}
+        onCancel={() => setDeleteConfirmDialog({ visible: false, cardIndex: -1 })}
+      >
+        <View className="py-4">
+          <Text className="text-[32px] mb-4 text-center">⚠️</Text>
+          <Text className="text-[16px] font-[Kanit-Light] text-center text-gray-700 leading-6">
+            {t("payment.deleteCardMessage") || "Are you sure you want to delete this card? This action cannot be undone."}
+          </Text>
         </View>
       </Dialog>
     </View>

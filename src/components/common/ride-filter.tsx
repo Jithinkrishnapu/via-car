@@ -19,16 +19,56 @@ interface Props {
     amenities: Record<string, boolean>;
   }) => void;
   onDismiss: () => void;
+  currentFilter?: {
+    sortOption: number;
+    numberOfStops: string;
+    verifiedProfile: boolean;
+    amenities: Record<string, boolean>;
+  } | null;
 }
 
-const RideFilters = ({ close, onDismiss }: Props) => {
+const RideFilters = ({ close, onDismiss, currentFilter }: Props) => {
   const { t } = useTranslation("components");
+  
+  // Helper function to convert sort code back to label
+  const fromSortCode = (code: number): string => {
+    const map: Record<number, string> = {
+      1: t("rideFilter.earliestDeparture"),
+      2: t("rideFilter.lowestPrice"),
+      3: t("rideFilter.closeToDeparture"),
+      4: t("rideFilter.closeToArrival"),
+      5: t("rideFilter.shortestRide"),
+    };
+    return map[code] ?? t("rideFilter.earliestDeparture");
+  };
+
+  // Helper function to convert stop code back to value
+  const fromStopCode = (code: string): string => {
+    switch (code) {
+      case "direct_only":
+        return "0";
+      case "1_stop":
+        return "1";
+      case "2_stops_or_more":
+        return "2+";
+      default:
+        return "0";
+    }
+  };
+
+  // Initialize state with current filter values or defaults
   const [sortOption, setSortOption] = useState(
-    t("rideFilter.earliestDeparture")
+    currentFilter ? fromSortCode(currentFilter.sortOption) : t("rideFilter.earliestDeparture")
   );
-  const [numberOfStops, setNumberOfStops] = useState("0");
-  const [verifiedProfile, setVerifiedProfile] = useState(true);
-  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>({});
+  const [numberOfStops, setNumberOfStops] = useState(
+    currentFilter ? fromStopCode(currentFilter.numberOfStops) : "0"
+  );
+  const [verifiedProfile, setVerifiedProfile] = useState(
+    currentFilter ? currentFilter.verifiedProfile : false
+  );
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
+    currentFilter ? currentFilter.amenities : {}
+  );
   const [carModel, setCarModel] = useState(t("rideFilter.lastThreeYears"));
 
   const anim = useRef(new Animated.Value(0)).current;
@@ -41,11 +81,21 @@ const RideFilters = ({ close, onDismiss }: Props) => {
     }).start();
   }, [verifiedProfile, anim]);
 
-  // Update state values when language changes
+  // Update state values when language changes or currentFilter changes
   useEffect(() => {
-    setSortOption(t("rideFilter.earliestDeparture"));
+    if (currentFilter) {
+      setSortOption(fromSortCode(currentFilter.sortOption));
+      setNumberOfStops(fromStopCode(currentFilter.numberOfStops));
+      setVerifiedProfile(currentFilter.verifiedProfile);
+      setCheckedItems(currentFilter.amenities);
+    } else {
+      setSortOption(t("rideFilter.earliestDeparture"));
+      setNumberOfStops("0");
+      setVerifiedProfile(false);
+      setCheckedItems({});
+    }
     setCarModel(t("rideFilter.lastThreeYears"));
-  }, [t]);
+  }, [t, currentFilter]);
 
   const translateX = anim.interpolate({
     inputRange: [0, 1],
@@ -129,14 +179,19 @@ const RideFilters = ({ close, onDismiss }: Props) => {
               {t("rideFilter.filter")}
             </Text>
           </View>
-          <TouchableOpacity onPress={() =>
+          <TouchableOpacity onPress={() => {
+            // Reset all filters to default values
+            setSortOption(t("rideFilter.earliestDeparture"));
+            setNumberOfStops("0");
+            setVerifiedProfile(false);
+            setCheckedItems({});
             close({
               sortOption: 1,         // Default sort (earliestDeparture)
               numberOfStops: "direct_only", // Default stops
               verifiedProfile: false,
               amenities: {}
-            })
-          }>
+            });
+          }}>
             <Text
               fontSize={18}
               className="text-[18px] text-[#666666] font-[Kanit-Light]"

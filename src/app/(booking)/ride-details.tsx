@@ -74,9 +74,10 @@ function RideDetails() {
   }
 
   const handleGetRideDetails = async () => {
+    const routeParams = route?.params as { rideId?: string; ride_amount_id?: string } | undefined;
     const postData = {
-      ride_id: route?.params?.rideId,
-      ride_amount_id: route?.params?.ride_amount_id
+      ride_id: routeParams?.rideId ? Number(routeParams.rideId) : 0,
+      ride_amount_id: routeParams?.ride_amount_id ? Number(routeParams.ride_amount_id) : 0
     }
     console.log("postData========", postData)
     const response = await useGetRideDetails(postData)
@@ -91,9 +92,10 @@ function RideDetails() {
 
   const handleRideBooking = async () => {
     console.log("rideDetails============",rideDetail)
+    const routeParams = route?.params as { passengers?: string } | undefined;
     const postData = {
       ride_id: rideDetail?.rideId?.id,
-      passengers: Number(route?.params?.passengers),
+      passengers: Number(routeParams?.passengers || 1),
       pickup_lat: rideDetail?.pickUpStop?.lat,
       pickup_lng: rideDetail?.pickUpStop?.lng,
       pickup_address: rideDetail?.pickUpStop?.address,
@@ -188,7 +190,7 @@ function RideDetails() {
                 {rideDetail?.dropOffStop?.address}
               </Text>
             </View>
-            {rideDetail?.pickUpStop?.time && <View
+            {(rideDetail?.pickUpStop as any)?.time && <View
               className={swap(
                 "flex flex-col text-end ml-auto",
                 "flex flex-col text-start mr-auto"
@@ -204,7 +206,7 @@ function RideDetails() {
                 fontSize={16}
                 className="text-base lg:text-lg text-white mb-4 font-[Kanit-Regular]"
               >
-                {rideDetail?.pickUpStop?.time?.slice(0, 5)}
+                {(rideDetail?.pickUpStop as any)?.time?.slice(0, 5)}
               </Text>
               <Text
                 fontSize={14}
@@ -317,7 +319,7 @@ function RideDetails() {
                   {t("rideDetails.details")}
                 </Text>
                 <View className="flex-wrap flex-row gap-[15px]">
-                {userDetails?.travel_preferences?.[0]          // take the first (and only) string
+                {(userDetails as any)?.travel_preferences?.[0]          // take the first (and only) string
                   ?.split(',')                                 // break it into real tags
                   .map((text: string) => (
                     <View
@@ -341,7 +343,19 @@ function RideDetails() {
                   return <TouchableOpacity
                     activeOpacity={0.8}
                     className="flex-row items-center justify-between"
-                    onPress={() => router.push("/passenger-profile")}
+                    onPress={() => router.push({
+                      pathname: "/(booking)/passenger-profile",
+                      params: {
+                        userId: item?.user?.id?.toString() || "",
+                        name: item?.user?.name || "Unknown Passenger",
+                        profileImage: item?.user?.profile_image || "",
+                        pickupAddress: rideDetail?.pickUpStop?.address || "",
+                        dropoffAddress: rideDetail?.dropOffStop?.address || "",
+                        email: (item?.user as any)?.email || "",
+                        phone: (item?.user as any)?.phone || "",
+                        about: (item?.user as any)?.about || "No additional information available."
+                      }
+                    })}
                   >
                     <View className="flex-row items-center gap-4">
                       <Avatar

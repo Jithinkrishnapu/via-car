@@ -28,6 +28,22 @@ export function DrawerComponent() {
         { label: 'Bank Account', icon: Building2, route: '/(profile)/bank' },
     ];
 
+    const handleMenuPress = async (route: string) => {
+        try {
+            const raw = await AsyncStorage.getItem("userDetails");
+            const token = raw ? JSON.parse(raw).token : "";
+            
+            if (token) {
+                router.push(route);
+            } else {
+                router.replace("/login");
+            }
+        } catch (error) {
+            console.log("Auth check error:", error);
+            router.replace("/login");
+        }
+    };
+
     const handleLogout = () => {
         handleLogOut().then((res) => {
           AsyncStorage.removeItem("userDetails");
@@ -47,7 +63,7 @@ export function DrawerComponent() {
                 {menu.map((item) => (
                     <TouchableOpacity
                     key={item.label}
-                    onPress={() => router.push(item?.route)}
+                    onPress={() => handleMenuPress(item?.route)}
                     className="flex-row items-center justify-between rounded-lg py-4 px-2 border bg-gray-100  border-gray-200"
                     >
                         <View className="flex-row items-center">
