@@ -59,11 +59,9 @@ export default function Drawer({ visible =false, onClose }: Props) {
         ]}
         {...pan.panHandlers}
       >
-        <View style={styles.header}>
-          <Pressable onPress={onClose} style={styles.closeBtn}>
-            <X size={24} color="#374151" />
-          </Pressable>
-        </View>
+        <Pressable onPress={onClose} style={styles.closeBtn}>
+          <X size={24} color="white" />
+        </Pressable>
 
         {/* your content */}
         <DrawerComponent />
@@ -88,12 +86,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#fff',
     zIndex: 50,
   },
-  header: {
-    padding: 16,
-    paddingTop: 48,               // status-bar offset
-  },
   closeBtn: {
-    alignSelf: 'flex-end',
-    marginBottom: 24,
+    position: 'absolute',
+    top: 48,
+    right: 16,
+    zIndex: 60,
+    padding: 8,
   },
 });

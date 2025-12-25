@@ -1,5 +1,5 @@
-import React from 'react';
-import { SafeAreaView, ScrollView, View, Text, TouchableOpacity, ImageBackground, Alert } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { ScrollView, View, Text, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
 import {
     Car,
     FileText,
@@ -11,21 +11,37 @@ import {
     LogOut,
     ChevronRight,
 } from 'lucide-react-native';
-import { useRouter } from 'expo-router';   // swap with your navigator if different
-import { handleLogOut } from '@/service/auth';
+import { useRouter } from 'expo-router';
+import { handleLogOut, useGetProfileDetails } from '@/service/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 export function DrawerComponent() {
     const router = useRouter();
+    const [userDetails, setUserDetails] = useState<any>(null);
+
+    useEffect(() => {
+        loadUserDetails();
+    }, []);
+
+    const loadUserDetails = async () => {
+        try {
+            const response = await useGetProfileDetails();
+            if (response?.data) {
+                setUserDetails(response.data);
+            }
+        } catch (error) {
+            console.log("Error loading user details:", error);
+        }
+    };
 
     const menu = [
-        { label: 'Your rides', icon: Car, route: '/(tabs)/your-rides' },
-        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request' },
-        { label: 'Notification', icon: Bell, route: '/(tabs)/inbox' },
-        { label: 'Profile', icon: User, route: '/(tabs)/user-profile' },
-        { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions' },
-        // { label: 'Payment & Refund', icon: CreditCard, route: '/payment' },
-        { label: 'Bank Account', icon: Building2, route: '/(profile)/bank' },
+        { label: 'Your rides', icon: Car, route: '/(tabs)/your-rides', hasNotification: false },
+        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: true },
+        { label: 'Notification', icon: Bell, route: '/(tabs)/inbox', hasNotification: false },
+        { label: 'Profile', icon: User, route: '/(tabs)/user-profile', hasNotification: false },
+        { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions', hasNotification: false },
+        { label: 'Payment & Refund', icon: CreditCard, route: '/payment', hasNotification: false },
+        { label: 'Bank Account', icon: Building2, route: '/(profile)/bank', hasNotification: false },
     ];
 
     const handleMenuPress = async (route: string) => {
@@ -45,46 +61,75 @@ export function DrawerComponent() {
     };
 
     const handleLogout = () => {
-        handleLogOut().then((res) => {
+        handleLogOut().then(() => {
           AsyncStorage.removeItem("userDetails");
           router.replace("/login");
         }).catch((err) => {
           console.log("error===========", err)
           Alert.alert("Something went wrong")
         })
-    
       };
 
     return (
-        <ScrollView bounces={false} contentContainerStyle={{ paddingBottom: 40 }}>
-            {/* Header */}
-            {/* Menu rows */}
-            <View className="px-4 gap-3">
-                {menu.map((item) => (
-                    <TouchableOpacity
-                    key={item.label}
-                    onPress={() => handleMenuPress(item?.route)}
-                    className="flex-row items-center justify-between rounded-lg py-4 px-2 border bg-gray-100  border-gray-200"
-                    >
-                        <View className="flex-row items-center">
-                            <item.icon size={22} color="#374151" />
-                            <Text className="ml-3 text-base text-gray-800">{item.label}</Text>
-                        </View>
-                        <ChevronRight size={20} color="#9CA3AF" />
-                    </TouchableOpacity>
-                ))}
-
-                {/* Log out */}
-                <TouchableOpacity
-                    onPress={() => handleLogout()}
-                    className="flex-row items-center justify-between py-4 mt-6"
-                    >
-                    <View className="flex-row items-center">
-                        <LogOut size={22} color="#EF4444" />
-                        <Text className="ml-3 text-base text-red-600 font-medium">Log out</Text>
+        <View className="flex-1 bg-white">
+            {/* Header with user info */}
+            <ImageBackground 
+                source={require("../../public/hero.png")}
+                className="px-4 py-6 pt-12"
+                resizeMode="cover"
+            >
+                <View className="flex-row items-center">
+                    <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center mr-3">
+                        {userDetails?.profile_image ? (
+                            <Image 
+                                source={{ uri: userDetails.profile_image }} 
+                                className="w-12 h-12 rounded-full"
+                            />
+                        ) : (
+                            <User size={24} color="white" />
+                        )}
                     </View>
-                </TouchableOpacity>
-            </View>
-        </ScrollView>
+                    <View className="flex-1">
+                        <Text className="text-white text-lg font-semibold">
+                            {userDetails?.first_name ? `${userDetails.first_name} ${userDetails.last_name || ''}`.trim() : 'Ahammed bin Nasser'}
+                        </Text>
+                    </View>
+                </View>
+            </ImageBackground>
+
+            {/* Menu items */}
+            <ScrollView className="flex-1 bg-gray-50" bounces={false}>
+                <View className="px-4 py-4 gap-1">
+                    {menu.map((item) => (
+                        <TouchableOpacity
+                            key={item.label}
+                            onPress={() => handleMenuPress(item?.route)}
+                            className="flex-row items-center justify-between bg-white py-4 px-4 border-b border-gray-100"
+                        >
+                            <View className="flex-row items-center flex-1">
+                                <item.icon size={20} color="#6B7280" />
+                                <Text className="ml-4 text-base text-gray-800 flex-1">{item.label}</Text>
+                                {item.hasNotification && (
+                                    <View className="w-2 h-2 bg-red-500 rounded-full mr-2" />
+                                )}
+                            </View>
+                            <ChevronRight size={16} color="#9CA3AF" />
+                        </TouchableOpacity>
+                    ))}
+
+                    {/* Log out */}
+                    <TouchableOpacity
+                        onPress={() => handleLogout()}
+                        className="flex-row items-center justify-between bg-white py-4 px-4 mt-2"
+                    >
+                        <View className="flex-row items-center flex-1">
+                            <LogOut size={20} color="#6B7280" />
+                            <Text className="ml-4 text-base text-gray-800">Log out</Text>
+                        </View>
+                        <ChevronRight size={16} color="#9CA3AF" />
+                    </TouchableOpacity>
+                </View>
+            </ScrollView>
+        </View>
     );
 }
