@@ -20,6 +20,7 @@ import Animated, {
 import { useTranslation } from 'react-i18next';
 import { format } from 'date-fns';
 import { ChevronDown, ChevronRight, ChevronLeft } from 'lucide-react-native';
+import { useRouter } from 'expo-router';
 
 import { useLoadFonts } from '@/hooks/use-load-fonts';
 import { useDirection } from '@/hooks/useDirection';
@@ -61,6 +62,7 @@ export default function RidesTabsScreen() {
   const { width } = useWindowDimensions();
   const loaded = useLoadFonts();
   const { isRTL, swap } = useDirection();
+  const router = useRouter();
 
   /* --------------------- STATE  --------------------- */
   const [activeTab, setActiveTab] = useState<Tab>('Pending');
@@ -70,6 +72,8 @@ export default function RidesTabsScreen() {
   const [modalVisible, setModalVisible] = useState(true);
   const [sideModalVisible, setSideModalVisible] = useState(false);
   const [showModalVisible, setShowModalVisible] = useState(false);
+  const [startRideModalVisible, setStartRideModalVisible] = useState(false);
+  const [selectedRideItem, setSelectedRideItem] = useState<any>(null);
   const [bookingList, setBookingList] = useState<any[]>([]);
   const [refreshing, setRefreshing] = useState(false);
 
@@ -95,13 +99,28 @@ export default function RidesTabsScreen() {
   }
 
   const handleStartBooking = async (item: any) => {
+    setSelectedRideItem(item);
+    setStartRideModalVisible(true);
+  }
+
+  const confirmStartRide = async () => {
+    if (!selectedRideItem) return;
+    
     const req = {
-      ride_id: item?.id,
+      ride_id: selectedRideItem?.id,
       status: 3
     }
-    const response = await useUpdateRideStatus(req)
-    if (response) {
-      Alert.alert(t('yourRides.rideStarted'))
+    
+    try {
+      const response = await useUpdateRideStatus(req);
+      if (response) {
+        Alert.alert(t('yourRides.rideStarted'));
+        setStartRideModalVisible(false);
+        setSelectedRideItem(null);
+        fetchList(); // Refresh the list
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to start ride. Please try again.');
     }
   }
 
@@ -158,7 +177,7 @@ export default function RidesTabsScreen() {
             activeTab.toLowerCase() == "in progress" ? "ongoing" : activeTab.toLowerCase() as 'pending' | 'completed' | 'cancelled' | 'ongoing'
           )
           : await useGetAlRides(activeTab?.toLowerCase() as 'pending' | 'completed' | 'cancelled');
-      console.log("side============", side, "===================", activeTab, "==============", res?.data)
+      console.log("side============", side, "===================", activeTab, "==============", res?.data[0]?.rideAmounts)
       setBookingList(res?.data?.length ? res.data : []);
     } catch (e: any) {
       Alert.alert('Error', e?.message ?? 'Failed to load data');
@@ -200,6 +219,12 @@ export default function RidesTabsScreen() {
       onAddPassengers={() => {
         setRideId(item?.id)
         setShowModalVisible(true)
+      }}
+      onCardPress={() => {
+        router.push({
+          pathname: "/(publish)/ride-details",
+          params: { ride_id: item?.id }
+        });
       }}
       key={`${activeTab}-${index}`}
     /> : <></>
@@ -402,6 +427,46 @@ export default function RidesTabsScreen() {
             </View>
           </View>
         </Pressable>
+      </Modal>
+
+      {/* Start Ride Confirmation Modal */}
+      <Modal visible={startRideModalVisible} transparent animationType="fade">
+        <View className="flex-1 justify-center items-center bg-black/50">
+          <View className="bg-white mx-6 rounded-2xl p-6 w-4/5 max-w-sm">
+            <Text className="text-[22px] font-[Kanit-Medium] text-black text-center mb-4">
+              {t('yourRides.confirmStartRide')}
+            </Text>
+            
+            <Text className="text-[16px] font-[Kanit-Light] text-gray-600 text-center mb-6 leading-6">
+              {t('yourRides.startRideMessage')}
+            </Text>
+
+            <View className="flex-row gap-3">
+              <TouchableOpacity
+                className="flex-1 border border-gray-300 rounded-full h-[45px] items-center justify-center"
+                activeOpacity={0.8}
+                onPress={() => {
+                  setStartRideModalVisible(false);
+                  setSelectedRideItem(null);
+                }}
+              >
+                <Text className="text-[16px] text-gray-600 font-[Kanit-Regular]">
+                  {t('yourRides.cancel')}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                className="flex-1 bg-[#FF4848] rounded-full h-[45px] items-center justify-center"
+                activeOpacity={0.8}
+                onPress={confirmStartRide}
+              >
+                <Text className="text-[16px] text-white font-[Kanit-Medium]">
+                  {t('yourRides.startRide')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
       </Modal>
     </View>
   );

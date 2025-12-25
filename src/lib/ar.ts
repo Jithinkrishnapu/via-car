@@ -201,6 +201,12 @@ const ar = {
       rideStarted: "بدأت الرحلة",
       bookingCompleted: "اكتمل الحجز",
       bookingVerified: "تم التحقق من الحجز",
+      confirmStartRide: "بدء الرحلة؟",
+      startRideMessage: "هل أنت متأكد من بدء هذه الرحلة؟ سيتم إشعار جميع الركاب أن الرحلة قد بدأت.",
+      cancel: "إلغاء",
+      startRide: "بدء الرحلة",
+      endRide: "إنهاء الرحلة",
+      addPassengers: "إضافة ركاب",
     },
     inbox: {
       title: "صندوق الوارد",

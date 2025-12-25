@@ -273,27 +273,39 @@ function RideDetails() {
                   return <TouchableOpacity
                     activeOpacity={0.8}
                     className="flex-row items-center justify-between"
-                    onPress={() => router.push("/passenger-profile")}
+                    onPress={() => router.push({
+                      pathname: "/(publish)/passenger-profile",
+                      params: {
+                        userId: item?.user?.id?.toString() || "",
+                        name: item?.user?.name || "Unknown Passenger",
+                        profileImage: item?.user?.profile_image || "",
+                        pickupAddress: rideDetail?.pickUpStop?.address || "",
+                        dropoffAddress: rideDetail?.dropOffStop?.address || "",
+                        email: (item?.user as any)?.email || "",
+                        phone: (item?.user as any)?.phone || "",
+                        about: (item?.user as any)?.about || "No additional information available."
+                      }
+                    })}
                   >
                     <View className="flex-row items-center gap-4">
                       <Avatar
-                        source={require(`../../../public/profile-img.png`)}
+                        source={ item?.user?.profile_image !== null ? {uri:item?.user?.profile_image} : require(`../../../public/profile-image.jpg.webp`)}
                         size={40}
-                        initials="CN"
+                        initials={item?.user?.name?.substring(0,2)?.toUpperCase()}
                       />
                       <View className="flex flex-col">
                         <Text
                           fontSize={14}
                           className="text-[14px] mb-1 font-[Kanit-Regular]"
                         >
-                          {t("rideDetails.karthik")}
+                          {item?.user?.name}
                         </Text>
                         <View className="flex-row items-center justify-between gap-1">
                           <Text
                             fontSize={12}
                             className="text-[12px] text-[#666666] font-[Kanit-Light]"
                           >
-                            {t("rideDetails.chennai")}
+                            {rideDetail?.pickUpStop?.address}
                           </Text>
                           {swap(
                             <ArrowRight size={10} color="#A5A5A5" />,
@@ -303,17 +315,12 @@ function RideDetails() {
                             fontSize={12}
                             className="text-[12px] text-[#666666] font-[Kanit-Light]"
                           >
-                            {t("rideDetails.banglaluru")}
+                            {rideDetail?.dropOffStop?.address}
                           </Text>
                         </View>
                       </View>
                     </View>
-                    <View>
-                      {swap(
-                        <ChevronRight color="#A69A9A" className="size-[24px]" />,
-                        <ChevronLeft color="#A69A9A" className="size-[24px]" />
-                      )}
-                    </View>
+
                   </TouchableOpacity>
                 }}
                 ListEmptyComponent={() => <View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}
@@ -367,7 +374,27 @@ function RideDetails() {
                   fontSize={12}
                   className="flex-1 text-[12px] text-[#666666] font-[Kanit-Light]"
                 >
-                  {t("rideDetails.serviceFeeAndVAT")}
+                  Service Fee ({rideDetail?.platformFeePercentage}%)
+                </Text>
+                <Text
+                  fontSize={15}
+                  className="w-[10px] text-[15px] font-[Kanit-Regular]"
+                >
+                  :
+                </Text>
+                <Text
+                  fontSize={12}
+                  className="text-[12px] text-end font-[Kanit-Regular]"
+                >
+                  SR {rideDetail?.platformFeeAmount}
+                </Text>
+              </View>
+              <View className="flex-row gap-2 items-center">
+                <Text
+                  fontSize={12}
+                  className="flex-1 text-[12px] text-[#666666] font-[Kanit-Light]"
+                >
+                  VAT ({rideDetail?.vatPercentage}%)
                 </Text>
                 <Text
                   fontSize={15}

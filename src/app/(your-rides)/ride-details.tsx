@@ -344,7 +344,19 @@ function RideDetails() {
                   return <TouchableOpacity
                     activeOpacity={0.8}
                     className="flex-row items-center justify-between"
-                    onPress={() => router.push("/passenger-profile")}
+                    onPress={() => router.push({
+                      pathname: "/(your-rides)/passenger-profile",
+                      params: {
+                        userId: item?.user?.id?.toString() || "",
+                        name: item?.user?.name || "Unknown Passenger",
+                        profileImage: item?.user?.profile_image || "",
+                        pickupAddress: rideDetail?.pickUpStop?.address || "",
+                        dropoffAddress: rideDetail?.dropOffStop?.address || "",
+                        email: (item?.user as any)?.email || "",
+                        phone: (item?.user as any)?.phone || "",
+                        about: (item?.user as any)?.about || "No additional information available."
+                      }
+                    })}
                   >
                     <View className="flex-row items-center gap-4">
                       <Avatar
@@ -364,7 +376,7 @@ function RideDetails() {
                             fontSize={12}
                             className="text-[12px] text-[#666666] font-[Kanit-Light]"
                           >
-                            {t("rideDetails.chennai")}
+                            {rideDetail?.pickUpStop?.address}
                           </Text>
                           {swap(
                             <ArrowRight size={10} color="#A5A5A5" />,
@@ -374,17 +386,12 @@ function RideDetails() {
                             fontSize={12}
                             className="text-[12px] text-[#666666] font-[Kanit-Light]"
                           >
-                            {t("rideDetails.banglaluru")}
+                            {rideDetail?.dropOffStop?.address}
                           </Text>
                         </View>
                       </View>
                     </View>
-                    <View>
-                      {swap(
-                        <ChevronRight color="#A69A9A" className="size-[24px]" />,
-                        <ChevronLeft color="#A69A9A" className="size-[24px]" />
-                      )}
-                    </View>
+
                   </TouchableOpacity>
                 }}
                 ListEmptyComponent={() => <View className="justify-center items-center" ><Text>No Passengers Found</Text></View>}

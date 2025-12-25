@@ -7,6 +7,7 @@ import Avatar from './ui/avatar';
 import { ArrowRight, ChevronRight } from 'lucide-react-native';
 import DashedLine from './common/DashedLine';
 import { format, parseISO } from 'date-fns';
+import { useTranslation } from 'react-i18next';
 
 type Props = {
     driverName: string;
@@ -26,6 +27,7 @@ type Props = {
     onRideCancel?:()=>void
     status:number,
     activeTab?: 'Pending' | 'Cancelled' | 'Completed' | 'In Progress'
+    onCardPress?: () => void;
 };
 
 export const RideCard: React.FC<Props> = ({
@@ -45,8 +47,10 @@ export const RideCard: React.FC<Props> = ({
     passengers,
     onRideCancel,
     status,
-    activeTab
+    activeTab,
+    onCardPress
 }) => {
+    const { t } = useTranslation('components');
     /* -------------------------------------------------
      * Helper – pretty print duration
      * ------------------------------------------------- */
@@ -70,7 +74,11 @@ export const RideCard: React.FC<Props> = ({
 
 
     return (
-        <View className=" my-2 py-2 rounded-2xl bg-white shadow-md overflow-hidden">
+        <TouchableOpacity 
+            className=" my-2 py-2 rounded-2xl bg-white shadow-md overflow-hidden"
+            onPress={onCardPress}
+            activeOpacity={0.8}
+        >
             {/* ----------  Header  ---------- */}
             <View className="flex-row items-center justify-between px-4 pt-4">
                 <View className="flex-row gap-2 items-center">
@@ -90,7 +98,7 @@ export const RideCard: React.FC<Props> = ({
 
                { status == 1 &&  <TouchableOpacity onPress={onRideCancel} className='bg-[#FF1919] rounded-full p-2 flex-row gap-3 items-center' >
                     <CloseIcon />
-                    <Text className="text-sm text-white font-[Kanit-Light]">Ride Cancel</Text>
+                    <Text className="text-sm text-white font-[Kanit-Light]">{t('yourRides.rideCancelled')}</Text>
                 </TouchableOpacity>}
             </View>
 
@@ -139,7 +147,7 @@ export const RideCard: React.FC<Props> = ({
            <View className="mt-4 px-4 pb-4">
            {passengers?.length &&  
                <>
-               <Text className='text-[16px] font-[Kanit-Medium] text-black' >Passengers Confirmed</Text>
+               <Text className='text-[16px] font-[Kanit-Medium] text-black' >{t('rideDetails.passengers')} Confirmed</Text>
                 <FlatList 
                 contentContainerClassName='gap-2'
                 className={"flex-1 py-2"}
@@ -157,24 +165,24 @@ export const RideCard: React.FC<Props> = ({
                         onPress={onAddPassengers}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
                     >
-                        <Text className="text-[14px] text-white font-[Kanit-Light]">Add Passengers</Text>
+                        <Text className="text-[14px] text-white font-[Kanit-Light]">{t('yourRides.addPassengers')}</Text>
                     </TouchableOpacity>
 
                     { status == 3 ? <TouchableOpacity
                         onPress={onEndRide}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#FF4848]"
                     >
-                        <Text className="text-[14px] text-white font-[Kanit-Light]">End Ride</Text>
+                        <Text className="text-[14px] text-white font-[Kanit-Light]">{t('yourRides.endRide')}</Text>
                     </TouchableOpacity> : <TouchableOpacity
                         onPress={onStartRide}
                         className="p-4 flex-1 rounded-full items-center justify-center bg-[#0E8D7E]"
                     >
-                        <Text className="text-[14px] text-white font-[Kanit-Light]">Start Ride</Text>
+                        <Text className="text-[14px] text-white font-[Kanit-Light]">{t('yourRides.startRide')}</Text>
                     </TouchableOpacity>}
 
                 </View>}
             </View>
-        </View>
+        </TouchableOpacity>
     );
 };
 

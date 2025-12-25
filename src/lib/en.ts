@@ -201,6 +201,12 @@ const en = {
       rideStarted: "Ride Started",
       bookingCompleted: "Booking Completed",
       bookingVerified: "Booking Verified",
+      confirmStartRide: "Start Ride?",
+      startRideMessage: "Are you sure you want to start this ride? This action will notify all passengers that the journey has begun.",
+      cancel: "Cancel",
+      startRide: "Start Ride",
+      endRide: "End Ride",
+      addPassengers: "Add Passengers",
     },
     inbox: {
       title: "Inbox",
