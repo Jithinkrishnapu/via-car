@@ -32,6 +32,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RideDetail } from "@/types/ride-types";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useGetProfileDetails } from "@/service/auth";
+import { canUsersChat } from "@/service/chatService";
 
 function RideDetails() {
 
@@ -303,7 +304,22 @@ function RideDetails() {
                   <TouchableOpacity
                     className="rounded-full size-[38px] border border-[#EBEBEB] flex-row items-center justify-center"
                     activeOpacity={0.8}
-                    onPress={() => router.push({pathname:"/(inbox)/chat",params:{driver_id:rideDetail?.driver?.id,driver_name:rideDetail?.driver?.first_name}})}
+                    onPress={() => {
+                      // Prevent self-messaging using utility function
+                      if (!canUsersChat(userDetails?.id, rideDetail?.driver?.id)) {
+                        Alert.alert("Error", "You cannot message yourself.");
+                        return;
+                      }
+                      
+                      router.push({
+                        pathname:"/(inbox)/chat",
+                        params:{
+                          driver_id: String(rideDetail?.driver?.id),
+                          driver_name: rideDetail?.driver?.first_name,
+                          driver_profile_image: rideDetail?.driver?.profile_image || ""
+                        }
+                      })
+                    }}
                   >
                     <Chat width={15} height={15} />
                   </TouchableOpacity>

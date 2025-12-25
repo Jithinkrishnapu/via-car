@@ -838,9 +838,9 @@ export default function ProfilePage() {
       <ConfirmDialog
         visible={logoutDialog.visible}
         onClose={() => setLogoutDialog({ visible: false })}
-        title={t("profile.Logout")}
+        title={t("Logout")}
         message={t("profile.Are you sure you want to logout?")}
-        confirmText={t("profile.Logout")}
+        confirmText={t("Logout")}
         cancelText={t("profile.Cancel")}
         onConfirm={confirmLogout}
         onCancel={() => setLogoutDialog({ visible: false })}

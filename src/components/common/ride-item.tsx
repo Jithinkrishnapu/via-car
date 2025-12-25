@@ -100,7 +100,7 @@ function RideItem({ ride,passengers }: RideItemProps) {
         <View className="flex-row items-center justify-between">
           <View className="flex-row items-center gap-3">
             <Avatar
-              source={require(`../../../public/profile-img.png`)}
+              source={ride?.driver?.profile_image !== null ? {uri:ride?.driver?.profile_image} : require(`../../../public/profile-image.jpg.webp`)}
               size={32}
               initials="CN"
               className="bg-blue-500"

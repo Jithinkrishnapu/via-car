@@ -14,6 +14,12 @@ export interface Message {
   to: string;
   text: string;
   createdAt: any;
+  from_name?: string;
+  to_name?: string;
+  from_user_type?: 'driver' | 'customer';
+  to_user_type?: 'driver' | 'customer';
+  from_profile_image?: string | null;
+  to_profile_image?: string | null;
 }
 
 export function useMessages(chatId: string) {

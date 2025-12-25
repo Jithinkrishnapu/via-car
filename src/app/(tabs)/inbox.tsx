@@ -17,13 +17,16 @@ import {
   orderBy,
 } from "firebase/firestore";
 import { useGetProfileDetails } from "@/service/auth";
+import { generateInitials } from "@/service/chatService";
 
 interface Chat {
   id: string;
-  users: string[];
+  participants: string[];
   userNames?: { [key: string]: string };
+  userTypes?: { [key: string]: 'driver' | 'customer' };
+  userProfileImages?: { [key: string]: string | null };
   lastMessage: string;
-  updatedAt: any;
+  lastMessageAt: any;
 }
 
 export default function Page() {
@@ -86,28 +89,43 @@ export default function Page() {
   useEffect(() => {
     if (!userId) return;
 
+    console.log("Setting up chat listener for userId:", userId);
+    
     const q = query(
       collection(db, "chats"),
-      where("participants", "array-contains", userId),
+      where("participants", "array-contains", String(userId)),
       orderBy("lastMessageAt", "desc")
     );
 
     const unsub = onSnapshot(q, (snapshot) => {
+      console.log("Chat snapshot received, docs count:", snapshot.docs.length);
       const list: Chat[] = snapshot.docs.map((doc) => {
         const data = doc.data() as any;
-        console.log(data)
+        console.log("Chat data:", data);
         return {
           id: doc.id,
-          users: data?.participants || [], // Use participants array (user IDs)
-          userNames: {
-            // Map user IDs to their names using the stored from_id/to_id and from_name/to_name
+          participants: data?.participants || [],
+          userNames: data?.userNames || {
             [data?.from_id]: data?.from_name,
             [data?.to_id]: data?.to_name
-          }, // Map user IDs to names
+          },
+          userTypes: data?.userTypes || {
+            [data?.from_id]: data?.from_user_type || 'customer',
+            [data?.to_id]: data?.to_user_type || 'customer'
+          },
+          userProfileImages: data?.userProfileImages || {
+            [data?.from_id]: data?.from_profile_image || null,
+            [data?.to_id]: data?.to_profile_image || null
+          },
           lastMessage: data?.lastMessage ?? '',
-          updatedAt: data?.lastMessageAt ?? null, // Use lastMessageAt instead of updatedAt
+          lastMessageAt: data?.lastMessageAt ?? null,
         } as Chat;
+      }).filter(chat => {
+        // Filter out chats where user is talking to themselves
+        const otherUserId = chat.participants.find((u) => String(u) !== String(userId));
+        return otherUserId && String(otherUserId) !== String(userId);
       });
+      console.log("Processed chats:", list);
       setChats(list);
     });
 
@@ -140,9 +158,13 @@ export default function Page() {
           ) : (
             chats.map((chat, index) => {
               // Find the other user ID (not the current user)
-              const otherUserId = chat.users.find((u) => u.toString() !== userId.toString());
+              const otherUserId = chat.participants.find((u) => String(u) !== String(userId));
               // Get the other user's name from the userNames mapping
               const otherUserName = chat.userNames?.[otherUserId] || "Unknown User";
+              // Get the other user's type
+              const otherUserType = chat.userTypes?.[otherUserId] || 'customer';
+              // Get the other user's profile image
+              const otherUserProfileImage = chat.userProfileImages?.[otherUserId];
               
               return (
                 <Fragment key={chat.id}>
@@ -151,7 +173,8 @@ export default function Page() {
                       pathname: "/(inbox)/chat", 
                       params: { 
                         driver_id: otherUserId,
-                        driver_name: otherUserName
+                        driver_name: otherUserName,
+                        driver_profile_image: otherUserProfileImage || ""
                       } 
                     })}
                     className="flex-row items-center gap-4 px-4 py-4 active:bg-gray-50"
@@ -159,9 +182,9 @@ export default function Page() {
                   >
                     <View className="relative">
                       <Avatar
-                        source={require("../../../public/profile-img.png")}
+                        source={otherUserProfileImage ? { uri: otherUserProfileImage } : require(`../../../public/profile-image.jpg.webp`)}
                         size={48}
-                        initials={otherUserName?.charAt(0) || "U"}
+                        initials={generateInitials(otherUserName)}
                       />
                       {/* Online indicator */}
                       <View className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
@@ -169,11 +192,19 @@ export default function Page() {
                     
                     <View className="flex-col flex-1 min-w-0">
                       <View className="flex-row items-center justify-between mb-1">
-                        <Text fontSize={16} className="text-[16px] text-gray-900 font-[Kanit-Medium] flex-1" numberOfLines={1}>
-                          {otherUserName}
-                        </Text>
+                        <View className="flex-row items-center flex-1">
+                          <Text fontSize={16} className="text-[16px] text-gray-900 font-[Kanit-Medium]" numberOfLines={1}>
+                            {otherUserName}
+                          </Text>
+                          {/* User type badge */}
+                          <View className={`ml-2 px-2 py-1 rounded-full ${otherUserType === 'driver' ? 'bg-blue-100' : 'bg-green-100'}`}>
+                            <Text fontSize={10} className={`text-[10px] font-[Kanit-Medium] ${otherUserType === 'driver' ? 'text-blue-600' : 'text-green-600'}`}>
+                              {otherUserType === 'driver' ? '🚗 Driver' : '👤 Customer'}
+                            </Text>
+                          </View>
+                        </View>
                         <Text fontSize={12} className="text-[12px] text-gray-400 font-[Kanit-Regular] ml-2">
-                          {chat.updatedAt ? new Date(chat.updatedAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
+                          {chat.lastMessageAt ? new Date(chat.lastMessageAt.seconds * 1000).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'}) : ""}
                         </Text>
                       </View>
                       
