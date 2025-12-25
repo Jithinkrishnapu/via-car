@@ -24,6 +24,7 @@ module.exports = {
       },
       fontFamily: {
         sans: [
+          "var(--font-primary)",
           "Kanit",
           "ui-sans-serif",
           "system-ui",
@@ -34,6 +35,7 @@ module.exports = {
           "Noto Color Emoji",
         ],
         alt: [
+          "var(--font-secondary)",
           "Cairo",
           "ui-sans-serif",
           "system-ui",

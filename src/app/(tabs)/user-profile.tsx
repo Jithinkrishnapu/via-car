@@ -333,7 +333,7 @@ export default function ProfilePage() {
   console.log("userdetails===============",userDetails)
 
   return (
-    <View className="font-[Kanit-Regular] bg-white flex-1">
+    <View className="bg-white flex-1">
       {/* Sticky Hero Section */}
       <ImageBackground
         className="w-full h-max"
@@ -343,7 +343,8 @@ export default function ProfilePage() {
         <View className="mx-auto w-full max-w-7xl p-6 pt-16">
           <Text
             fontSize={24}
-            className="text-2xl text-white font-[Kanit-Medium]"
+            fontWeight="medium"
+            className="text-2xl text-white"
           >
             {t("Profile")}
           </Text>
@@ -358,7 +359,8 @@ export default function ProfilePage() {
                 <View className="flex-row justify-between items-center">
                   <Text
                     fontSize={25}
-                    className="text-[25px] text-white font-[Kanit-Regular]"
+                    fontWeight="regular"
+                    className="text-[25px] text-white"
                   >
                     {userDetails?.first_name}
                   </Text>
@@ -372,7 +374,8 @@ export default function ProfilePage() {
                     <Pencil size={14} color="#FF4848" strokeWidth={1} />
                     <Text
                       fontSize={12}
-                      className="text-[12px] text-white font-[Kanit-Light] ml-1"
+                      fontWeight="light"
+                      className="text-[12px] text-white ml-1"
                     >
                       {t("Edit")}
                     </Text>
@@ -381,7 +384,8 @@ export default function ProfilePage() {
                 <View className="flex-row items-center mt-2 gap-[10px]">
                   <Text
                     fontSize={16}
-                    className="text-base text-white font-[Kanit-Regular]"
+                    fontWeight="regular"
+                    className="text-base text-white"
                   >
                     {userDetails?.avg_rating}
                   </Text>
@@ -404,19 +408,22 @@ export default function ProfilePage() {
                 value && <View key={idx} className="flex-row py-1">
                   <Text
                     fontSize={14}
-                    className="flex-1 text-[14px] text-white font-[Kanit-Light]"
+                    fontWeight="light"
+                    className="flex-1 text-[14px] text-white"
                   >
                     {label}
                   </Text>
                   <Text
                     fontSize={14}
-                    className="w-[20px] text-center text-[14px] text-white font-[Kanit-Light]"
+                    fontWeight="light"
+                    className="w-[20px] text-center text-[14px] text-white"
                   >
                     :
                   </Text>
                   <Text
                     fontSize={14}
-                    className="flex-1 text-[14px] text-white font-[Kanit-Light] ml-1"
+                    fontWeight="light"
+                    className="flex-1 text-[14px] text-white ml-1"
                   >
                     {value}
                   </Text>
@@ -447,8 +454,9 @@ export default function ProfilePage() {
             >
               <Text
                 fontSize={15}
+                fontWeight="regular"
                 className={cn(
-                  "text-[15px] font-[Kanit-Regular] z-10 transition-all duration-700",
+                  "text-[15px] z-10 transition-all duration-700",
                   isActive ? "text-white" : "text-[#666666]"
                 )}
               >
@@ -482,7 +490,8 @@ export default function ProfilePage() {
                         <CheckGreen width={18} height={18} />
                         <Text
                           fontSize={14}
-                          className="ml-4 text-[14px] font-[Kanit-Light]"
+                          fontWeight="light"
+                          className="ml-4 text-[14px]"
                         >
                           {t("ID verified")}
                         </Text>
@@ -508,7 +517,8 @@ export default function ProfilePage() {
                     )}
                     <Text
                       fontSize={14}
-                      className="ml-4 text-[14px] font-[Kanit-Light]"
+                      fontWeight="light"
+                      className="ml-4 text-[14px]"
                     >
                       {userDetails?.email_verified 
                         ? t("Email confirmed") 
@@ -529,7 +539,8 @@ export default function ProfilePage() {
                   <CheckGreen width={18} height={18} />
                   <Text
                     fontSize={14}
-                    className="ml-4 text-[14px] font-[Kanit-Light]"
+                    fontWeight="light"
+                    className="ml-4 text-[14px]"
                   >
                     {t("Confirmed phone number")}
                   </Text>
@@ -542,7 +553,8 @@ export default function ProfilePage() {
                 <View className="flex-row justify-between items-center mb-[20px]">
                   <Text
                     fontSize={16}
-                    className="text-[16px] font-[Kanit-Regular]"
+                    fontWeight="regular"
+                    className="text-[16px]"
                   >
                     {t("Travel Preferences")}
                   </Text>
@@ -566,14 +578,15 @@ export default function ProfilePage() {
                           className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
                         >
                           <ChatIcon width={21} height={21} />
-                          <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
+                          <Text className="ml-2 text-sm" fontWeight="light">{text.trim()}</Text>
                         </View>
                       ))}
                   </View>
                 ) : (
                   <Text
                     fontSize={14}
-                    className="bg-gray-100 text-gray-500 rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light]"
+                    fontWeight="light"
+                    className="bg-gray-100 text-gray-500 rounded-2xl p-4 text-sm leading-relaxed"
                   >
                     {t("Add your travel preferences here")}
                   </Text>
@@ -585,7 +598,8 @@ export default function ProfilePage() {
                 <View className="flex-row justify-between items-center mb-[20px]">
                   <Text
                     fontSize={16}
-                    className="text-[16px] font-[Kanit-Regular]"
+                    fontWeight="regular"
+                    className="text-[16px]"
                   >
                     {t("About you")}
                   </Text>
@@ -596,7 +610,8 @@ export default function ProfilePage() {
                     <Pencil size={12} color="#FF4848" />
                     <Text
                       fontSize={14}
-                      className="text-sm ml-1 font-[Kanit-Light]"
+                      fontWeight="light"
+                      className="text-sm ml-1"
                     >
                       {userDetails?.about ? t("Edit") : t("Add About")}
                     </Text>
@@ -604,7 +619,8 @@ export default function ProfilePage() {
                 </View>
                 <Text
                   fontSize={14}
-                  className={`rounded-2xl p-4 text-sm leading-relaxed font-[Kanit-Light] ${userDetails?.about
+                  fontWeight="light"
+                  className={`rounded-2xl p-4 text-sm leading-relaxed ${userDetails?.about
                       ? "bg-gray-100 text-black"
                       : "bg-gray-100 text-gray-500"
                     }`}
@@ -617,7 +633,8 @@ export default function ProfilePage() {
               <View className="px-6 pb-8">
                 <Text
                   fontSize={16}
-                  className="text-[16px] font-[Kanit-Regular] mb-6"
+                  fontWeight="regular"
+                  className="text-[16px] mb-6"
                 >
                   {t("Vehicles")}
                 </Text>
@@ -634,19 +651,22 @@ export default function ProfilePage() {
                           <View className="flex-1 mr-4">
                             <Text
                               fontSize={16}
-                              className="text-[16px] font-[Kanit-Medium] mb-1"
+                              fontWeight="medium"
+                              className="text-[16px] mb-1"
                             >
                               {item?.model?.name}
                             </Text>
                             <Text
                               fontSize={12}
-                              className="text-[12px] text-gray-600 font-[Kanit-Light]"
+                              fontWeight="light"
+                              className="text-[12px] text-gray-600"
                             >
                               {item?.model?.category_name}, {item?.brand?.name}
                             </Text>
                             <Text
                               fontSize={11}
-                              className="text-[11px] text-gray-500 font-[Kanit-Light] mt-1"
+                              fontWeight="light"
+                              className="text-[11px] text-gray-500 mt-1"
                             >
                               {item?.year}
                             </Text>
@@ -679,7 +699,7 @@ export default function ProfilePage() {
                   </View>
                 ) : (
                   <View className="items-center py-8 mb-4">
-                    <Text className="text-gray-400 text-sm font-[Kanit-Light]">
+                    <Text className="text-gray-400 text-sm" fontWeight="light">
                       {t("profile.No vehicles added yet")}
                     </Text>
                   </View>
@@ -696,7 +716,8 @@ export default function ProfilePage() {
                   <CirclePlus size={20} color="#fff" strokeWidth={1} />
                   <Text
                     fontSize={18}
-                    className="ml-2 text-lg text-white font-[Kanit-Regular]"
+                    fontWeight="regular"
+                    className="ml-2 text-lg text-white"
                   >
                     {t("Add vehicle")}
                   </Text>
@@ -750,10 +771,10 @@ export default function ProfilePage() {
                   className="flex-row items-center justify-between"
                 >
                   <View className="flex-row items-center">
-                    <Text fontSize={14} className="text-[14px] font-[Kanit-Light]">
+                    <Text fontSize={14} fontWeight="light" className="text-[14px]">
                       {t("profile.Language")}
                     </Text>
-                    <Text fontSize={12} className="text-[12px] text-gray-500 font-[Kanit-Light] ml-2">
+                    <Text fontSize={12} fontWeight="light" className="text-[12px] text-gray-500 ml-2">
                       ({getCurrentLanguageName()})
                     </Text>
                   </View>
@@ -765,7 +786,7 @@ export default function ProfilePage() {
               </View>
 
               <TouchableOpacity onPress={handleLogout} className="px-6 py-4 " >
-                <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >{t("Logout")}</Text>
+                <Text fontWeight="regular" className="text-[14px] text-red-400" >{t("Logout")}</Text>
               </TouchableOpacity>
 
               <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
@@ -795,7 +816,7 @@ export default function ProfilePage() {
                 ))}
               </View>
               <View className="px-6 py-4 " >
-                <Text className="text-[14px] text-red-400 font-[Kanit-Regular]" >{t("profile.Close my account")}</Text>
+                <Text fontWeight="regular" className="text-[14px] text-red-400" >{t("profile.Close my account")}</Text>
               </View>
 
             </View>

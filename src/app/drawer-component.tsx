@@ -42,6 +42,7 @@ export function DrawerComponent() {
         { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions', hasNotification: false },
         { label: 'Payment & Refund', icon: CreditCard, route: '/payment', hasNotification: false },
         { label: 'Bank Account', icon: Building2, route: '/(profile)/bank', hasNotification: false },
+        { label: 'Font Test', icon: FileText, route: '/font-test', hasNotification: false },
     ];
 
     const handleMenuPress = async (route: string) => {

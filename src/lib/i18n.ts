@@ -5,8 +5,8 @@ import en from "./en";
 import ar from "./ar";
 
 const resources = {
-  en: { translation: en, index: en.login, components: en.components, profile: en.profile, booking: en.booking },
-  ar: { translation: ar, index: ar.index, components: ar.components, profile: ar.profile, booking: ar.booking },
+  en: { translation: en, components: en.components, profile: en.profile, booking: en.booking },
+  ar: { translation: ar, components: ar.components, profile: ar.profile, booking: ar.booking },
 };
 
 /* ---------- helpers ---------- */
@@ -42,6 +42,16 @@ const updateRTL = (lng: string) => {
     // Web platform
     window.document.documentElement.dir = isRTL ? "rtl" : "ltr";
     window.document.documentElement.lang = lng;
+    
+    // Update CSS custom properties for font switching
+    const root = window.document.documentElement;
+    if (lng === "ar") {
+      root.style.setProperty('--font-primary', "'Cairo', ui-sans-serif, system-ui, sans-serif");
+      root.style.setProperty('--font-secondary', "'Cairo', ui-sans-serif, system-ui, sans-serif");
+    } else {
+      root.style.setProperty('--font-primary', "'Kanit', ui-sans-serif, system-ui, sans-serif");
+      root.style.setProperty('--font-secondary', "'Inter', ui-sans-serif, system-ui, sans-serif");
+    }
   } else if (Platform.OS !== "web") {
     // React Native platform
     if (I18nManager.isRTL !== isRTL) {
@@ -69,7 +79,7 @@ const initI18n = async () => {
       resources,
       lng: initialLang,
       fallbackLng: "en",
-      ns: ["translation", "index", "components", "profile", "booking"],
+      ns: ["translation", "components", "profile", "booking"],
       defaultNS: "translation",
       interpolation: { escapeValue: false },
       react: {

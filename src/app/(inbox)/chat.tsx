@@ -321,19 +321,22 @@ function Chat() {
           <View className="bg-white rounded-t-3xl p-8">
             <Text
               fontSize={30}
-              className="text-3xl text-center font-[Kanit-Regular] mb-6"
+              fontWeight="regular"
+              className="text-3xl text-center mb-6"
             >
               {t("chat.messagingGuidelines")}
             </Text>
             <Text
               fontSize={14}
-              className="text-sm text-[#666666] font-[Kanit-Light] mb-4"
+              fontWeight="light"
+              className="text-sm text-[#666666] mb-4"
             >
               {t("chat.guidelines1")}
             </Text>
             <Text
               fontSize={14}
-              className="text-sm text-[#666666] font-[Kanit-Light] mb-8"
+              fontWeight="light"
+              className="text-sm text-[#666666] mb-8"
             >
               {t("chat.guidelines2")}{" "}
               <Text fontSize={14} className="text-[#FF4848]" onPress={() => { }}>
@@ -345,7 +348,7 @@ function Chat() {
               onPress={() => setShowGuidelines(false)}
               activeOpacity={0.8}
             >
-              <Text fontSize={16} className="text-white font-[Kanit-Medium]">
+              <Text fontSize={16} fontWeight="medium" className="text-white">
                 {t("chat.close")}
               </Text>
             </TouchableOpacity>

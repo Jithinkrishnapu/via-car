@@ -33,13 +33,14 @@ function RideItem({ ride,passengers }: RideItemProps) {
         {/* Header with Price */}
         <View className="flex-row justify-between items-start mb-4">
           <View className="flex-1">
-            <Text fontSize={12} className="text-[#666666] font-[Kanit-Light] mb-1">
+            <Text fontSize={12} fontWeight="light" className="text-[#666666] mb-1">
               {formatDuration(ride?.rideAmount?.duration_minutes)}
             </Text>
           </View>
           <Text
             fontSize={20}
-            className="text-[#00665A] font-[Kanit-Medium]"
+            fontWeight="medium"
+            className="text-[#00665A]"
           >
             {ride?.rideAmount.amount ? `SR ${ride?.rideAmount.amount}` : "--"}
           </Text>
@@ -49,11 +50,11 @@ function RideItem({ ride,passengers }: RideItemProps) {
         <View className="flex-row items-start gap-4 mb-4">
           {/* Time Column */}
           <View className="items-center min-w-[50px]">
-            <Text fontSize={16} className="text-[#263238] font-[Kanit-Medium] mb-1">
+            <Text fontSize={16} fontWeight="medium" className="text-[#263238] mb-1">
               {ride?.pickup_stop?.time ? ride.pickup_stop.time.slice(0, 5) : "--:--"}
             </Text>
             <View className="w-[2px] h-8 bg-[#E0E0E0] my-1" />
-            <Text fontSize={16} className="text-[#263238] font-[Kanit-Medium]">
+            <Text fontSize={16} fontWeight="medium" className="text-[#263238]">
               {ride?.drop_stop?.time ? ride.drop_stop.time.slice(0, 5) : "--:--"}
             </Text>
           </View>
@@ -66,12 +67,13 @@ function RideItem({ ride,passengers }: RideItemProps) {
           {/* Address Column */}
           <View className="flex-1">
             <View className="mb-3">
-              <Text fontSize={12} className="text-[#939393] font-[Kanit-Light] uppercase tracking-wide mb-1">
+              <Text fontSize={12} fontWeight="light" className="text-[#939393] uppercase tracking-wide mb-1">
                 {t("booking.rideItem.pickup") || "PICKUP"}
               </Text>
               <Text
                 fontSize={15}
-                className="text-[#263238] font-[Kanit-Regular] leading-5"
+                fontWeight="regular"
+                className="text-[#263238] leading-5"
                 numberOfLines={2}
               >
                 {ride?.pickup_stop?.address || "Pickup location"}
@@ -79,12 +81,13 @@ function RideItem({ ride,passengers }: RideItemProps) {
             </View>
             
             <View>
-              <Text fontSize={12} className="text-[#939393] font-[Kanit-Light] uppercase tracking-wide mb-1">
+              <Text fontSize={12} fontWeight="light" className="text-[#939393] uppercase tracking-wide mb-1">
                 {t("booking.rideItem.drop") || "DROP"}
               </Text>
               <Text
                 fontSize={15}
-                className="text-[#263238] font-[Kanit-Regular] leading-5"
+                fontWeight="regular"
+                className="text-[#263238] leading-5"
                 numberOfLines={2}
               >
                 {ride?.drop_stop?.address || "Drop location"}
@@ -107,12 +110,12 @@ function RideItem({ ride,passengers }: RideItemProps) {
               textClassName="text-white text-sm"
             />
             <View>
-              <Text fontSize={15} className="text-[#263238] font-[Kanit-Medium]">
+              <Text fontSize={15} fontWeight="medium" className="text-[#263238]">
                 {ride?.driver?.name || "Driver"}
               </Text>
               <View className="flex-row items-center gap-1">
                 <Star size={14} fill="#FF9C00" strokeWidth={0} />
-                <Text fontSize={13} className="text-[#666666] font-[Kanit-Regular]">
+                <Text fontSize={13} fontWeight="regular" className="text-[#666666]">
                   {t("booking.rideItem.rating") || "4.8"}
                 </Text>
               </View>
@@ -121,7 +124,7 @@ function RideItem({ ride,passengers }: RideItemProps) {
           
           {/* Additional Info */}
           <View className="items-end">
-            <Text fontSize={12} className="text-[#666666] font-[Kanit-Light]">
+            <Text fontSize={12} fontWeight="light" className="text-[#666666]">
               {passengers} {t("booking.rideItem.passengers")}
             </Text>
           </View>

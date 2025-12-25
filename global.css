@@ -44,6 +44,10 @@
     --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    
+    /* Font family variables - Default (English) */
+    --font-primary: 'Kanit', ui-sans-serif, system-ui, sans-serif;
+    --font-secondary: 'Inter', ui-sans-serif, system-ui, sans-serif;
   }
 
   .dark {
@@ -87,14 +91,11 @@
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
-}
-
-@layer base {
-  * {
-    @apply border-border;
-  }
-  body {
-    @apply text-foreground;
+  
+  /* Arabic language font overrides */
+  html[lang="ar"] {
+    --font-primary: 'Cairo', ui-sans-serif, system-ui, sans-serif;
+    --font-secondary: 'Cairo', ui-sans-serif, system-ui, sans-serif;
   }
 }
 
@@ -102,14 +103,28 @@
   * {
     @apply border-border;
   }
+  
   body {
     @apply bg-background text-foreground;
+    font-family: var(--font-primary);
   }
-}
-
-@layer base {
+  
+  /* Apply font families to all text elements */
+  html * {
+    font-family: var(--font-primary);
+  }
+  
+  /* Override for specific font classes */
+  .font-sans {
+    font-family: var(--font-primary);
+  }
+  
+  .font-alt {
+    font-family: var(--font-secondary);
+  }
+  
+  /* Disable automatic text inflation on iOS/Android */
   * {
-    /* Disable automatic text inflation on iOS/Android */
     -webkit-text-size-adjust: 100%; /* iOS Safari */
     -moz-text-size-adjust: 100%; /* Firefox Android */
     -ms-text-size-adjust: 100%; /* IE Mobile */

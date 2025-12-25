@@ -4,9 +4,12 @@ import {
   Text as RNText,
   TextProps as RNTextProps,
 } from "react-native";
+import { useTranslation } from "react-i18next";
+import { getFontStyle } from "@/utils/fontUtils";
 
 export type TextProps = RNTextProps & {
   fontSize?: number;
+  fontWeight?: 'light' | 'regular' | 'medium' | 'bold';
 };
 
 const { width: SCREEN_WIDTH, fontScale: OS_FONT_SCALE = 1 } =
@@ -18,7 +21,18 @@ const BASE_WIDTH = 406;
 //   return (size * widthScale) / OS_FONT_SCALE;
 // }
 
-const Text: React.FC<TextProps> = ({ children, style, fontSize, ...props }) => {
+const Text: React.FC<TextProps> = ({ 
+  children, 
+  style, 
+  fontSize, 
+  fontWeight = 'regular',
+  ...props 
+}) => {
+  const { i18n } = useTranslation();
+  
+  // Get the appropriate font style based on current language
+  const fontStyle = getFontStyle(i18n.language, fontWeight);
+  
   // console.log(SCREEN_WIDTH, OS_FONT_SCALE);
   // if (fontSize === undefined) {
   //   console.log(children);
@@ -26,7 +40,8 @@ const Text: React.FC<TextProps> = ({ children, style, fontSize, ...props }) => {
   return (
     <RNText
       {...props}
-      style={
+      style={[
+        fontStyle, // Apply language-specific font
         fontSize
           ? [
               style,
@@ -35,7 +50,7 @@ const Text: React.FC<TextProps> = ({ children, style, fontSize, ...props }) => {
                 : { fontSize: fontSize - 2 }, // 4, 2
             ]
           : [style]
-      }
+      ]}
       maxFontSizeMultiplier={1}
       allowFontScaling={false}
       minimumFontScale={1}

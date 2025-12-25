@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { initI18n } from '@/lib/i18n';
 import { I18nManager, Platform, View } from 'react-native';
 import GlobalSnackbar from '@/components/ui/snackbar';
+import FontProvider from '@/components/providers/FontProvider';
 
 export default function RootLayout() {
   const [i18nReady, setI18nReady] = useState(false);
@@ -98,21 +99,23 @@ export default function RootLayout() {
   }
 
   return (
-    <View style={{ flex: 1 }}>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="login" options={{ headerShown: false }} />
-        <Stack.Screen name="register" options={{ headerShown: false }} />
-        <Stack.Screen name="bank-save" options={{ headerShown: false }} />
-        <Stack.Screen name="add-vehicles" options={{ headerShown: false }} />
-        <Stack.Screen name="pending-verification" options={{ headerShown: false }} />
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="(booking)" options={{ headerShown: false }} />
-        <Stack.Screen name="(publish)" options={{ headerShown: false }} />
-        <Stack.Screen name="(profile)" options={{ headerShown: false }} />
-      </Stack>
-      
-      {/* Global Snackbar - appears on top of all screens */}
-      <GlobalSnackbar />
-    </View>
+    <FontProvider>
+      <View style={{ flex: 1 }}>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="login" options={{ headerShown: false }} />
+          <Stack.Screen name="register" options={{ headerShown: false }} />
+          <Stack.Screen name="bank-save" options={{ headerShown: false }} />
+          <Stack.Screen name="add-vehicles" options={{ headerShown: false }} />
+          <Stack.Screen name="pending-verification" options={{ headerShown: false }} />
+          <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+          <Stack.Screen name="(booking)" options={{ headerShown: false }} />
+          <Stack.Screen name="(publish)" options={{ headerShown: false }} />
+          <Stack.Screen name="(profile)" options={{ headerShown: false }} />
+        </Stack>
+        
+        {/* Global Snackbar - appears on top of all screens */}
+        <GlobalSnackbar />
+      </View>
+    </FontProvider>
   );
 }
