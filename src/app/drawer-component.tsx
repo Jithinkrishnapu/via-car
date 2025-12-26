@@ -14,6 +14,7 @@ import {
 import { useRouter } from 'expo-router';
 import { handleLogOut, useGetProfileDetails } from '@/service/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import Avatar from '@/components/ui/avatar';
 
 export function DrawerComponent() {
     const router = useRouter();
@@ -81,14 +82,19 @@ export function DrawerComponent() {
             >
                 <View className="flex-row items-center">
                     <View className="w-12 h-12 rounded-full bg-white/20 items-center justify-center mr-3">
-                        {userDetails?.profile_image ? (
+                        {/* {userDetails?.profile_image ? (
                             <Image 
                                 source={{ uri: userDetails.profile_image }} 
                                 className="w-12 h-12 rounded-full"
                             />
                         ) : (
                             <User size={24} color="white" />
-                        )}
+                        )} */}
+                         <Avatar
+                      source={userDetails?.profile_image !== null ? { uri: userDetails?.profile_image } : require(`../../public/profile-image.jpg.webp`)}
+                      size={40}
+                      initials="CN"
+                    />
                     </View>
                     <View className="flex-1">
                         <Text className="text-white text-lg font-semibold">

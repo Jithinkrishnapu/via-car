@@ -5,27 +5,86 @@ import { router } from "expo-router";
 import { t } from "i18next";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { useCallback, useEffect, useState } from "react";
-import { Alert, Image, Pressable, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Image, Pressable, RefreshControl, SafeAreaView, ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import AlertDialog from "@/components/ui/alert-dialog";
 
 export default function BookingRequest() {
     const [bookingList, setBookingList] = useState<any[]>([]);
     const [loading, setLoading] = useState(true);
+    const [refreshing, setRefreshing] = useState(false);
     const { isRTL, swap } = useDirection();
-    const { polyline: EncodedPolyline ,setPolyline} = useCreateRideStore();
+    const { polyline: EncodedPolyline, setPolyline } = useCreateRideStore();
+    
+    // Dialog state
+    const [dialog, setDialog] = useState({
+      visible: false,
+      title: '',
+      message: '',
+      type: 'info' as 'info' | 'warning' | 'error' | 'success',
+      onConfirm: () => {}
+    });
+
+    // Dialog helpers
+    const showDialog = (
+      title: string, 
+      message: string, 
+      type: 'info' | 'warning' | 'error' | 'success' = 'info',
+      onConfirm?: () => void
+    ) => {
+      setDialog({
+        visible: true,
+        title,
+        message,
+        type,
+        onConfirm: onConfirm || (() => setDialog(prev => ({ ...prev, visible: false })))
+      });
+    };
+
+    const closeDialog = () => {
+      setDialog(prev => ({ ...prev, visible: false }));
+    };
   
-    const fetchList = useCallback(async () => {
-      setLoading(true);
+    const fetchList = useCallback(async (isRefresh = false) => {
+      if (isRefresh) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
+      
       try {
         const res = await useGetAllBooking('published', 'requested');
         setBookingList(res?.data?.length ? res.data : []);
-        console.log("response===========",res?.data)
+        console.log("response===========", res?.data);
       } catch (e: any) {
-        Alert.alert('Error', e?.message ?? 'Failed to load data');
+        console.error('Error fetching booking list:', e);
+        
+        let errorMessage = 'Failed to load booking requests. Please try again.';
+        
+        if (e?.response?.data?.message) {
+          errorMessage = e.response.data.message;
+        } else if (e?.message) {
+          errorMessage = e.message;
+        }
+        
+        // Handle network errors
+        if (e?.code === 'NETWORK_ERROR' || e?.message?.includes('Network')) {
+          errorMessage = 'Network error. Please check your internet connection and try again.';
+        }
+        
+        showDialog('Error', errorMessage, 'error');
         setBookingList([]);
       } finally {
-        setLoading(false);
+        if (isRefresh) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
       }
     }, []);
+
+    const onRefresh = useCallback(() => {
+      fetchList(true);
+    }, [fetchList]);
   
     useEffect(() => {
       fetchList();
@@ -49,7 +108,18 @@ export default function BookingRequest() {
     /* ---------- render ---------- */
     return (
       <SafeAreaView style={{ flex: 1, paddingTop: 25 }}>
-        <ScrollView bounces={false} style={styles.container}>
+        <ScrollView 
+          bounces={false} 
+          style={styles.container}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={onRefresh}
+              colors={['#FF4848']} // Android
+              tintColor="#FF4848" // iOS
+            />
+          }
+        >
           {/* ---- header ---- */}
           <View style={styles.headerRow}>
             <TouchableOpacity
@@ -58,8 +128,8 @@ export default function BookingRequest() {
               onPress={() => router.replace('..')}
             >
               {swap(
-                <ChevronLeft color="#000" />,
-                <ChevronRight color="#000" />
+                <ChevronLeft size={24} color="#3C3F4E" />,
+                <ChevronRight size={24} color="#3C3F4E" />
               )}
             </TouchableOpacity>
             <Text style={styles.headerTitle}>{t('Booking Request')}</Text>
@@ -74,13 +144,44 @@ export default function BookingRequest() {
               const bookedUser = item.user ?? {};
               return (
                 <Pressable
-                onPress={()=>{
-                    setPolyline(item.rideRoute)
-                    console.log("rideRoute==================",item)
-                    setTimeout(()=>{
-                        router.push({pathname:'/(booking)/booking-approval',params:{item:JSON.stringify(item)}})
-                    },100)
-                    }}
+                onPress={() => {
+                  try {
+                    if (!item?.rideRoute) {
+                      showDialog(
+                        'Error',
+                        'Route information is not available for this booking.',
+                        'error'
+                      );
+                      return;
+                    }
+                    
+                    if (!item?.id) {
+                      showDialog(
+                        'Error',
+                        'Booking information is incomplete. Please try again.',
+                        'error'
+                      );
+                      return;
+                    }
+                    
+                    setPolyline(item.rideRoute);
+                    console.log("rideRoute==================", item);
+                    
+                    setTimeout(() => {
+                      router.push({
+                        pathname: '/(booking)/booking-approval',
+                        params: { item: JSON.stringify(item) }
+                      });
+                    }, 100);
+                  } catch (error) {
+                    console.error('Error navigating to booking approval:', error);
+                    showDialog(
+                      'Error',
+                      'Failed to open booking details. Please try again.',
+                      'error'
+                    );
+                  }
+                }}
                   key={item.id}
                   style={styles.cardWrapper}
                 >
@@ -106,6 +207,17 @@ export default function BookingRequest() {
             })
           )}
         </ScrollView>
+        
+        {/* Custom Alert Dialog */}
+        <AlertDialog
+          visible={dialog.visible}
+          onClose={closeDialog}
+          title={dialog.title}
+          message={dialog.message}
+          type={dialog.type}
+          onConfirm={dialog.onConfirm}
+          confirmText="OK"
+        />
       </SafeAreaView>
     );
   }
@@ -115,10 +227,12 @@ export default function BookingRequest() {
     container: { flex: 1, backgroundColor: '#f9fafb', paddingHorizontal: 16, paddingTop: 24 },
     headerRow: { flexDirection: 'row', alignItems: 'center', gap: 12, marginBottom: 24 },
     backButton: {
-      width: 45,
-      height: 45,
+      width: 46,
+      height: 46,
       borderRadius: 999,
       backgroundColor: 'rgba(255,255,255,0.2)',
+      borderWidth: 1,
+      borderColor: '#EBEBEB',
       justifyContent: 'center',
       alignItems: 'center',
     },
