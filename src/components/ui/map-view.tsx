@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
-import { View, StyleSheet, Text } from 'react-native';
+import { View, StyleSheet, Text, Platform, Dimensions } from 'react-native';
 import MapView, {
   Marker,
   Polyline,
@@ -11,6 +11,8 @@ import MapView, {
 import polyline from '@mapbox/polyline';
 import { useCreateRideStore } from '@/store/useRideStore';
 import LocationPin from "../../../public/location-pin.svg";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 /* ------------------------------------------------------------------ */
 /* Types                                                              */
@@ -60,7 +62,12 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
       if (markers?.length) {
         const coords = markers.map((m) => ({ latitude: m.lat, longitude: m.lng }));
         mapRef.current?.fitToCoordinates(coords, {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          edgePadding: { 
+            top: Platform.OS === 'ios' ? 80 : 60, 
+            right: 40, 
+            bottom: Platform.OS === 'ios' ? 80 : 60, 
+            left: 40 
+          },
           animated: true,
         });
         hasInitializedRef.current = true;
@@ -70,12 +77,17 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
       /* case 2 : we have a polyline – fit the whole route */
       if (polyCoords.length) {
         mapRef.current?.fitToCoordinates(polyCoords, {
-          edgePadding: { top: 50, right: 50, bottom: 50, left: 50 },
+          edgePadding: { 
+            top: Platform.OS === 'ios' ? 80 : 60, 
+            right: 40, 
+            bottom: Platform.OS === 'ios' ? 80 : 60, 
+            left: 40 
+          },
           animated: true,
         });
         hasInitializedRef.current = true;
       }
-    }, 500); // Increased delay to ensure map is ready
+    }, Platform.OS === 'ios' ? 600 : 400); // Different delays for iOS/Android
 
     return () => clearTimeout(timer);
   }, [markers?.length, polyCoords.length]); // Only depend on length, not the arrays themselves
@@ -101,14 +113,30 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 
   return (
     <View style={styles.container}>
-       { name && <View className=' bg-green-100 self-center rounded-full border border-green-800 mb-3 w-3/4 justify-center items-center p-2' >
-     <Text className='text-[14px] capitalize font-[Kanin-Medium] text-black'>{name}</Text>
-     </View>}
+      {name && (
+        <View style={styles.nameContainer}>
+          <Text style={styles.nameText}>{name}</Text>
+        </View>
+      )}
       <MapView
         ref={mapRef}
         style={styles.map}
         provider={PROVIDER_GOOGLE}
         initialRegion={initialRegion}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        toolbarEnabled={false}
+        loadingEnabled={true}
+        moveOnMarkerPress={false}
+        showsCompass={false}
+        showsScale={false}
+        showsBuildings={false}
+        showsTraffic={false}
+        showsIndoors={false}
+        rotateEnabled={true}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={false}
       >
         {/* 1.  Polyline (only when NO markers supplied) */}
         {showPolyline && (
@@ -128,10 +156,10 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
                 anchor={{ x: 0.5, y: 0.5 }}
                 centerOffset={{ x: 0, y: 0 }}
               >
-                <View className="w-4 h-4 bg-green-500 rounded-full border-2 border-white shadow-md" />
+                <View style={styles.startMarker} />
                 <Callout tooltip={false}>
-                  <View className="bg-white p-2 rounded-lg">
-                    <Text className="text-sm font-medium text-green-600">Start Point</Text>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutText}>Start Point</Text>
                   </View>
                 </Callout>
               </Marker>
@@ -144,10 +172,10 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
                 anchor={{ x: 0.5, y: 0.5 }}
                 centerOffset={{ x: 0, y: 0 }}
               >
-                <View className="w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-md" />
+                <View style={styles.endMarker} />
                 <Callout tooltip={false}>
-                  <View className="bg-white p-2 rounded-lg">
-                    <Text className="text-sm font-medium text-red-600">End Point</Text>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutText}>End Point</Text>
                   </View>
                 </Callout>
               </Marker>
@@ -167,8 +195,8 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
               }}
             >
               <Callout tooltip={false}>
-                <View>
-                  <Text>{m.name || `Point ${idx + 1}`}</Text>
+                <View style={styles.markerCallout}>
+                  <Text style={styles.markerCalloutText}>{m.name || `Point ${idx + 1}`}</Text>
                 </View>
               </Callout>
             </Marker>
@@ -182,22 +210,136 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 /* Styles                                                             */
 /* ------------------------------------------------------------------ */
 const styles = StyleSheet.create({
-  container: { flex: 1 },
-  map: { flex: 1 },
-  // callout: {
-  //   backgroundColor: '#fff',
-  //   paddingHorizontal: 12,
-  //   paddingVertical: 6,
-  //   borderRadius: 6,
-  //   borderColor: '#ccc',
-  //   borderWidth: 1,
-  // },
-  // calloutText: {
-  //   fontSize: 14,
-  //   color: '#000',
-  //   width: 'auto',
-  //   height: 90
-  // },
+  container: { 
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  map: { 
+    flex: 1,
+    width: '100%',
+    height: '100%',
+  },
+  nameContainer: {
+    backgroundColor: '#dcfce7', // green-100
+    alignSelf: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#166534', // green-800
+    marginBottom: Platform.OS === 'ios' ? 12 : 8,
+    marginTop: Platform.OS === 'ios' ? 8 : 4,
+    width: '75%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+    paddingHorizontal: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  nameText: {
+    fontSize: 14,
+    textTransform: 'capitalize',
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+  },
+  startMarker: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#22c55e', // green-500
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  endMarker: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#ef4444', // red-500
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  calloutContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  calloutText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  markerCallout: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    maxWidth: screenWidth * 0.6,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  markerCalloutText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+    flexWrap: 'wrap',
+  },
 });
 
 export default MapScreen;

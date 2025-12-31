@@ -19,7 +19,8 @@ type Props ={
 
 export default function DatePicker({onSelect}:Props) {
   const { t } = useTranslation("components");
-  const defaultDate = new Date();
+  const today = new Date();
+  const defaultDate = today;
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(
     defaultDate
   );
@@ -99,8 +100,9 @@ export default function DatePicker({onSelect}:Props) {
               <TouchableOpacity activeOpacity={1} onPress={() => {}}>
                 <Calendar
                   onChange={(newDate) => {
-                    onSelect(new Date(newDate))
+                    onSelect?.(new Date(newDate))
                     setTempDate(new Date(newDate))}}
+                  minDate={new Date().toISOString().split('T')[0]}
                 />
                 <TouchableOpacity
                   onPress={() => {

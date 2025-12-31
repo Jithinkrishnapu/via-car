@@ -66,11 +66,34 @@ function RideDetails() {
   const handleBookNow = async () => {
     const stored = await useAsyncStorage("userDetails").getItem()
     const userDetails = stored ? JSON.parse(stored) : null
+    
     if (userDetails?.type === "login") {
-      // router.push('/(booking)/payment')
+      // User is logged in, proceed with booking
       handleRideBooking()
     } else {
-      router.replace('/login')
+      // User is not logged in, store booking context and redirect to login
+      const routeParams = route?.params as { rideId?: string; ride_amount_id?: string; passengers?: string } | undefined;
+      
+      // Store the booking context for after login
+      const bookingContext = {
+        rideId: routeParams?.rideId,
+        ride_amount_id: routeParams?.ride_amount_id,
+        passengers: routeParams?.passengers || "1",
+        returnTo: "booking", // Flag to indicate where to return after login
+        rideDetail: {
+          id: rideDetail?.rideId?.id,
+          pickUpStop: rideDetail?.pickUpStop,
+          dropOffStop: rideDetail?.dropOffStop,
+          rideAmount: rideDetail?.rideAmount,
+          totalAmount: rideDetail?.totalAmount
+        }
+      };
+      
+      // Store booking context in AsyncStorage
+      await useAsyncStorage("pendingBooking").setItem(JSON.stringify(bookingContext));
+      
+      // Redirect to login
+      router.push('/login');
     }
   }
 
@@ -140,6 +163,21 @@ function RideDetails() {
   useEffect(() => {
     handleGetRideDetails()
   }, [route,EncodedLine])
+
+  // Handle auto-booking after login redirect
+  useEffect(() => {
+    const checkAutoBook = async () => {
+      const routeParams = route?.params as { autoBook?: string } | undefined;
+      if (routeParams?.autoBook === "true" && rideDetail) {
+        // Small delay to ensure UI is ready
+        setTimeout(() => {
+          handleRideBooking();
+        }, 500);
+      }
+    };
+    
+    checkAutoBook();
+  }, [rideDetail]); // Trigger when rideDetail is loaded
 
   if (!loaded) return null;
   return (

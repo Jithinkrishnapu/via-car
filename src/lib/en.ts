@@ -132,9 +132,9 @@ const en = {
     verify_phone_number: "Verify your phone number",
     verify_your_profile: "Verify your profile",
     no_special_offers:
-      "I don't want to receive special offers and personalised recommendations via text messages or calls",
+      "You agree to Privacy Policy and Terms of Use",
     agreement_text:
-      "By entering your phone number, you agree to receive promotional SMS, WhatsApp messages and calls from BlaBlaCar. Opt out now by checking the box above or at any time in your profile settings.",
+      "By entering your phone number, you agree to receive promotional SMS, WhatsApp messages and calls from Via Car.",
     do_it_later: "I'll do it later",
     continue_as_guest: "Continue as Guest",
     phone_min_digits: "Phone number must be at least 8 digits",
@@ -163,6 +163,29 @@ const en = {
     },
     pickup: {
       title: "Where are you leaving from?",
+      setupDialog: {
+        title: "Complete Your Profile Setup",
+        subtitle: "Complete these steps to start publishing rides",
+        steps: {
+          login: "Login to your account",
+          bank: "Add bank details",
+          verification: "Complete identity verification",
+          vehicle: "Add vehicle information"
+        },
+        status: {
+          completed: "Completed",
+          pending: "Verification pending"
+        },
+        buttons: {
+          setup: "Setup →",
+          later: "I'll do this later"
+        }
+      },
+      messages: {
+        selectLocation: "Select your pickup location to continue",
+        locationRequired: "Please select a pickup location to continue",
+        setupRequired: "Complete your profile setup to publish rides"
+      }
     },
     common: {
       continue: "Continue",
@@ -179,6 +202,9 @@ const en = {
       error: "Error",
       warning: "Warning",
       info: "Info",
+      loadingNotifications: "Loading notifications...",
+      noMoreNotifications: "No more notifications",
+      loadingMore: "Loading more notifications...",
     },
     yourRides: {
       title: "Your Rides",
@@ -629,6 +655,15 @@ const en = {
       Invoice: "Invoice",
       Pending: "Pending",
       Cancelled: "Cancelled",
+    },
+    notifications: {
+      title: "Notifications",
+      emptyTitle: "No notifications yet",
+      emptySubtitle: "You'll see your notifications here",
+      bookingConfirmed: "Your booking confirmed",
+      bookingCompleted: "Your booking completed",
+      bookingCancelled: "Your booking cancelled",
+      defaultMessage: "Lorem ipsum dolor sit amet, consectetur",
     },
   },
   booking: {

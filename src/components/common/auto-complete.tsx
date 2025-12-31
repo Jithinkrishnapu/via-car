@@ -99,8 +99,8 @@ export function AutoComplete<T extends string>({
     }, 100);
   };
 
-  // Calculate max height: total height minus some padding
-  const maxSheetHeight = height - 150;
+  // Calculate max height: half of screen height
+  const maxSheetHeight = height / 2;
 
   return (
     <View>
@@ -121,7 +121,7 @@ export function AutoComplete<T extends string>({
         >
           {searchValue ||
             labels[selectedValue] ||
-            t(placeholder, { ns: "components" })}
+            placeholder}
         </Text>
       </TouchableOpacity>
 
@@ -147,16 +147,16 @@ export function AutoComplete<T extends string>({
             <Animated.View
               style={{
                 transform: [{ translateY }],
-                maxHeight: maxSheetHeight,
+                height: maxSheetHeight,
               }}
               className="bg-white rounded-t-3xl"
             >
-                <View className="p-6">
+                <View className="p-6 flex-1">
                   <View className="relative mb-4">
                     <TextInput
                       allowFontScaling={false}
                       className="border border-gray-300 rounded-lg px-4 py-3 font-[Kanit-Regular] text-base lg:!text-[17px] lg:font-normal !ring-0 lg:border-0 pr-6 lg:px-0 lg:max-w-[140px] max-lg:h-[50px] lg:rounded-none w-full max-lg:mx-auto shadow-none placeholder:text-[#757478] max-lg:bg-[#F1F1F5] max-lg:border-0"
-                      placeholder={t(placeholder, { ns: "components" })}
+                      placeholder={placeholder}
                       value={searchValue}
                       onChangeText={onSearchValueChange}
                       autoFocus
@@ -169,7 +169,7 @@ export function AutoComplete<T extends string>({
                     keyboardShouldPersistTaps="always"
                     showsVerticalScrollIndicator={true}
                     style={{ 
-                      maxHeight: maxSheetHeight - 150
+                      flex: 1
                     }}
                     contentContainerStyle={{ paddingBottom: 20 }}
                     renderItem={({ item }) => (

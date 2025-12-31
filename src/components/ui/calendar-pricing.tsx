@@ -51,10 +51,11 @@ const datePricing: Record<string, string> = generateDatePricing(
 
 interface CalendarProps {
   onChange: (newDate: string) => void;
-  date?:string
+  date?:string;
+  minDate?: string;
 }
 
-const Calendar = ({ onChange,date }: CalendarProps) => {
+const Calendar = ({ onChange,date, minDate }: CalendarProps) => {
   console.log(date,"================parans==date")
   const [selectedDate, setSelectedDate] = React.useState<string>(
     date && date !== "" ? date : format(new Date(), "yyyy-MM-dd")
@@ -94,6 +95,7 @@ const Calendar = ({ onChange,date }: CalendarProps) => {
         onDayPress={(day: DateData) => setSelectedDate(day.dateString)}
         markedDates={markedDates}
         renderArrow={renderArrow}
+        minDate={minDate || format(new Date(), "yyyy-MM-dd")}
         theme={{
           backgroundColor: "#ffffff",
           calendarBackground: "#ffffff",
@@ -120,6 +122,9 @@ const Calendar = ({ onChange,date }: CalendarProps) => {
           const dateString = date?.dateString;
           const price = dateString ? datePricing[dateString] : null;
           const isSelected = dateString === selectedDate;
+          const currentDate = new Date();
+          const dayDate = dateString ? new Date(dateString) : null;
+          const isPastDate = dayDate ? dayDate < new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()) : false;
 
           return (
             <TouchableOpacity
@@ -127,17 +132,18 @@ const Calendar = ({ onChange,date }: CalendarProps) => {
                 isSelected ? "bg-[#2DA771] rounded-full" : ""
               }`}
               onPress={() => {
-                if (dateString) {
+                if (dateString && !isPastDate) {
                   setSelectedDate(dateString);
                 }
               }}
+              disabled={isPastDate}
             >
               <Text
                 fontSize={14}
                 className={`text-[14px] font-[Inter] font-medium ${
                   isSelected
                     ? "text-white"
-                    : state === "disabled"
+                    : isPastDate || state === "disabled"
                     ? "text-gray-400"
                     : "text-[#4A5660]"
                 }`}

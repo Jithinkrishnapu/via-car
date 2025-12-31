@@ -34,7 +34,7 @@ function Book() {
   };
 
   const handleBellPress = () => {
-    router.push("/(tabs)/inbox");
+    router.push("/notifications");
   };
   
   if (!loaded) return null;
@@ -54,18 +54,18 @@ function Book() {
     <ImageBackground
       source={require("../../../public/hero.png")}
       resizeMode="cover"
-      className="justify-center items-center pb-24 pt-32"
+      className="justify-center items-center pb-16 pt-28"
     >
         <View 
           style={{
             position: 'absolute',
-            top: 60,
+            top: 50,
             flexDirection: 'row',
             justifyContent: 'space-between',
             alignItems: 'center',
-            height: 50,
+            height: 44,
             width: '100%',
-            paddingHorizontal: 15,
+            paddingHorizontal: 20,
             backgroundColor: 'transparent',
           }}
         >
@@ -83,20 +83,20 @@ function Book() {
             <BellIocn />
           </TouchableOpacity>
         </View>
-        <View className="w-full max-w-[645px] items-center px-6">
+        <View className="w-full max-w-[645px] items-center px-5">
           <Text
-            fontSize={34}
-            className="text-[34px] font-[Kanit-Medium] text-white text-center"
+            fontSize={30}
+            className="text-[30px] font-[Kanit-Medium] text-white text-center leading-tight"
           >
             {t("book.title")}
-            <Text fontSize={34} className="text-[#FFC0C0]">
+            <Text fontSize={30} className="text-[#FFC0C0]">
               {" "}
               {t("book.affordable")}{" "}
             </Text>
             {t("book.prices")}
           </Text>
         </View>
-        <View className="mt-4 w-full px-6">
+        <View className="mt-3 w-full px-5">
           <CarAnimation />
         </View>
       </ImageBackground>

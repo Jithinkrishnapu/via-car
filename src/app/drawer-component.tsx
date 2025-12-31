@@ -16,12 +16,14 @@ import { handleLogOut, useGetProfileDetails } from '@/service/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Avatar from '@/components/ui/avatar';
 
-export function DrawerComponent() {
+export default function DrawerComponent() {
     const router = useRouter();
     const [userDetails, setUserDetails] = useState<any>(null);
+    const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
     useEffect(() => {
         loadUserDetails();
+        checkAuthStatus();
     }, []);
 
     const loadUserDetails = async () => {
@@ -35,15 +37,25 @@ export function DrawerComponent() {
         }
     };
 
+    const checkAuthStatus = async () => {
+        try {
+            const raw = await AsyncStorage.getItem("userDetails");
+            const token = raw ? JSON.parse(raw).token : "";
+            setIsLoggedIn(!!token);
+        } catch (error) {
+            console.log("Auth status check error:", error);
+            setIsLoggedIn(false);
+        }
+    };
+
     const menu = [
         { label: 'Your rides', icon: Car, route: '/(tabs)/your-rides', hasNotification: false },
         { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: true },
-        { label: 'Notification', icon: Bell, route: '/(tabs)/inbox', hasNotification: false },
+        { label: 'Notification', icon: Bell, route: '/notifications', hasNotification: false },
         { label: 'Profile', icon: User, route: '/(tabs)/user-profile', hasNotification: false },
         { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions', hasNotification: false },
-        { label: 'Payment & Refund', icon: CreditCard, route: '/payment', hasNotification: false },
+        // { label: 'Payment & Refund', icon: CreditCard, route: '/payment', hasNotification: false },
         { label: 'Bank Account', icon: Building2, route: '/(profile)/bank', hasNotification: false },
-        { label: 'Font Test', icon: FileText, route: '/font-test', hasNotification: false },
     ];
 
     const handleMenuPress = async (route: string) => {
@@ -52,7 +64,7 @@ export function DrawerComponent() {
             const token = raw ? JSON.parse(raw).token : "";
             
             if (token) {
-                router.push(route);
+                router.push(route as any);
             } else {
                 router.replace("/login");
             }
@@ -98,7 +110,7 @@ export function DrawerComponent() {
                     </View>
                     <View className="flex-1">
                         <Text className="text-white text-lg font-semibold">
-                            {userDetails?.first_name ? `${userDetails.first_name} ${userDetails.last_name || ''}`.trim() : 'Ahammed bin Nasser'}
+                            {userDetails?.first_name ? `${userDetails.first_name} ${userDetails.last_name || ''}`.trim() : 'Guest User'}
                         </Text>
                     </View>
                 </View>
@@ -124,17 +136,19 @@ export function DrawerComponent() {
                         </TouchableOpacity>
                     ))}
 
-                    {/* Log out */}
-                    <TouchableOpacity
-                        onPress={() => handleLogout()}
-                        className="flex-row items-center justify-between bg-white py-4 px-4 mt-2"
-                    >
-                        <View className="flex-row items-center flex-1">
-                            <LogOut size={20} color="#6B7280" />
-                            <Text className="ml-4 text-base text-gray-800">Log out</Text>
-                        </View>
-                        <ChevronRight size={16} color="#9CA3AF" />
-                    </TouchableOpacity>
+                    {/* Log out - only show if user is logged in */}
+                    {isLoggedIn && (
+                        <TouchableOpacity
+                            onPress={() => handleLogout()}
+                            className="flex-row items-center justify-between bg-white py-4 px-4 mt-2"
+                        >
+                            <View className="flex-row items-center flex-1">
+                                <LogOut size={20} color="#6B7280" />
+                                <Text className="ml-4 text-base text-gray-800">Log out</Text>
+                            </View>
+                            <ChevronRight size={16} color="#9CA3AF" />
+                        </TouchableOpacity>
+                    )}
                 </View>
             </ScrollView>
         </View>

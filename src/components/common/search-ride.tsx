@@ -97,10 +97,10 @@ function SearchRide({ onModalStateChange }: SearchRideProps) {
 
   /* ------------------ UI ------------------ */
   return (
-    <View className="rounded-t-[32px] -mt-[20px] bg-white pb-10 z-10 pt-5 px-[30px] max-w-[500px] w-full mx-auto flex flex-col gap-[16px]">
+    <View className="rounded-t-[28px] -mt-[28px] bg-white pb-8 z-10 pt-4 px-6 max-w-[500px] w-full mx-auto flex flex-col gap-3">
       <Text
-        fontSize={24}
-        className="text-[24px] text-black font-[Kanit-Regular]"
+        fontSize={22}
+        className="text-[22px] text-black font-[Kanit-Regular] mb-1"
       >
         {t("searchRide.title")}
       </Text>
@@ -113,7 +113,7 @@ function SearchRide({ onModalStateChange }: SearchRideProps) {
           height: error ? "auto" : 0,
           overflow: "hidden",
         }}
-        className="bg-red-50 border border-red-200 rounded-lg px-3 py-2"
+        className="bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-1"
       >
         <Text className="text-sm text-red-700">{error}</Text>
       </Animated.View>
@@ -135,13 +135,13 @@ function SearchRide({ onModalStateChange }: SearchRideProps) {
       />
 
       <TouchableOpacity
-        className="bg-[#FF4848] rounded-full h-[58px] cursor-pointer w-full flex items-center justify-center"
+        className="bg-[#FF4848] rounded-full h-[52px] cursor-pointer w-full flex items-center justify-center mt-2"
         activeOpacity={0.8}
         onPress={handleSearch}
       >
         <Text
-          fontSize={20}
-          className="text-[20px] text-white font-[Kanit-Regular]"
+          fontSize={18}
+          className="text-[18px] text-white font-[Kanit-Regular]"
         >
           {t("searchRide.searchButton")}
         </Text>

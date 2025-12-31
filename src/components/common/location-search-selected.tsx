@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback } from "react";
 import { CircleHelp, ArrowLeft } from "lucide-react-native";
-import { TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { TouchableOpacity, View, ActivityIndicator, StyleSheet, Platform, Dimensions } from "react-native";
 import Text from "./text";
 import { useTranslation } from "react-i18next";
 import { Region } from 'react-native-maps';
@@ -8,6 +8,8 @@ import MapComponent from "../ui/map-view";
 import LocationPickerComponent from "./location-picker-component";
 import { useGetExactLocation } from "@/service/ride-booking";
 import { router } from "expo-router";
+
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
 interface LocationData {
   latitude: number;
@@ -113,29 +115,29 @@ export default function LocationSearchSelected({
   };
 
   return (
-    <View className="relative flex-1 font-[Kanit-Regular]">
+    <View style={styles.container}>
       {/* Back Button */}
-      <View className="absolute top-12 left-6 z-20">
+      <View style={styles.backButtonContainer}>
         <TouchableOpacity
           onPress={handleBack}
-          className="bg-white rounded-full p-3 shadow-lg"
+          style={styles.backButton}
           activeOpacity={0.8}
         >
-          <ArrowLeft className="size-[20px]" strokeWidth={2} color="black" />
+          <ArrowLeft size={20} strokeWidth={2} color="black" />
         </TouchableOpacity>
       </View>
 
-      <View className="flex-auto flex-col gap-4 mt-4 h-full">
+      <View style={styles.contentContainer}>
         {/* Why Exact Location Button */}
         <TouchableOpacity
           onPress={() => setWhyExact(true)}
-          className="border border-[#EBEBEB] rounded-full h-max w-max mx-auto mb-4 flex-row items-center gap-[15px] px-[10px] py-[6px]"
+          style={styles.whyExactButton}
           activeOpacity={0.8}
         >
-          <CircleHelp className="size-[14px]" strokeWidth={1} />
+          <CircleHelp size={14} strokeWidth={1} />
           <Text
             fontSize={12}
-            className="text-[12px] font-[Kanit-Light] text-[#3C3F4E]"
+            style={styles.whyExactText}
           >
             {t("locationSearchSelected.whyExactLocation", "Why an exact location?")}
           </Text>
@@ -143,46 +145,49 @@ export default function LocationSearchSelected({
 
         {/* Error Message */}
         {error && (
-          <View className="mx-6 p-3 bg-red-100 rounded-lg">
-            <Text className="text-red-600 text-sm">{error}</Text>
+          <View style={styles.errorContainer}>
+            <Text style={styles.errorText}>{error}</Text>
           </View>
         )}
 
         {/* Loading Indicator */}
         {isLoadingMarkers && (
-          <View className="absolute top-1/2 left-1/2 z-30 -translate-x-1/2 -translate-y-1/2">
+          <View style={styles.loadingContainer}>
             <ActivityIndicator size="large" color="#FF4848" />
           </View>
         )}
 
         {/* Map Component - Conditional Rendering */}
-        {whyExact ? (
-          <MapComponent 
-            onMarkerPress={handleMarkerPress} 
-            markers={markers} 
-          />
-        ) : (
-          <LocationPickerComponent 
-            initialRegion={initialRegion} 
-            onLocationSelected={handleLocationSelected}
-            confirmButtonText={t("locationSearchSelected.selectLocation", "Select This Location")}
-          />
-        )}
+        <View style={styles.mapContainer}>
+          {whyExact ? (
+            <MapComponent 
+              onMarkerPress={handleMarkerPress} 
+              markers={markers} 
+            />
+          ) : (
+            <LocationPickerComponent 
+              initialRegion={initialRegion} 
+              onLocationSelected={handleLocationSelected}
+              confirmButtonText={t("locationSearchSelected.selectLocation", "Select This Location")}
+            />
+          )}
+        </View>
       </View>
 
       {/* Continue Button */}
-      <View className="absolute right-0 bottom-10 left-0 px-6 z-10">
+      <View style={styles.continueButtonContainer}>
         <TouchableOpacity
-          className={`rounded-full w-full h-[55px] items-center justify-center ${
-            location ? 'bg-[#FF4848]' : 'bg-gray-400'
-          }`}
+          style={[
+            styles.continueButton,
+            location ? styles.continueButtonActive : styles.continueButtonDisabled
+          ]}
           onPress={handleContinue}
           activeOpacity={0.8}
           disabled={!location}
         >
           <Text
             fontSize={20}
-            className="text-xl text-white font-[Kanit-Regular]"
+            style={styles.continueButtonText}
           >
             {t("locationSearchSelected.continue", "Continue")}
           </Text>
@@ -191,3 +196,148 @@ export default function LocationSearchSelected({
     </View>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+    flex: 1,
+    backgroundColor: '#fff',
+  },
+  backButtonContainer: {
+    position: 'absolute',
+    top: Platform.OS === 'ios' ? 50 : 35,
+    left: 24,
+    zIndex: 20,
+  },
+  backButton: {
+    backgroundColor: '#fff',
+    borderRadius: 25,
+    padding: 12,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  contentContainer: {
+    flex: 1,
+    flexDirection: 'column',
+    marginTop: Platform.OS === 'ios' ? 80 : 70,
+    height: '100%',
+  },
+  whyExactButton: {
+    borderWidth: 1,
+    borderColor: '#EBEBEB',
+    borderRadius: 25,
+    alignSelf: 'center',
+    marginBottom: 8,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 15,
+    paddingHorizontal: 16,
+    paddingVertical: Platform.OS === 'ios' ? 8 : 6,
+    backgroundColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 1 },
+        shadowOpacity: 0.1,
+        shadowRadius: 2,
+      },
+      android: {
+        elevation: 2,
+      },
+    }),
+  },
+  whyExactText: {
+    fontSize: 12,
+    fontWeight: '300',
+    color: '#3C3F4E',
+  },
+  errorContainer: {
+    marginHorizontal: 24,
+    padding: 12,
+    backgroundColor: '#fef2f2',
+    borderRadius: 8,
+    marginBottom: 8,
+    borderWidth: 1,
+    borderColor: '#fecaca',
+  },
+  errorText: {
+    color: '#dc2626',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  loadingContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    zIndex: 30,
+    transform: [
+      { translateX: -25 },
+      { translateY: -25 }
+    ],
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+    borderRadius: 25,
+    padding: 15,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  mapContainer: {
+    flex: 1,
+    marginTop: 4,
+  },
+  continueButtonContainer: {
+    position: 'absolute',
+    right: 0,
+    bottom: Platform.OS === 'ios' ? 50 : 30,
+    left: 0,
+    paddingHorizontal: 24,
+    zIndex: 10,
+  },
+  continueButton: {
+    borderRadius: 27.5,
+    width: '100%',
+    height: 55,
+    alignItems: 'center',
+    justifyContent: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.2,
+        shadowRadius: 8,
+      },
+      android: {
+        elevation: 6,
+      },
+    }),
+  },
+  continueButtonActive: {
+    backgroundColor: '#FF4848',
+  },
+  continueButtonDisabled: {
+    backgroundColor: '#9ca3af',
+  },
+  continueButtonText: {
+    fontSize: 20,
+    color: '#fff',
+    fontWeight: '400',
+    textAlign: 'center',
+  },
+});

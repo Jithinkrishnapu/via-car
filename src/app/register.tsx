@@ -198,6 +198,30 @@ function Register() {
       if (response) {
         if (response?.data?.type === "login") {
           await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data));
+          
+          // Check for pending booking after successful registration
+          const pendingBookingData = await useAsyncStorage("pendingBooking").getItem();
+          if (pendingBookingData) {
+            const bookingContext = JSON.parse(pendingBookingData);
+            
+            // Clear the pending booking data
+            await useAsyncStorage("pendingBooking").removeItem();
+            
+            // Redirect back to ride details to complete the booking
+            if (bookingContext.returnTo === "booking" && bookingContext.rideId) {
+              router.replace({
+                pathname: "/(booking)/ride-details",
+                params: {
+                  rideId: bookingContext.rideId,
+                  ride_amount_id: bookingContext.ride_amount_id,
+                  passengers: bookingContext.passengers,
+                  autoBook: "true" // Flag to automatically trigger booking
+                }
+              });
+              return;
+            }
+          }
+          
           if (isPublish) {
             // User came from publish flow, enforce profile completeness
             enforceProfileCompleteness();

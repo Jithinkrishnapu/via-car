@@ -12,7 +12,7 @@ import {
   StyleSheet,
 } from 'react-native';
 import { X } from 'lucide-react-native';
-import { DrawerComponent } from './drawer-component';
+import DrawerComponent from './drawer-component';
 
 const { width } = Dimensions.get('window');
 const DRAWER_WIDTH = width;

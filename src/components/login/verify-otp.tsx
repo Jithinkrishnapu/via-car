@@ -355,6 +355,30 @@ const VerifyOtp = ({
           router.replace(`/register`);
         } else {
           await useAsyncStorage('userDetails').setItem(JSON.stringify(response?.data))
+          
+          // Check for pending booking after successful login
+          const pendingBookingData = await useAsyncStorage("pendingBooking").getItem();
+          if (pendingBookingData) {
+            const bookingContext = JSON.parse(pendingBookingData);
+            
+            // Clear the pending booking data
+            await useAsyncStorage("pendingBooking").removeItem();
+            
+            // Redirect back to ride details to complete the booking
+            if (bookingContext.returnTo === "booking" && bookingContext.rideId) {
+              router.push({
+                pathname: "/(booking)/ride-details",
+                params: {
+                  rideId: bookingContext.rideId,
+                  ride_amount_id: bookingContext.ride_amount_id,
+                  passengers: bookingContext.passengers,
+                  autoBook: "true" // Flag to automatically trigger booking
+                }
+              });
+              return;
+            }
+          }
+          
           // For existing users, go directly to book tab (normal user flow)
           router.push(`/(tabs)/book`);
         }
