@@ -4,12 +4,14 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { router } from "expo-router";
 import { ChevronLeft } from "lucide-react-native";
 import { ScrollView, TouchableOpacity, View } from "react-native";
+import { useTranslation } from "react-i18next";
 
 export default function Page() {
   const loaded = useLoadFonts();
+  const { t } = useTranslation("components");
   if (!loaded) return null;
   return (
-    <ScrollView className="bg-white">
+    <ScrollView bounces={false} className="bg-white">
       <View className="w-full px-6 pt-14 pb-12">
         <View className="flex-row items-center gap-4 mb-6 w-full">
           <TouchableOpacity
@@ -20,7 +22,7 @@ export default function Page() {
             <ChevronLeft size={16} />
           </TouchableOpacity>
           <Text fontSize={25} className="text-[25px] text-black font-[Kanit-Medium] flex-1">
-            Add a new city to the list
+            {t("stopovers.addCity")}
           </Text>
         </View>
         <LocationSearch />

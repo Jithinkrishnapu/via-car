@@ -9,13 +9,21 @@ import CheckGreen from "../../../public/check-green.svg";
 import MailAnimation from "@/components/animated/mail-animation";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useRoute } from "@react-navigation/native";
+import { useCreateRideStore } from "@/store/useRideStore";
 
 export default function RideConfirmationScreen() {
   const loaded = useLoadFonts();
   const [modalVisible, setModalVisible] = useState(false);
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+
+  const { ride, setSelectedPlaces, selectedPlaces, setRideId } = useCreateRideStore();
   if (!loaded) return null;
+
+  const route = useRoute()
+
+  console.log("publishride----------------",route)
 
   return (
     <View className="flex-1 bg-white relative">
@@ -32,15 +40,15 @@ export default function RideConfirmationScreen() {
 
       {/* Verification Steps */}
       <View className="max-w-[716px] w-full self-center px-6 pt-6 pb-24 flex-col gap-4">
-        <Text
+        {/* <Text
           fontSize={20}
           className="text-[20px] leading-tight font-[Kanit-Regular]"
         >
           {t("publishRide.verifyProfile")}
-        </Text>
+        </Text> */}
 
         {/* Options */}
-        <View className="flex-col">
+        {/* <View className="flex-col">
           <TouchableOpacity
             onPress={() => setModalVisible(true)}
             activeOpacity={0.8}
@@ -66,13 +74,29 @@ export default function RideConfirmationScreen() {
               </Text>
             </View>
           </TouchableOpacity>
-        </View>
+        </View> */}
 
         {/* See My Ride */}
       </View>
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => router.push("/(publish)/your-ride")}
+          onPress={() => {
+            setSelectedPlaces([])
+            router.replace("/(tabs)/book")}}
+          activeOpacity={0.8}
+          className="border-[#FF4848] border rounded-full w-full h-[55px] items-center justify-center mt-6"
+        >
+          <Text
+            fontSize={20}
+            className="text-xl text-[#FF4848] font-[Kanit-Regular]"
+          >
+            {"Back to Home"}
+          </Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          onPress={() => {
+            setRideId(route?.params?.ride_id)
+            router.push({pathname:"/(publish)/your-ride",params:{ride_id:route?.params?.ride_id,ride_amount_id:route?.params?.ride_amount_id}})}}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full w-full h-[55px] items-center justify-center mt-6"
         >

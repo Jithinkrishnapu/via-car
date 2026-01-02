@@ -5,12 +5,12 @@ import {
   TouchableOpacity,
   Animated,
   Dimensions,
-  FlatList,
 } from "react-native";
 import UserIcon from "../icons/user-icon";
 import Text from "../common/text";
-import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import MinusLarge from "../../../public/minus-large.svg";
+import PlusLarge from "../../../public/plus-large.svg";
 
 const { height } = Dimensions.get("window");
 
@@ -49,6 +49,14 @@ export default function PassengerSelect({
     setPassengerCount(value);
     onCountChange?.(value);
     closeSheet();
+  };
+
+  const adjustPassengers = (delta: number) => {
+    const currentCount = parseInt(passengerCount);
+    const newCount = Math.max(1, Math.min(9, currentCount + delta));
+    const newValue = String(newCount);
+    setPassengerCount(newValue);
+    onCountChange?.(newValue);
   };
 
   return (
@@ -91,37 +99,49 @@ export default function PassengerSelect({
                 {t("Select no. of passengers")}
               </Text>
 
-              <FlatList
-                data={[1, 2, 3, 4]}
-                keyExtractor={(item) => String(item)}
-                renderItem={({ item }) => {
-                  const value = String(item);
-                  const selected = value === passengerCount;
-                  return (
-                    <TouchableOpacity
-                      onPress={() => handleSelect(value)}
-                      className="flex-row items-center gap-3 py-3"
-                    >
-                      <View
-                        className={cn(
-                          "border border-gray-400 rounded-full size-5",
-                          selected &&
-                            "bg-[#FF4848] border-[#FF4848] rounded-full"
-                        )}
-                      />
-                      <Text
-                        fontSize={16}
-                        className="text-base font-[Kanit-Regular]"
-                      >
-                        {item} {t("Passenger", { ns: "components" })}
-                        {item > 1
-                          ? t("Passenger(s)", { ns: "components" })
-                          : ""}
-                      </Text>
-                    </TouchableOpacity>
-                  );
-                }}
-              />
+              {/* Passenger Counter */}
+              <View className="flex-row items-center justify-center space-x-2 px-6 mb-8">
+                <TouchableOpacity
+                  onPress={() => adjustPassengers(-1)}
+                  activeOpacity={0.8}
+                  disabled={parseInt(passengerCount) === 1}
+                  className="w-[32px] h-[32px] rounded-full items-center justify-center"
+                >
+                  <MinusLarge width={32} height={32} />
+                </TouchableOpacity>
+
+                <View className="flex-1 items-center py-4">
+                  <Text
+                    fontSize={60}
+                    className="text-[60px] text-[#00665A] font-[Kanit-SemiBold]"
+                  >
+                    {passengerCount.padStart(2, "0")}
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  onPress={() => adjustPassengers(1)}
+                  activeOpacity={0.8}
+                  disabled={parseInt(passengerCount) === 9}
+                  className="w-[32px] h-[32px] rounded-full items-center justify-center"
+                >
+                  <PlusLarge width={32} height={32} />
+                </TouchableOpacity>
+              </View>
+
+              {/* Continue Button */}
+              <TouchableOpacity
+                onPress={closeSheet}
+                activeOpacity={0.8}
+                className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
+              >
+                <Text
+                  fontSize={20}
+                  className="text-xl text-white font-[Kanit-Regular]"
+                >
+                  {t("common.continue")}
+                </Text>
+              </TouchableOpacity>
             </Animated.View>
           </TouchableOpacity>
         </Modal>

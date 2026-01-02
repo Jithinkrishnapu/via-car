@@ -6,11 +6,16 @@ import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import ReturnIllustration from "../../../public/return.svg";
 import { useTranslation } from "react-i18next";
+import { useCreateRideStore } from "@/store/useRideStore";
+import { useRoute } from "@react-navigation/native";
 
 export default function Page() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   if (!loaded) return null;
+  const route = useRoute()
+
+  const { ride, setSelectedPlaces, selectedPlaces, setRideId } = useCreateRideStore();
 
   return (
     <View className="flex-1 bg-white">
@@ -56,7 +61,11 @@ export default function Page() {
 
           {/* Option: Later */}
           <TouchableOpacity
-            onPress={() => router.push("/(publish)/publish-comment")}
+            onPress={() => {
+              setRideId(route?.params?.ride_id)
+              router.push({pathname:"/(publish)/publish-ride",params:{ride_id:route?.params?.ride_id,ride_amount_id:route?.params?.ride_amount_id}}); 
+              // router.push({pathname:"/(publish)/publish-ride"}); 
+            }}
             activeOpacity={0.8}
             className="py-4 flex-row items-center border-b border-[#EBEBEB] border-dashed"
           >

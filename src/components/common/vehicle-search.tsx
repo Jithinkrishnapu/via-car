@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from "react";
+import React, { useState, useMemo, useRef, useEffect } from "react";
 import {
   ScrollView,
   TextInput,
@@ -13,6 +13,8 @@ import { vehicles } from "@/constants/vehicles";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { getBrandList } from "@/service/vehicle";
+import { useStore } from "@/store/useStore";
 
 interface Props {
   label?: string;
@@ -33,8 +35,9 @@ export default function VehicleSearch({
   const [selectedValue, setSelectedValue] = useState("");
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [inputWidth, setInputWidth] = useState<number | undefined>();
+  const [vehicleList,setVehiclesList] = useState([]);
   const inputRef = useRef<View>(null);
+  const {setVehicle} = useStore()
 
   const labels = useMemo(() => {
     return vehicles.reduce<Record<string, string>>((acc, v) => {
@@ -42,6 +45,20 @@ export default function VehicleSearch({
       return acc;
     }, {});
   }, []);
+
+  const handleGetVehicles = async()=>{
+    console.log("calling in handle")
+    const response = await getBrandList(searchValue)
+    console.log("res=======vehicles",response)
+    if(response.data){
+      setVehiclesList(response.data)
+    }
+  }
+
+  useEffect(()=>{
+    console.log("calling api")
+    handleGetVehicles()
+  },[searchValue])
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
@@ -99,17 +116,19 @@ export default function VehicleSearch({
         />
       </View>
 
-      <ScrollView className="z-10 bg-white w-full mt-1 rounded-lg max-h-60">
+      <ScrollView bounces={false} className="z-10 bg-white w-full mt-1 rounded-lg max-h-60">
         {isLoading ? (
           <View className="p-4">
             <Text fontSize={16}>Loading...</Text>
           </View>
-        ) : filtered.length > 0 ? (
-          filtered.map((opt, idx) => (
+        ) : vehicleList?.brands?.length > 0 ? (
+          vehicleList?.brands?.map((opt, idx) => (
             <Pressable
-              key={opt.value}
+              key={opt.id}
               activeOpacity={0.8}
-              onPress={() => selectItem(opt.value)}
+              onPress={() => {
+                setVehicle(opt.id,"")
+                selectItem(opt.name)}}
               className={cn(
                 "flex-row items-center justify-between px-4 py-4",
                 idx + 1 < filtered.length && "border-b border-[#EBEBEB]"
@@ -119,14 +138,14 @@ export default function VehicleSearch({
                 <HistoryIcon width={20} height={20} />
                 <View className="flex-1">
                   <Text fontSize={14} className="text-sm">
-                    {opt.label}
+                    {opt.name}
                   </Text>
-                  <Text
+                  {/* <Text
                     fontSize={16}
                     className="text-xs font-[Kanit-Light] text-[#666666]"
                   >
                     {opt.desc}
-                  </Text>
+                  </Text> */}
                 </View>
               </View>
               {swap(

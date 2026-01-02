@@ -97,7 +97,7 @@ export default function CitySearch({ label, name, onSelect }: Props) {
           className="absolute bg-white rounded-lg shadow-md max-h-[300px] z-10"
           style={{ width: inputWidth }}
         >
-          <ScrollView keyboardShouldPersistTaps="handled">
+          <ScrollView bounces={false} keyboardShouldPersistTaps="handled">
             {filteredLocations.length > 0 ? (
               filteredLocations.map((option, idx) => (
                 <Pressable

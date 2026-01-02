@@ -57,7 +57,7 @@ export default function YourPublicationScreen() {
   ];
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <ScrollView bounces={false} className="flex-1 bg-white">
       <View className="max-w-[716px] w-full self-center px-6 pt-16 lg:pt-20 pb-24 flex-col gap-4">
         {/* Header */}
         <View className="flex-row items-center gap-4 mb-6">

@@ -7,53 +7,53 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		08946AFA80E64D8B90EEF27B /* Roboto-VariableFont_wdth,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 2DE8C0ACB8344C49B2B34ACB /* Roboto-VariableFont_wdth,wght.ttf */; };
+		01EBB987CD4A431A9A80CF6B /* Kanit-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 37ECACBF4F9D425FBED22F55 /* Kanit-Bold.ttf */; };
+		0791899E0E254BA5AE46AE0E /* Kanit-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0891BEA1571C4B31A55A5285 /* Kanit-Light.ttf */; };
 		13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 13B07FB51A68108700A75B9A /* Images.xcassets */; };
-		1A2284B6B5A972E8C10EE78D /* libPods-ViaCar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 0D83BA35118A244AB5B969B4 /* libPods-ViaCar.a */; };
+		1EF2C7EEEB264832A91D4DFD /* Roboto-VariableFont_wdth,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 3AAD2C739F034DA38F2DDA85 /* Roboto-VariableFont_wdth,wght.ttf */; };
+		219A252829C14CEFAC7B771D /* Kanit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 8C5D1932EACC49EF9837D87F /* Kanit-ExtraBold.ttf */; };
 		3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */; };
-		8027015ED0CC4A6B97D51D8A /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 82517C8C060A43668D13964E /* Kanit-Regular.ttf */; };
-		849C4EB3FE5E4263A216414F /* Kanit-Light.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 6526CBBC5B2B402B8760A881 /* Kanit-Light.ttf */; };
-		88E4689E284A4B1DB88D996B /* Kanit-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F26ADDBECDB04EA399212C71 /* Kanit-ExtraLight.ttf */; };
-		8C9DC3002DDF40D3A5FB1670 /* Kanit-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 11787702668D452EB6AE1B47 /* Kanit-SemiBold.ttf */; };
-		9BA2AE82EBAABA2F8B045FFA /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 600B9959816465FEE02EB518 /* PrivacyInfo.xcprivacy */; };
-		B44A8A8296384DC98189E324 /* Kanit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = CEAA79BE2B9647FB94993333 /* Kanit-Medium.ttf */; };
+		44B9AAC9E2B344EA90C88018 /* Cairo-VariableFont_slnt,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1BC7044FC04C4344B25729FA /* Cairo-VariableFont_slnt,wght.ttf */; };
+		583544E3F9AD0304A5643E0E /* libPods-ViaCar.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 3341327BD151FEA79AE782E9 /* libPods-ViaCar.a */; };
+		718A799067A84657970EE24A /* Kanit-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B9EC4DE8756A467C893E98E2 /* Kanit-Thin.ttf */; };
+		76D3EC9377EB44EF895FA642 /* Kanit-SemiBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 1CD403405F8A4FDA94D2A109 /* Kanit-SemiBold.ttf */; };
+		81127AD1828B4839948E1689 /* Kanit-ExtraLight.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 275640754F4C4F428210C71C /* Kanit-ExtraLight.ttf */; };
+		8F4E690DC2114931A86DE7E8 /* Kanit-Medium.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B4C0D2F58E8542DE83DFBBC3 /* Kanit-Medium.ttf */; };
+		9704D7FFB6EA463EB0435AF4 /* Inter-VariableFont_opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 856729C11F3549E0A614BA7F /* Inter-VariableFont_opsz,wght.ttf */; };
+		A0C6781BE08547E3AC9B790D /* Kanit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = B836A78FDAA74447984967F5 /* Kanit-Black.ttf */; };
+		A62017B47230CEFEACD9F9F1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 083E6CE5FD79E5C4EDA0CBD2 /* PrivacyInfo.xcprivacy */; };
+		A8256D40F4690DE97013374D /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = A7619E5E4662BA365B5E1229 /* ExpoModulesProvider.swift */; };
 		BB2F792D24A3F905000567C9 /* Expo.plist in Resources */ = {isa = PBXBuildFile; fileRef = BB2F792C24A3F905000567C9 /* Expo.plist */; };
-		C455C379BC4E4DE1BBAFC219 /* Inter-VariableFont_opsz,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4206AB26EB6A45F09C12629B /* Inter-VariableFont_opsz,wght.ttf */; };
-		D04A01417809439A98C896DC /* Kanit-Black.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 9A1E9F8ABD94465C99C0550A /* Kanit-Black.ttf */; };
-		D18B519C2F8E4DE083E4D714 /* Cairo-VariableFont_slnt,wght.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 4A7D57263CBC42F7A5554E09 /* Cairo-VariableFont_slnt,wght.ttf */; };
-		D39E6D9988944B56BFEBA2E1 /* Kanit-ExtraBold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 0F3B215948424BAFA8D04F5D /* Kanit-ExtraBold.ttf */; };
-		D750A5CCEB80E29BD931E977 /* ExpoModulesProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 39D0673CFDFF683167E9BE56 /* ExpoModulesProvider.swift */; };
-		E69B779567E64103B80DD9DD /* Kanit-Bold.ttf in Resources */ = {isa = PBXBuildFile; fileRef = F3823E1FE3DE4F6A9A83DFDD /* Kanit-Bold.ttf */; };
+		DD3622D5574742A78BDC777B /* Kanit-Regular.ttf in Resources */ = {isa = PBXBuildFile; fileRef = EFC47EA2B9B8405C847D02CA /* Kanit-Regular.ttf */; };
 		F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11748412D0307B40044C1D9 /* AppDelegate.swift */; };
-		F7F3228DEA4446E292AAF1E2 /* Kanit-Thin.ttf in Resources */ = {isa = PBXBuildFile; fileRef = 59D853ECB8C846819CE3B70B /* Kanit-Thin.ttf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		0D83BA35118A244AB5B969B4 /* libPods-ViaCar.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ViaCar.a"; sourceTree = BUILT_PRODUCTS_DIR; };
-		0F3B215948424BAFA8D04F5D /* Kanit-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-ExtraBold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-ExtraBold.ttf"; sourceTree = "<group>"; };
-		11787702668D452EB6AE1B47 /* Kanit-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-SemiBold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-SemiBold.ttf"; sourceTree = "<group>"; };
+		083E6CE5FD79E5C4EDA0CBD2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xml; name = PrivacyInfo.xcprivacy; path = ViaCar/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		0891BEA1571C4B31A55A5285 /* Kanit-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Light.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Light.ttf"; sourceTree = "<group>"; };
 		13B07F961A680F5B00A75B9A /* ViaCar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = ViaCar.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		13B07FB51A68108700A75B9A /* Images.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; name = Images.xcassets; path = ViaCar/Images.xcassets; sourceTree = "<group>"; };
 		13B07FB61A68108700A75B9A /* Info.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; name = Info.plist; path = ViaCar/Info.plist; sourceTree = "<group>"; };
-		2DE8C0ACB8344C49B2B34ACB /* Roboto-VariableFont_wdth,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-VariableFont_wdth,wght.ttf"; path = "../src/assets/fonts/Roboto/Roboto-VariableFont_wdth,wght.ttf"; sourceTree = "<group>"; };
-		3298FA80478EF227C09E4DEC /* Pods-ViaCar.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViaCar.release.xcconfig"; path = "Target Support Files/Pods-ViaCar/Pods-ViaCar.release.xcconfig"; sourceTree = "<group>"; };
-		39D0673CFDFF683167E9BE56 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ViaCar/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
-		4206AB26EB6A45F09C12629B /* Inter-VariableFont_opsz,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-VariableFont_opsz,wght.ttf"; path = "../src/assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf"; sourceTree = "<group>"; };
-		4A7D57263CBC42F7A5554E09 /* Cairo-VariableFont_slnt,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Cairo-VariableFont_slnt,wght.ttf"; path = "../src/assets/fonts/Cairo/Cairo-VariableFont_slnt,wght.ttf"; sourceTree = "<group>"; };
-		59D853ECB8C846819CE3B70B /* Kanit-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Thin.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Thin.ttf"; sourceTree = "<group>"; };
-		5F9F7B799F58D6DF23B8138E /* Pods-ViaCar.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViaCar.debug.xcconfig"; path = "Target Support Files/Pods-ViaCar/Pods-ViaCar.debug.xcconfig"; sourceTree = "<group>"; };
-		600B9959816465FEE02EB518 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; includeInIndex = 1; name = PrivacyInfo.xcprivacy; path = ViaCar/PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
-		6526CBBC5B2B402B8760A881 /* Kanit-Light.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Light.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Light.ttf"; sourceTree = "<group>"; };
-		82517C8C060A43668D13964E /* Kanit-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Regular.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Regular.ttf"; sourceTree = "<group>"; };
-		9A1E9F8ABD94465C99C0550A /* Kanit-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Black.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Black.ttf"; sourceTree = "<group>"; };
+		1BC7044FC04C4344B25729FA /* Cairo-VariableFont_slnt,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Cairo-VariableFont_slnt,wght.ttf"; path = "../src/assets/fonts/Cairo/Cairo-VariableFont_slnt,wght.ttf"; sourceTree = "<group>"; };
+		1CD403405F8A4FDA94D2A109 /* Kanit-SemiBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-SemiBold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-SemiBold.ttf"; sourceTree = "<group>"; };
+		275640754F4C4F428210C71C /* Kanit-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-ExtraLight.ttf"; path = "../src/assets/fonts/Kanit/Kanit-ExtraLight.ttf"; sourceTree = "<group>"; };
+		3341327BD151FEA79AE782E9 /* libPods-ViaCar.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = "libPods-ViaCar.a"; sourceTree = BUILT_PRODUCTS_DIR; };
+		37ECACBF4F9D425FBED22F55 /* Kanit-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Bold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Bold.ttf"; sourceTree = "<group>"; };
+		3AAD2C739F034DA38F2DDA85 /* Roboto-VariableFont_wdth,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Roboto-VariableFont_wdth,wght.ttf"; path = "../src/assets/fonts/Roboto/Roboto-VariableFont_wdth,wght.ttf"; sourceTree = "<group>"; };
+		7197E2F7316553E98C3563FE /* Pods-ViaCar.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViaCar.release.xcconfig"; path = "Target Support Files/Pods-ViaCar/Pods-ViaCar.release.xcconfig"; sourceTree = "<group>"; };
+		856729C11F3549E0A614BA7F /* Inter-VariableFont_opsz,wght.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Inter-VariableFont_opsz,wght.ttf"; path = "../src/assets/fonts/Inter/Inter-VariableFont_opsz,wght.ttf"; sourceTree = "<group>"; };
+		8C5D1932EACC49EF9837D87F /* Kanit-ExtraBold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-ExtraBold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-ExtraBold.ttf"; sourceTree = "<group>"; };
+		8D8E950AB6C332BBFE8BB1F5 /* Pods-ViaCar.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-ViaCar.debug.xcconfig"; path = "Target Support Files/Pods-ViaCar/Pods-ViaCar.debug.xcconfig"; sourceTree = "<group>"; };
+		A7619E5E4662BA365B5E1229 /* ExpoModulesProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = ExpoModulesProvider.swift; path = "Pods/Target Support Files/Pods-ViaCar/ExpoModulesProvider.swift"; sourceTree = "<group>"; };
 		AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = file.storyboard; name = SplashScreen.storyboard; path = ViaCar/SplashScreen.storyboard; sourceTree = "<group>"; };
+		B4C0D2F58E8542DE83DFBBC3 /* Kanit-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Medium.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Medium.ttf"; sourceTree = "<group>"; };
+		B836A78FDAA74447984967F5 /* Kanit-Black.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Black.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Black.ttf"; sourceTree = "<group>"; };
+		B9EC4DE8756A467C893E98E2 /* Kanit-Thin.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Thin.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Thin.ttf"; sourceTree = "<group>"; };
 		BB2F792C24A3F905000567C9 /* Expo.plist */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.plist.xml; path = Expo.plist; sourceTree = "<group>"; };
-		CEAA79BE2B9647FB94993333 /* Kanit-Medium.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Medium.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Medium.ttf"; sourceTree = "<group>"; };
 		ED297162215061F000B7C4FE /* JavaScriptCore.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = JavaScriptCore.framework; path = System/Library/Frameworks/JavaScriptCore.framework; sourceTree = SDKROOT; };
+		EFC47EA2B9B8405C847D02CA /* Kanit-Regular.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = 9; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Regular.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Regular.ttf"; sourceTree = "<group>"; };
 		F11748412D0307B40044C1D9 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppDelegate.swift; path = ViaCar/AppDelegate.swift; sourceTree = "<group>"; };
 		F11748442D0722820044C1D9 /* ViaCar-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = "ViaCar-Bridging-Header.h"; path = "ViaCar/ViaCar-Bridging-Header.h"; sourceTree = "<group>"; };
-		F26ADDBECDB04EA399212C71 /* Kanit-ExtraLight.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-ExtraLight.ttf"; path = "../src/assets/fonts/Kanit/Kanit-ExtraLight.ttf"; sourceTree = "<group>"; };
-		F3823E1FE3DE4F6A9A83DFDD /* Kanit-Bold.ttf */ = {isa = PBXFileReference; explicitFileType = undefined; fileEncoding = undefined; includeInIndex = 0; lastKnownFileType = unknown; name = "Kanit-Bold.ttf"; path = "../src/assets/fonts/Kanit/Kanit-Bold.ttf"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -61,7 +61,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				1A2284B6B5A972E8C10EE78D /* libPods-ViaCar.a in Frameworks */,
+				583544E3F9AD0304A5643E0E /* libPods-ViaCar.a in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -77,15 +77,7 @@
 				13B07FB51A68108700A75B9A /* Images.xcassets */,
 				13B07FB61A68108700A75B9A /* Info.plist */,
 				AA286B85B6C04FC6940260E9 /* SplashScreen.storyboard */,
-				600B9959816465FEE02EB518 /* PrivacyInfo.xcprivacy */,
-			);
-			name = ViaCar;
-			sourceTree = "<group>";
-		};
-		29EFD1732E51A386643B7C16 /* ViaCar */ = {
-			isa = PBXGroup;
-			children = (
-				39D0673CFDFF683167E9BE56 /* ExpoModulesProvider.swift */,
+				083E6CE5FD79E5C4EDA0CBD2 /* PrivacyInfo.xcprivacy */,
 			);
 			name = ViaCar;
 			sourceTree = "<group>";
@@ -94,19 +86,28 @@
 			isa = PBXGroup;
 			children = (
 				ED297162215061F000B7C4FE /* JavaScriptCore.framework */,
-				0D83BA35118A244AB5B969B4 /* libPods-ViaCar.a */,
+				3341327BD151FEA79AE782E9 /* libPods-ViaCar.a */,
 			);
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
-		6CD5F1890838F8681857FDA0 /* Pods */ = {
+		7E7614C7AA2D4364A41CB471 /* Resources */ = {
 			isa = PBXGroup;
 			children = (
-				5F9F7B799F58D6DF23B8138E /* Pods-ViaCar.debug.xcconfig */,
-				3298FA80478EF227C09E4DEC /* Pods-ViaCar.release.xcconfig */,
+				1BC7044FC04C4344B25729FA /* Cairo-VariableFont_slnt,wght.ttf */,
+				856729C11F3549E0A614BA7F /* Inter-VariableFont_opsz,wght.ttf */,
+				3AAD2C739F034DA38F2DDA85 /* Roboto-VariableFont_wdth,wght.ttf */,
+				B9EC4DE8756A467C893E98E2 /* Kanit-Thin.ttf */,
+				275640754F4C4F428210C71C /* Kanit-ExtraLight.ttf */,
+				0891BEA1571C4B31A55A5285 /* Kanit-Light.ttf */,
+				EFC47EA2B9B8405C847D02CA /* Kanit-Regular.ttf */,
+				B4C0D2F58E8542DE83DFBBC3 /* Kanit-Medium.ttf */,
+				1CD403405F8A4FDA94D2A109 /* Kanit-SemiBold.ttf */,
+				37ECACBF4F9D425FBED22F55 /* Kanit-Bold.ttf */,
+				8C5D1932EACC49EF9837D87F /* Kanit-ExtraBold.ttf */,
+				B836A78FDAA74447984967F5 /* Kanit-Black.ttf */,
 			);
-			name = Pods;
-			path = Pods;
+			name = Resources;
 			sourceTree = "<group>";
 		};
 		832341AE1AAA6A7D00B99B32 /* Libraries */ = {
@@ -123,9 +124,9 @@
 				832341AE1AAA6A7D00B99B32 /* Libraries */,
 				83CBBA001A601CBA00E9B192 /* Products */,
 				2D16E6871FA4F8E400B85C8A /* Frameworks */,
-				CCE48FDB802D493E868B5212 /* Resources */,
-				6CD5F1890838F8681857FDA0 /* Pods */,
-				E219743D044A98DA29B8DF8F /* ExpoModulesProviders */,
+				7E7614C7AA2D4364A41CB471 /* Resources */,
+				BB70260F5AADE8D6FC9B3A01 /* Pods */,
+				8744C616796C9EAD464F7AF6 /* ExpoModulesProviders */,
 			);
 			indentWidth = 2;
 			sourceTree = "<group>";
@@ -140,6 +141,14 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		8744C616796C9EAD464F7AF6 /* ExpoModulesProviders */ = {
+			isa = PBXGroup;
+			children = (
+				D7BDFE2762A3B9B2A04DEC37 /* ViaCar */,
+			);
+			name = ExpoModulesProviders;
+			sourceTree = "<group>";
+		};
 		BB2F792B24A3F905000567C9 /* Supporting */ = {
 			isa = PBXGroup;
 			children = (
@@ -149,32 +158,21 @@
 			path = ViaCar/Supporting;
 			sourceTree = "<group>";
 		};
-		CCE48FDB802D493E868B5212 /* Resources */ = {
+		BB70260F5AADE8D6FC9B3A01 /* Pods */ = {
 			isa = PBXGroup;
 			children = (
-				4A7D57263CBC42F7A5554E09 /* Cairo-VariableFont_slnt,wght.ttf */,
-				4206AB26EB6A45F09C12629B /* Inter-VariableFont_opsz,wght.ttf */,
-				2DE8C0ACB8344C49B2B34ACB /* Roboto-VariableFont_wdth,wght.ttf */,
-				59D853ECB8C846819CE3B70B /* Kanit-Thin.ttf */,
-				F26ADDBECDB04EA399212C71 /* Kanit-ExtraLight.ttf */,
-				6526CBBC5B2B402B8760A881 /* Kanit-Light.ttf */,
-				82517C8C060A43668D13964E /* Kanit-Regular.ttf */,
-				CEAA79BE2B9647FB94993333 /* Kanit-Medium.ttf */,
-				11787702668D452EB6AE1B47 /* Kanit-SemiBold.ttf */,
-				F3823E1FE3DE4F6A9A83DFDD /* Kanit-Bold.ttf */,
-				0F3B215948424BAFA8D04F5D /* Kanit-ExtraBold.ttf */,
-				9A1E9F8ABD94465C99C0550A /* Kanit-Black.ttf */,
+				8D8E950AB6C332BBFE8BB1F5 /* Pods-ViaCar.debug.xcconfig */,
+				7197E2F7316553E98C3563FE /* Pods-ViaCar.release.xcconfig */,
 			);
-			name = Resources;
-			path = "";
+			path = Pods;
 			sourceTree = "<group>";
 		};
-		E219743D044A98DA29B8DF8F /* ExpoModulesProviders */ = {
+		D7BDFE2762A3B9B2A04DEC37 /* ViaCar */ = {
 			isa = PBXGroup;
 			children = (
-				29EFD1732E51A386643B7C16 /* ViaCar */,
+				A7619E5E4662BA365B5E1229 /* ExpoModulesProvider.swift */,
 			);
-			name = ExpoModulesProviders;
+			name = ViaCar;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -185,13 +183,13 @@
 			buildConfigurationList = 13B07F931A680F5B00A75B9A /* Build configuration list for PBXNativeTarget "ViaCar" */;
 			buildPhases = (
 				08A4A3CD28434E44B6B9DE2E /* [CP] Check Pods Manifest.lock */,
-				93DFBAAE98B1E0F9955A2E67 /* [Expo] Configure project */,
+				2064A3AD1D2696FD83D9B793 /* [Expo] Configure project */,
 				13B07F871A680F5B00A75B9A /* Sources */,
 				13B07F8C1A680F5B00A75B9A /* Frameworks */,
 				13B07F8E1A680F5B00A75B9A /* Resources */,
 				00DD1BFF1BD5951E006B06BC /* Bundle React Native code and images */,
 				800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */,
-				5B431F2A8F8BEE1363007731 /* [CP] Embed Pods Frameworks */,
+				936A1EB280F61BB47841DD83 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -241,19 +239,19 @@
 				BB2F792D24A3F905000567C9 /* Expo.plist in Resources */,
 				13B07FBF1A68108700A75B9A /* Images.xcassets in Resources */,
 				3E461D99554A48A4959DE609 /* SplashScreen.storyboard in Resources */,
-				D18B519C2F8E4DE083E4D714 /* Cairo-VariableFont_slnt,wght.ttf in Resources */,
-				C455C379BC4E4DE1BBAFC219 /* Inter-VariableFont_opsz,wght.ttf in Resources */,
-				08946AFA80E64D8B90EEF27B /* Roboto-VariableFont_wdth,wght.ttf in Resources */,
-				F7F3228DEA4446E292AAF1E2 /* Kanit-Thin.ttf in Resources */,
-				88E4689E284A4B1DB88D996B /* Kanit-ExtraLight.ttf in Resources */,
-				849C4EB3FE5E4263A216414F /* Kanit-Light.ttf in Resources */,
-				8027015ED0CC4A6B97D51D8A /* Kanit-Regular.ttf in Resources */,
-				B44A8A8296384DC98189E324 /* Kanit-Medium.ttf in Resources */,
-				8C9DC3002DDF40D3A5FB1670 /* Kanit-SemiBold.ttf in Resources */,
-				E69B779567E64103B80DD9DD /* Kanit-Bold.ttf in Resources */,
-				D39E6D9988944B56BFEBA2E1 /* Kanit-ExtraBold.ttf in Resources */,
-				D04A01417809439A98C896DC /* Kanit-Black.ttf in Resources */,
-				9BA2AE82EBAABA2F8B045FFA /* PrivacyInfo.xcprivacy in Resources */,
+				44B9AAC9E2B344EA90C88018 /* Cairo-VariableFont_slnt,wght.ttf in Resources */,
+				9704D7FFB6EA463EB0435AF4 /* Inter-VariableFont_opsz,wght.ttf in Resources */,
+				1EF2C7EEEB264832A91D4DFD /* Roboto-VariableFont_wdth,wght.ttf in Resources */,
+				718A799067A84657970EE24A /* Kanit-Thin.ttf in Resources */,
+				81127AD1828B4839948E1689 /* Kanit-ExtraLight.ttf in Resources */,
+				0791899E0E254BA5AE46AE0E /* Kanit-Light.ttf in Resources */,
+				DD3622D5574742A78BDC777B /* Kanit-Regular.ttf in Resources */,
+				8F4E690DC2114931A86DE7E8 /* Kanit-Medium.ttf in Resources */,
+				76D3EC9377EB44EF895FA642 /* Kanit-SemiBold.ttf in Resources */,
+				01EBB987CD4A431A9A80CF6B /* Kanit-Bold.ttf in Resources */,
+				219A252829C14CEFAC7B771D /* Kanit-ExtraBold.ttf in Resources */,
+				A0C6781BE08547E3AC9B790D /* Kanit-Black.ttf in Resources */,
+				A62017B47230CEFEACD9F9F1 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -297,23 +295,24 @@
 			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
 			showEnvVarsInLog = 0;
 		};
-		5B431F2A8F8BEE1363007731 /* [CP] Embed Pods Frameworks */ = {
+		2064A3AD1D2696FD83D9B793 /* [Expo] Configure project */ = {
 			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputPaths = (
-				"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-frameworks.sh",
-				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
+			inputFileListPaths = (
 			);
-			name = "[CP] Embed Pods Frameworks";
+			inputPaths = (
+			);
+			name = "[Expo] Configure project";
+			outputFileListPaths = (
+			);
 			outputPaths = (
-				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-frameworks.sh\"\n";
-			showEnvVarsInLog = 0;
+			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-ViaCar/expo-configure-project.sh\"\n";
 		};
 		800E24972A6A228C8D4807E9 /* [CP] Copy Pods Resources */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -322,8 +321,10 @@
 			);
 			inputPaths = (
 				"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-resources.sh",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXApplication/ExpoApplication_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/EXConstants.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/EXConstants/ExpoConstants_privacy.bundle",
+				"${PODS_CONFIGURATION_BUILD_DIR}/EXNotifications/ExpoNotifications_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoFileSystem/ExpoFileSystem_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/ExpoSystemUI/ExpoSystemUI_privacy.bundle",
 				"${PODS_CONFIGURATION_BUILD_DIR}/GoogleMaps/GoogleMapsResources.bundle",
@@ -341,8 +342,10 @@
 			);
 			name = "[CP] Copy Pods Resources";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoApplication_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/EXConstants.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoConstants_privacy.bundle",
+				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoNotifications_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoFileSystem_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/ExpoSystemUI_privacy.bundle",
 				"${TARGET_BUILD_DIR}/${UNLOCALIZED_RESOURCES_FOLDER_PATH}/GoogleMapsResources.bundle",
@@ -363,24 +366,23 @@
 			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-resources.sh\"\n";
 			showEnvVarsInLog = 0;
 		};
-		93DFBAAE98B1E0F9955A2E67 /* [Expo] Configure project */ = {
+		936A1EB280F61BB47841DD83 /* [CP] Embed Pods Frameworks */ = {
 			isa = PBXShellScriptBuildPhase;
-			alwaysOutOfDate = 1;
 			buildActionMask = 2147483647;
 			files = (
 			);
-			inputFileListPaths = (
-			);
 			inputPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-frameworks.sh",
+				"${PODS_XCFRAMEWORKS_BUILD_DIR}/hermes-engine/Pre-built/hermes.framework/hermes",
 			);
-			name = "[Expo] Configure project";
-			outputFileListPaths = (
-			);
+			name = "[CP] Embed Pods Frameworks";
 			outputPaths = (
+				"${TARGET_BUILD_DIR}/${FRAMEWORKS_FOLDER_PATH}/hermes.framework",
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "# This script configures Expo modules and generates the modules provider file.\nbash -l -c \"./Pods/Target\\ Support\\ Files/Pods-ViaCar/expo-configure-project.sh\"\n";
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-ViaCar/Pods-ViaCar-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -390,7 +392,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				F11748422D0307B40044C1D9 /* AppDelegate.swift in Sources */,
-				D750A5CCEB80E29BD931E977 /* ExpoModulesProvider.swift in Sources */,
+				A8256D40F4690DE97013374D /* ExpoModulesProvider.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -399,12 +401,13 @@
 /* Begin XCBuildConfiguration section */
 		13B07F941A680F5B00A75B9A /* Debug */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 5F9F7B799F58D6DF23B8138E /* Pods-ViaCar.debug.xcconfig */;
+			baseConfigurationReference = 8D8E950AB6C332BBFE8BB1F5 /* Pods-ViaCar.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ViaCar/ViaCar.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2KD8UUMW7F;
 				ENABLE_BITCODE = NO;
 				GCC_PREPROCESSOR_DEFINITIONS = (
 					"$(inherited)",
@@ -416,7 +419,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -435,19 +438,20 @@
 		};
 		13B07F951A680F5B00A75B9A /* Release */ = {
 			isa = XCBuildConfiguration;
-			baseConfigurationReference = 3298FA80478EF227C09E4DEC /* Pods-ViaCar.release.xcconfig */;
+			baseConfigurationReference = 7197E2F7316553E98C3563FE /* Pods-ViaCar.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ENTITLEMENTS = ViaCar/ViaCar.entitlements;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 2KD8UUMW7F;
 				INFOPLIST_FILE = ViaCar/Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.1;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 1.0.2;
 				OTHER_LDFLAGS = (
 					"$(inherited)",
 					"-ObjC",
@@ -518,10 +522,7 @@
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) DEBUG";
@@ -576,10 +577,7 @@
 				);
 				LIBRARY_SEARCH_PATHS = "$(SDKROOT)/usr/lib/swift\"$(inherited)\"";
 				MTL_ENABLE_DEBUG_INFO = NO;
-				OTHER_LDFLAGS = (
-					"$(inherited)",
-					" ",
-				);
+				OTHER_LDFLAGS = "$(inherited)  ";
 				REACT_NATIVE_PATH = "${PODS_ROOT}/../../node_modules/react-native";
 				SDKROOT = iphoneos;
 				USE_HERMES = true;

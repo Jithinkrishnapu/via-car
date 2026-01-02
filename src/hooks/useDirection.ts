@@ -1,26 +1,31 @@
 import { useTranslation } from "react-i18next";
 import { I18nManager, Platform } from "react-native";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export function useDirection() {
   const { i18n } = useTranslation();
-  const isRTL = i18n.language === "ar";
+  const [isRTL, setIsRTL] = useState(i18n.language === "ar");
 
-  // On language change, update I18nManager (for React Native) and document.dir (for web)
+  // Sync RTL state with language changes
   useEffect(() => {
+    const newIsRTL = i18n.language === "ar";
+    setIsRTL(newIsRTL);
+
+    // Update platform-specific RTL settings
     if (Platform.OS !== "web") {
-      if (I18nManager.isRTL !== isRTL) {
-        I18nManager.forceRTL(isRTL);
-        // Optionally, reload the app if needed for direction change
+      if (I18nManager.isRTL !== newIsRTL) {
+        I18nManager.allowRTL(newIsRTL);
+        I18nManager.forceRTL(newIsRTL);
       }
     } else {
       if (typeof document !== "undefined") {
-        document.documentElement.dir = isRTL ? "rtl" : "ltr";
+        document.documentElement.dir = newIsRTL ? "rtl" : "ltr";
+        document.documentElement.lang = i18n.language;
       }
     }
-  }, [isRTL]);
+  }, [i18n.language]);
 
-  // Helper to swap values
+  // Helper to swap values based on direction
   function swap<T>(ltrValue: T, rtlValue: T): T {
     return isRTL ? rtlValue : ltrValue;
   }

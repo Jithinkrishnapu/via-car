@@ -1,278 +1,345 @@
-import React, { useState, useEffect } from 'react';
-import { View, StyleSheet, Alert, Text } from 'react-native';
-import MapView, { Marker, Polyline, PROVIDER_GOOGLE, Region, LatLng } from 'react-native-maps';
-import * as Location from 'expo-location';
+import React, { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import { View, StyleSheet, Text, Platform, Dimensions } from 'react-native';
+import MapView, {
+  Marker,
+  Polyline,
+  PROVIDER_GOOGLE,
+  Region,
+  LatLng,
+  Callout,
+} from 'react-native-maps';
+import polyline from '@mapbox/polyline';
+import { useCreateRideStore } from '@/store/useRideStore';
+import LocationPin from "../../../public/location-pin.svg";
 
-interface LocationState {
-  coords: {
-    latitude: number;
-    longitude: number;
-    altitude: number | null;
-    accuracy: number | null;
-    altitudeAccuracy: number | null;
-    heading: number | null;
-    speed: number | null;
-  };
-  timestamp: number;
-}
+const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
-export interface DirectionRoute {
-  coordinates: LatLng[];
-  strokeColor?: string;
-  strokeWidth?: number;
-}
+/* ------------------------------------------------------------------ */
+/* Types                                                              */
+/* ------------------------------------------------------------------ */
+type Coordinate = LatLng;
 
-export interface MarkerData {
-  id: string;
-  coordinate: LatLng;
-  title: string;
-  description?: string;
-  pinColor?: string;
-}
+type Props = {
+  /* parent can give us EITHER markers OR a poly-line */
+  markers?: { lat: number; lng: number, name: string }[];
+  /* fired when user taps a marker (only when markers are shown) */
+  onMarkerPress?: (coord: Coordinate, index: number,name:string) => void;
+};
 
-interface MapComponentProps {
-  directions?: DirectionRoute[];
-  markers?: MarkerData[];
-  initialRegion?: Region;
-}
+/* ------------------------------------------------------------------ */
+/* Component                                                          */
+/* ------------------------------------------------------------------ */
+const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
+  const mapRef = useRef<MapView>(null);
+  const { polyline: EncodedPolyline } = useCreateRideStore();
 
-const MapComponent: React.FC<MapComponentProps> = ({
-  directions,
-  markers,
-  initialRegion,
-}) => {
-  const [location, setLocation] = useState<LocationState | null>(null);
-  const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [mapRegion, setMapRegion] = useState<Region>(
-    initialRegion || {
-      latitude: 37.78825,
-      longitude: -122.4324,
-      latitudeDelta: 0.0922,
-      longitudeDelta: 0.0421,
-    }
-  );
+  /* -------------- state -------------- */
+  const [polyCoords, setPolyCoords] = useState<Coordinate[]>([]);
+  const [name,setName] = useState("")
 
+  /* -------------- decode polyline -------------- */
   useEffect(() => {
-    getCurrentLocation();
-  }, []);
-
-  useEffect(() => {
-    if (directions && directions.length > 0) {
-      console.log('Fitting map to directions');
-      fitToDirections();
-    } else if (markers && markers.length > 0) {
-      console.log('Fitting map to markers');
-      fitToMarkers();
-    }
-  }, [directions, markers]);
-
-  const getCurrentLocation = async (): Promise<void> => {
+    if (!EncodedPolyline) return;
     try {
-      const { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== 'granted') {
-        setErrorMsg('Permission to access location was denied');
-        Alert.alert('Permission denied', 'Location permission is required to show your position on the map.');
+      const decoded = polyline
+        .decode(EncodedPolyline)
+        .map(([lat, lng]) => ({ latitude: lat, longitude: lng }));
+      setPolyCoords(decoded);
+    } catch (e) {
+      console.error('Invalid polyline:', e);
+      setPolyCoords([]);
+    }
+  }, [EncodedPolyline]);
+
+  /* -------------- fit camera (prevent continuous re-renders) -------------- */
+  const hasInitializedRef = useRef(false);
+  
+  useEffect(() => {
+    if (!mapRef.current || hasInitializedRef.current) return;
+
+    const timer = setTimeout(() => {
+      /* case 1 : we have markers – fit all markers */
+      if (markers?.length) {
+        const coords = markers.map((m) => ({ latitude: m.lat, longitude: m.lng }));
+        mapRef.current?.fitToCoordinates(coords, {
+          edgePadding: { 
+            top: Platform.OS === 'ios' ? 80 : 60, 
+            right: 40, 
+            bottom: Platform.OS === 'ios' ? 80 : 60, 
+            left: 40 
+          },
+          animated: true,
+        });
+        hasInitializedRef.current = true;
         return;
       }
 
-      const currentLocation = await Location.getCurrentPositionAsync({});
-      setLocation(currentLocation);
-
-      // If no directions or markers, center on user
-      if (!directions || directions.length === 0) {
-        if (!markers || markers.length === 0) {
-          setMapRegion({
-            latitude: currentLocation.coords.latitude,
-            longitude: currentLocation.coords.longitude,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          });
-        }
+      /* case 2 : we have a polyline – fit the whole route */
+      if (polyCoords.length) {
+        mapRef.current?.fitToCoordinates(polyCoords, {
+          edgePadding: { 
+            top: Platform.OS === 'ios' ? 80 : 60, 
+            right: 40, 
+            bottom: Platform.OS === 'ios' ? 80 : 60, 
+            left: 40 
+          },
+          animated: true,
+        });
+        hasInitializedRef.current = true;
       }
-    } catch (error: any) {
-      console.error('Error getting location:', error);
-      setErrorMsg(`Location error: ${error.message}`);
-    }
-  };
+    }, Platform.OS === 'ios' ? 600 : 400); // Different delays for iOS/Android
 
-  const fitToDirections = (): void => {
-    if (!directions || directions.length === 0) return;
+    return () => clearTimeout(timer);
+  }, [markers?.length, polyCoords.length]); // Only depend on length, not the arrays themselves
 
-    let minLat = Infinity;
-    let maxLat = -Infinity;
-    let minLng = Infinity;
-    let maxLng = -Infinity;
+  /* -------------- helpers -------------- */
+  const showPolyline = !markers?.length && polyCoords.length > 0;
+  const showMarkers = !!markers?.length;
+  
+  // Get start and end points for polyline
+  const startPoint = polyCoords.length > 0 ? polyCoords[0] : null;
+  const endPoint = polyCoords.length > 0 ? polyCoords[polyCoords.length - 1] : null;
 
-    directions.forEach((route) => {
-      route.coordinates.forEach((coord) => {
-        if (!coord.latitude || !coord.longitude) return;
-        if (!isFinite(coord.latitude) || !isFinite(coord.longitude)) return;
 
-        minLat = Math.min(minLat, coord.latitude);
-        maxLat = Math.max(maxLat, coord.latitude);
-        minLng = Math.min(minLng, coord.longitude);
-        maxLng = Math.max(maxLng, coord.longitude);
-      });
-    });
+  console.log(markers, "----------------------------------")
 
-    if (minLat === Infinity) {
-      console.warn('No valid coordinates found in directions');
-      return;
-    }
-
-    const latDelta = (maxLat - minLat) * 1.5;
-    const lngDelta = (maxLng - minLng) * 1.5;
-
-    setMapRegion({
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLng + maxLng) / 2,
-      latitudeDelta: Math.max(latDelta, 0.01),
-      longitudeDelta: Math.max(lngDelta, 0.01),
-    });
-  };
-
-  const fitToMarkers = (): void => {
-    if (!markers || markers.length === 0) return;
-
-    if (markers.length === 1) {
-      const { latitude, longitude } = markers[0].coordinate;
-      setMapRegion({
-        latitude,
-        longitude,
-        latitudeDelta: 0.0922,
-        longitudeDelta: 0.0421,
-      });
-      return;
-    }
-
-    let minLat = Infinity;
-    let maxLat = -Infinity;
-    let minLng = Infinity;
-    let maxLng = -Infinity;
-
-    markers.forEach((marker) => {
-      const { latitude, longitude } = marker.coordinate;
-      if (!isFinite(latitude) || !isFinite(longitude)) return;
-
-      minLat = Math.min(minLat, latitude);
-      maxLat = Math.max(maxLat, latitude);
-      minLng = Math.min(minLng, longitude);
-      maxLng = Math.max(maxLng, longitude);
-    });
-
-    if (minLat === Infinity) return;
-
-    const latDelta = (maxLat - minLat) * 1.5;
-    const lngDelta = (maxLng - minLng) * 1.5;
-
-    setMapRegion({
-      latitude: (minLat + maxLat) / 2,
-      longitude: (minLng + maxLng) / 2,
-      latitudeDelta: Math.max(latDelta, 0.01),
-      longitudeDelta: Math.max(lngDelta, 0.01),
-    });
-  };
-
-  if (errorMsg) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{errorMsg}</Text>
-      </View>
-    );
-  }
+  /* -------------- render -------------- */
+  const initialRegion = useMemo(() => ({
+    latitude: 37.78825,
+    longitude: -122.4324,
+    latitudeDelta: 0.0922,
+    longitudeDelta: 0.0421,
+  }), []);
 
   return (
     <View style={styles.container}>
+      {name && (
+        <View style={styles.nameContainer}>
+          <Text style={styles.nameText}>{name}</Text>
+        </View>
+      )}
       <MapView
-        provider={PROVIDER_GOOGLE} // Remove this line to use default provider (Apple/Google auto)
+        ref={mapRef}
         style={styles.map}
-        region={mapRegion}
-        // showsUserLocation={true}
-        showsMyLocationButton={true}
-        showsCompass={true}
-        showsScale={true}
-        zoomEnabled={true}
-        scrollEnabled={true}
+        provider={PROVIDER_GOOGLE}
+        initialRegion={initialRegion}
+        showsUserLocation={false}
+        showsMyLocationButton={false}
+        toolbarEnabled={false}
         loadingEnabled={true}
-        onRegionChangeComplete={(region) => console.log('Region changed:', region)}
+        moveOnMarkerPress={false}
+        showsCompass={false}
+        showsScale={false}
+        showsBuildings={false}
+        showsTraffic={false}
+        showsIndoors={false}
+        rotateEnabled={true}
+        scrollEnabled={true}
+        zoomEnabled={true}
+        pitchEnabled={false}
       >
-        {/* Render Directions (Polylines) */}
-        {directions &&
-          directions.map((route, index) => {
-            if (!route.coordinates || route.coordinates.length < 2) {
-              console.warn(`Route ${index} skipped: needs at least 2 valid points`);
-              return null;
-            }
-
-            // Validate coordinates
-            const validCoords = route.coordinates.filter(
-              (coord) =>
-                coord.latitude != null &&
-                coord.longitude != null &&
-                isFinite(coord.latitude) &&
-                isFinite(coord.longitude)
-            );
-
-            if (validCoords.length < 2) {
-              console.warn(`Route ${index} has invalid or insufficient coordinates`);
-              return null;
-            }
-
-            return (
-              <Polyline
-                key={`direction-${index}`}
-                coordinates={validCoords}
-                strokeColor={route.strokeColor || '#FF0000'} // Bright red for visibility
-                strokeWidth={route.strokeWidth || 6}
-                geodesic={false}
-              />
-            );
-          })}
-
-        {/* Render Markers */}
-        {markers &&
-          markers.map((marker) => (
-            <Marker
-              key={marker.id}
-              coordinate={marker.coordinate}
-              title={marker.title}
-              description={marker.description}
-              pinColor={marker.pinColor || 'red'}
+        {/* 1.  Polyline (only when NO markers supplied) */}
+        {showPolyline && (
+          <>
+            <Polyline
+              coordinates={polyCoords}
+              strokeWidth={5}
+              strokeColor="#2980b9"
+              lineCap="round"
+              lineJoin="round"
             />
-          ))}
-
-        {/* Show user location with blue pin if markers exist */}
-        {location && (
-          <Marker
-            coordinate={{
-              latitude: location.coords.latitude,
-              longitude: location.coords.longitude,
-            }}
-            title="Your Location"
-            description="You are here"
-            pinColor={markers ? 'blue' : 'red'}
-          />
+            
+            {/* Start point marker */}
+            {startPoint && (
+              <Marker
+                coordinate={startPoint}
+                anchor={{ x: 0.5, y: 0.5 }}
+                centerOffset={{ x: 0, y: 0 }}
+              >
+                <View style={styles.startMarker} />
+                <Callout tooltip={false}>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutText}>Start Point</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            )}
+            
+            {/* End point marker */}
+            {endPoint && (
+              <Marker
+                coordinate={endPoint}
+                anchor={{ x: 0.5, y: 0.5 }}
+                centerOffset={{ x: 0, y: 0 }}
+              >
+                <View style={styles.endMarker} />
+                <Callout tooltip={false}>
+                  <View style={styles.calloutContainer}>
+                    <Text style={styles.calloutText}>End Point</Text>
+                  </View>
+                </Callout>
+              </Marker>
+            )}
+          </>
         )}
+
+        {/* 2.  Markers (only when supplied) */}
+        {showMarkers &&
+          markers.map((m, idx) => (
+            <Marker
+              key={`${m.lat}-${m.lng}-${idx}`}
+              coordinate={{ latitude: m.lat, longitude: m.lng }}
+              onPress={() => {
+                setName(m.name);
+                onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx, m.name);
+              }}
+            >
+              <Callout tooltip={false}>
+                <View style={styles.markerCallout}>
+                  <Text style={styles.markerCalloutText}>{m.name || `Point ${idx + 1}`}</Text>
+                </View>
+              </Callout>
+            </Marker>
+          ))}
       </MapView>
     </View>
   );
 };
 
+/* ------------------------------------------------------------------ */
+/* Styles                                                             */
+/* ------------------------------------------------------------------ */
 const styles = StyleSheet.create({
-  container: {
+  container: { 
     flex: 1,
     backgroundColor: '#fff',
   },
-  map: {
+  map: { 
     flex: 1,
+    width: '100%',
+    height: '100%',
   },
-  errorText: {
-    flex: 1,
+  nameContainer: {
+    backgroundColor: '#dcfce7', // green-100
+    alignSelf: 'center',
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: '#166534', // green-800
+    marginBottom: Platform.OS === 'ios' ? 12 : 8,
+    marginTop: Platform.OS === 'ios' ? 8 : 4,
+    width: '75%',
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingVertical: Platform.OS === 'ios' ? 10 : 8,
+    paddingHorizontal: 16,
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.1,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  nameText: {
+    fontSize: 14,
+    textTransform: 'capitalize',
+    fontWeight: '500',
+    color: '#000',
     textAlign: 'center',
-    textAlignVertical: 'center',
-    fontSize: 16,
-    color: 'red',
+  },
+  startMarker: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#22c55e', // green-500
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  endMarker: {
+    width: 16,
+    height: 16,
+    backgroundColor: '#ef4444', // red-500
+    borderRadius: 8,
+    borderWidth: 2,
+    borderColor: '#fff',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3,
+      },
+      android: {
+        elevation: 4,
+      },
+    }),
+  },
+  calloutContainer: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    minWidth: 80,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  calloutText: {
+    fontSize: 12,
+    fontWeight: '600',
+    color: '#374151',
+    textAlign: 'center',
+  },
+  markerCallout: {
+    backgroundColor: '#fff',
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 8,
+    maxWidth: screenWidth * 0.6,
+    alignItems: 'center',
+    ...Platform.select({
+      ios: {
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.15,
+        shadowRadius: 4,
+      },
+      android: {
+        elevation: 3,
+      },
+    }),
+  },
+  markerCalloutText: {
+    fontSize: 14,
+    fontWeight: '500',
+    color: '#000',
+    textAlign: 'center',
+    flexWrap: 'wrap',
   },
 });
 
-export default MapComponent;
+export default MapScreen;

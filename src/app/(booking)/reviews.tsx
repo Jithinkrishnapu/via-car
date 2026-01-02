@@ -12,7 +12,7 @@ function Reviews() {
   if (!loaded) return null;
 
   return (
-    <ScrollView className="bg-[#F5F5F5] font-[Kanit-Regular]">
+    <ScrollView bounces={false} className="bg-[#F5F5F5] font-[Kanit-Regular]">
       <View className="max-w-[1384px] w-full mx-auto px-6 pt-16 pb-10 flex flex-col gap-4">
         <View className="flex-row items-center gap-4">
           <TouchableOpacity

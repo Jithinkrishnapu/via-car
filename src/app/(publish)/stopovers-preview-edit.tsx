@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Modal, Image, TouchableOpacity, View } from "react-native";
-import { ChevronLeft, Map } from "lucide-react-native";
+import { Map } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -9,11 +9,16 @@ import LocationPin from "../../../public/location-pin-green.svg";
 import FlagRed from "../../../public/flag-red.svg";
 import Path from "../../../public/path.svg";
 import { useTranslation } from "react-i18next";
+import { useCreateRideStore } from "@/store/useRideStore";
+import { RideEditDetails, Stops } from "@/types/ride-types";
+import { useEditRide } from "@/service/ride-booking";
 
 function StopoversPreview() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const [modalVisible, setModalVisible] = useState(false);
+  const { ride, setSelectedPlaces, selectedPlaces, ride_id } = useCreateRideStore();
+
 
   if (!loaded) return null;
 
@@ -25,33 +30,45 @@ function StopoversPreview() {
     },
   ];
 
+  const fullRoute = useMemo(() => {
+    const r: any[] = [];
+    if (ride.pickup_address?.trim() && typeof ride.pickup_lat === "number" && typeof ride.pickup_lng === "number") {
+      r.push({ address: ride.pickup_address, lat: ride.pickup_lat, lng: ride.pickup_lng });
+    }
+    selectedPlaces.forEach((p) => {
+      if (p.address?.trim() && typeof p.lat === "number" && typeof p.lng === "number") r.push(p);
+    });
+    if (ride.destination_address?.trim() && typeof ride.destination_lat === "number" && typeof ride.destination_lng === "number") {
+      r.push({ address: ride.destination_address, lat: ride.destination_lat, lng: ride.destination_lng });
+    }
+    return r;
+  }, [ride, selectedPlaces]);
+
+
+  const handleEditStops =async()=>{
+    const stops = fullRoute.map((pt, i) => ({
+      address: pt.address,
+      lat    : pt.lat,
+      lng    : pt.lng,
+      order  : i + 1,
+    }));
+    const req ={stops} as RideEditDetails
+    const res = await useEditRide(req)
+    if(res.ok){
+      router.push({pathname:"/(publish)/your-publication",params:{ride_id:ride_id}})
+    }
+  }
+
   return (
     <View className="flex-1 bg-white">
-      {/* Header */}
       <View className="w-full px-6 pt-16 pb-6 flex-1">
-        <View className="flex-row items-center gap-4 mb-6">
-          <TouchableOpacity
-            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.replace("..")}
-            activeOpacity={0.8}
-          >
-            <ChevronLeft size={16} />
-          </TouchableOpacity>
-          <Text
-            fontSize={25}
-            className="text-[25px] font-[Kanit-Medium] leading-tight flex-1"
-          >
-            {t("stopoversPreview.title")}
-          </Text>
-        </View>
-
         {/* Timeline Container */}
         <View className="bg-white border border-[#EBEBEB] rounded-2xl p-4 overflow-hidden">
           {/* vertical line */}
           <View className="absolute top-6 bottom-6 left-[24px] w-[3px] z-0 overflow-hidden">
-            <Path />
-            <Path />
-            <Path />
+            {Array.from({ length: selectedPlaces.length + 3 }, (_, index) => (
+              <Path key={index} />
+            ))}
           </View>
 
           {/* Start point */}
@@ -61,12 +78,12 @@ function StopoversPreview() {
               fontSize={16}
               className="text-[14px] text-[#3F3C3C] font-[Kanit-Light]"
             >
-              {t("stopoversPreview.start")}
+              {ride.pickup_address}
             </Text>
           </View>
 
           {/* Stops */}
-          {stops.map(({ title, desc }, idx) => (
+          {selectedPlaces.map(({ address }, idx) => (
             <View
               key={idx}
               className="flex-row items-center justify-between mb-6 z-10"
@@ -78,16 +95,16 @@ function StopoversPreview() {
                     fontSize={15}
                     className="text-[14px] font-[Kanit-Regular]"
                   >
-                    {title}
+                    {address}
                   </Text>
-                  <Text
+                  {/* <Text
                     fontSize={13}
                     className="text-[12px] text-[#666666] font-[Kanit-Light]"
                   >
                     {desc}
-                  </Text>
+                  </Text> */}
                 </View>
-                <TouchableOpacity
+                {/* <TouchableOpacity
                   onPress={() => setModalVisible(true)}
                   activeOpacity={0.8}
                   className="rounded-full size-[46px] items-center justify-center"
@@ -98,7 +115,7 @@ function StopoversPreview() {
                     color="#666666"
                     className="-scale-[1]"
                   />
-                </TouchableOpacity>
+                </TouchableOpacity> */}
               </View>
             </View>
           ))}
@@ -110,7 +127,7 @@ function StopoversPreview() {
               fontSize={16}
               className="text-[16px] text-[#3F3C3C] font-[Kanit-Light]"
             >
-              {t("stopoversPreview.end")}
+              {ride.destination_address}
             </Text>
           </View>
         </View>
@@ -119,7 +136,7 @@ function StopoversPreview() {
       {/* Continue Button */}
       <View className="absolute bottom-8 left-0 right-0 px-6">
         <TouchableOpacity
-          onPress={() => router.push("/(publish)/your-publication")}
+          onPress={() => handleEditStops()}
           activeOpacity={0.8}
           className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
         >

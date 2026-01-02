@@ -1,6 +1,10 @@
 import { useState, useEffect } from "react";
-import { View, TouchableOpacity } from "react-native";
-import { ChevronLeft, Plus } from "lucide-react-native";
+import {
+  View,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { Plus, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -8,66 +12,101 @@ import Building from "../../../public/building.svg";
 import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useCreateRideStore } from "@/store/useRideStore";
+import { useGetPopularPlaces } from "@/service/ride-booking";
+import { useRoute } from "@react-navigation/native";
 
 function Stopovers() {
   const loaded = useLoadFonts();
-  const { t, i18n } = useTranslation("components");
+  const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  const [places, setPlaces] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const { ride, setSelectedPlaces, selectedPlaces, polyline } =
+    useCreateRideStore();
+  const route = useRoute();
 
-  // Dynamically generate city list based on language
-  const getRoutes = () => [
-    { id: "1", title: t("stopovers.city1"), defaultChecked: true },
-    { id: "2", title: t("stopovers.city2"), defaultChecked: false },
-    { id: "3", title: t("stopovers.city3"), defaultChecked: false },
-  ];
+  const handleStopOvers = async () => {
+    setLoading(true);
+    const request = {
+      pickup_lat: ride.pickup_lat,
+      pickup_lng: ride.pickup_lng,
+      dropoff_lat: ride.destination_lat,
+      dropoff_lng: ride.destination_lng,
+      encoded_polyline: polyline,
+      type: "city",
+    };
 
-  const [cities, setCities] = useState(getRoutes());
-  const [checkedIds, setCheckedIds] = useState<string[]>(
-    getRoutes()
-      .filter((c) => c.defaultChecked)
-      .map((c) => c.id)
-  );
+    try {
+      const response = await useGetPopularPlaces(request);
+      const newPlaces = response?.data?.places ?? [];
 
-  // Update city names when language changes
-  useEffect(() => {
-    setCities(getRoutes());
-  }, [i18n.language]);
-
-  const toggleChecked = (id: string) => {
-    setCheckedIds((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
-    );
+      setPlaces((curr) => {
+        const merged = [...curr, ...newPlaces];
+        if (route?.params?.location) {
+          const loc = JSON.parse(route.params.location);
+          merged.push(...loc);
+        }
+        return merged;
+      });
+    } catch (err) {
+      console.error("Error fetching stopovers:", err);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  if (!loaded) return null;
+  useEffect(() => {
+    handleStopOvers();
+  }, []);
+
+  const toggleStopover = (loc: any) => {
+    const exists = selectedPlaces.some((p) => p.lat === loc.lat);
+    if (exists) {
+      setSelectedPlaces(selectedPlaces.filter((p) => p.lat !== loc.lat));
+    } else {
+      setSelectedPlaces([
+        ...selectedPlaces,
+        { lat: loc.lat, lng: loc.lng, address: loc.mainText },
+      ]);
+    }
+  };
+
+  /* ----------  loading state  ---------- */
+  if (!loaded || loading) {
+    return (
+      <View className="flex-1 bg-white items-center justify-center">
+        <ActivityIndicator size="large" color="#FF4848" />
+      </View>
+    );
+  }
+  /* ------------------------------------ */
+
   return (
     <View className="flex-1 bg-white font-[Kanit-Regular]">
       <View className="px-6 pt-16 pb-10 flex flex-col gap-4">
         {/* Header */}
-        <View className="flex-row items-center gap-4">
+        <View className="flex-row items-center gap-4 mb-4">
           <TouchableOpacity
             className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.replace("..")}
+            onPress={() => router.back()}
             activeOpacity={0.8}
           >
-            <ChevronLeft size={16} />
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
           </TouchableOpacity>
-          <Text
-            fontSize={25}
-            className="text-[25px] font-[Kanit-Medium] flex-1 leading-tight"
-          >
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
             {t("stopovers.title")}
           </Text>
         </View>
-
-        {/* City List */}
+        
+        {/* Stopover List */}
         <View className="flex-col gap-[14px] max-w-lg w-full self-center">
-          {cities.map(({ id, title }) => {
-            const isChecked = checkedIds.includes(id);
+          {places?.map((loc) => {
+            const isChecked = selectedPlaces.some((p) => p.lat === loc.lat);
             return (
               <TouchableOpacity
-                key={id}
-                onPress={() => toggleChecked(id)}
+                key={loc.lat}
+                onPress={() => toggleStopover(loc)}
                 className={`flex-row items-center justify-between border rounded-2xl px-6 py-4 ${
                   isChecked
                     ? "border-[#69D2A5] bg-[#F1FFF9]"
@@ -75,13 +114,13 @@ function Stopovers() {
                 }`}
                 activeOpacity={0.8}
               >
-                <View className="flex-row items-center gap-2">
+                <View className="flex-row w-[95%] items-center gap-2">
                   <Building width={22} height={22} />
                   <Text
                     fontSize={15}
-                    className="text-[15px] font-[Kanit-Regular]"
+                    className="text-[15px] text-wrap w-[90%] font-[Kanit-Regular]"
                   >
-                    {title}
+                    {loc.mainText}
                   </Text>
                 </View>
                 {isChecked && (
@@ -95,11 +134,19 @@ function Stopovers() {
         </View>
       </View>
 
-      {/* Fixed Footer Buttons */}
+      {/* Footer */}
       <View className="absolute bottom-8 left-0 right-0 px-6 flex-row gap-4">
         <TouchableOpacity
           className="flex-1 flex-row items-center justify-center border border-[#EBEBEB] rounded-full h-[55px] gap-[4px]"
-          onPress={() => router.push("/(publish)/add-city")}
+          onPress={() =>
+            router.push({
+              pathname: "/(publish)/add-city",
+              params: {
+                place: route?.params?.location,
+                path: "/(publish)/stopovers",
+              },
+            })
+          }
           activeOpacity={0.8}
         >
           <Plus size={20} className="mr-2" />

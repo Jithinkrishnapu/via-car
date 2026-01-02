@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ScrollView, View, TouchableOpacity, Animated } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import Text from "./text";
 import StopWatch from "../../../public/stopwatch.svg";
 import Walk from "../../../public/walk.svg";
@@ -11,16 +12,63 @@ import CheckboxCard from "../ui/checkbox-card";
 import { useTranslation } from "react-i18next";
 
 interface Props {
-  close: () => void;
+  close: (filters: {
+    sortOption: number;
+    numberOfStops: string;
+    verifiedProfile: boolean;
+    amenities: Record<string, boolean>;
+  }) => void;
+  onDismiss: () => void;
+  currentFilter?: {
+    sortOption: number;
+    numberOfStops: string;
+    verifiedProfile: boolean;
+    amenities: Record<string, boolean>;
+  } | null;
 }
 
-const RideFilters = ({ close }: Props) => {
+const RideFilters = ({ close, onDismiss, currentFilter }: Props) => {
   const { t } = useTranslation("components");
+  
+  // Helper function to convert sort code back to label
+  const fromSortCode = (code: number): string => {
+    const map: Record<number, string> = {
+      1: t("rideFilter.earliestDeparture"),
+      2: t("rideFilter.lowestPrice"),
+      3: t("rideFilter.closeToDeparture"),
+      4: t("rideFilter.closeToArrival"),
+      5: t("rideFilter.shortestRide"),
+    };
+    return map[code] ?? t("rideFilter.earliestDeparture");
+  };
+
+  // Helper function to convert stop code back to value
+  const fromStopCode = (code: string): string => {
+    switch (code) {
+      case "direct_only":
+        return "0";
+      case "1_stop":
+        return "1";
+      case "2_stops_or_more":
+        return "2+";
+      default:
+        return "0";
+    }
+  };
+
+  // Initialize state with current filter values or defaults
   const [sortOption, setSortOption] = useState(
-    t("rideFilter.earliestDeparture")
+    currentFilter ? fromSortCode(currentFilter.sortOption) : t("rideFilter.earliestDeparture")
   );
-  const [numberOfStops, setNumberOfStops] = useState("0");
-  const [verifiedProfile, setVerifiedProfile] = useState(true);
+  const [numberOfStops, setNumberOfStops] = useState(
+    currentFilter ? fromStopCode(currentFilter.numberOfStops) : "0"
+  );
+  const [verifiedProfile, setVerifiedProfile] = useState(
+    currentFilter ? currentFilter.verifiedProfile : false
+  );
+  const [checkedItems, setCheckedItems] = useState<Record<string, boolean>>(
+    currentFilter ? currentFilter.amenities : {}
+  );
   const [carModel, setCarModel] = useState(t("rideFilter.lastThreeYears"));
 
   const anim = useRef(new Animated.Value(0)).current;
@@ -33,11 +81,21 @@ const RideFilters = ({ close }: Props) => {
     }).start();
   }, [verifiedProfile, anim]);
 
-  // Update state values when language changes
+  // Update state values when language changes or currentFilter changes
   useEffect(() => {
-    setSortOption(t("rideFilter.earliestDeparture"));
+    if (currentFilter) {
+      setSortOption(fromSortCode(currentFilter.sortOption));
+      setNumberOfStops(fromStopCode(currentFilter.numberOfStops));
+      setVerifiedProfile(currentFilter.verifiedProfile);
+      setCheckedItems(currentFilter.amenities);
+    } else {
+      setSortOption(t("rideFilter.earliestDeparture"));
+      setNumberOfStops("0");
+      setVerifiedProfile(false);
+      setCheckedItems({});
+    }
     setCarModel(t("rideFilter.lastThreeYears"));
-  }, [t]);
+  }, [t, currentFilter]);
 
   const translateX = anim.interpolate({
     inputRange: [0, 1],
@@ -58,6 +116,30 @@ const RideFilters = ({ close }: Props) => {
     { label: t("rideFilter.twoStopsOrMore"), value: "2+", count: 25 },
   ];
 
+  const toSortCode = (label: string): number => {
+    const map: Record<string, number> = {
+      [t("rideFilter.earliestDeparture")]: 1,
+      [t("rideFilter.lowestPrice")]: 2,
+      [t("rideFilter.closeToDeparture")]: 3,
+      [t("rideFilter.closeToArrival")]: 4,
+      [t("rideFilter.shortestRide")]: 5,
+    };
+    return map[label] ?? 1; // fallback → 1
+  };
+
+  const toStopCode = (val: string): string => {
+    switch (val) {
+      case "0":
+        return "direct_only";
+      case "1":
+        return "1_stop";
+      case "2+":
+        return "2_stops_or_more";
+      default:
+        return "direct_only";
+    }
+  };
+
   const carModelOptions = [
     {
       label: t("rideFilter.lastThreeYears"),
@@ -72,24 +154,44 @@ const RideFilters = ({ close }: Props) => {
     { label: t("rideFilter.all"), value: t("rideFilter.all"), count: 70 },
   ];
 
+
+  console.log("checked==========",checkedItems)
+
   return (
-    <ScrollView>
-      <View className="px-[27px] pt-6 pb-6">
-        {/* Header */}
-        <View className="flex-row justify-between items-center mb-6">
-          <View className="flex-row items-center gap-[20px]">
-            <TouchableOpacity
-              className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
-              activeOpacity={0.8}
-              onPress={close}
-            >
-              <XIcon />
-            </TouchableOpacity>
+    <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+      <ScrollView 
+        bounces={false}
+        contentInsetAdjustmentBehavior="automatic"
+        automaticallyAdjustsScrollIndicatorInsets={false}
+      >
+        <View className="px-[27px] pt-6 pb-6">
+          {/* Header */}
+          <View className="flex-row justify-between items-center mb-6">
+            <View className="flex-row items-center gap-[20px]">
+              <TouchableOpacity
+                className="size-[45px] rounded-full border border-[#EBEBEB] bg-white items-center justify-center"
+                activeOpacity={0.8}
+                onPress={onDismiss}
+              >
+                <XIcon />
+              </TouchableOpacity>
             <Text fontSize={25} className="text-[25px] font-[Kanit-Regular]">
               {t("rideFilter.filter")}
             </Text>
           </View>
-          <TouchableOpacity>
+          <TouchableOpacity onPress={() => {
+            // Reset all filters to default values
+            setSortOption(t("rideFilter.earliestDeparture"));
+            setNumberOfStops("0");
+            setVerifiedProfile(false);
+            setCheckedItems({});
+            close({
+              sortOption: 1,         // Default sort (earliestDeparture)
+              numberOfStops: "direct_only", // Default stops
+              verifiedProfile: false,
+              amenities: {}
+            });
+          }}>
             <Text
               fontSize={18}
               className="text-[18px] text-[#666666] font-[Kanit-Light]"
@@ -107,7 +209,10 @@ const RideFilters = ({ close }: Props) => {
           >
             {t("rideFilter.sortBy")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setSortOption(t("rideFilter.earliestDeparture"))}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -126,9 +231,8 @@ const RideFilters = ({ close }: Props) => {
           >
             <View className="flex-row items-center gap-[23px]">
               <View
-                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${
-                  sortOption === label ? "border-gray-400" : "border-gray-400"
-                }`}
+                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${sortOption === label ? "border-gray-400" : "border-gray-400"
+                  }`}
               >
                 {sortOption === label && (
                   <View className="size-[11px] bg-red-500 rounded-full" />
@@ -155,7 +259,10 @@ const RideFilters = ({ close }: Props) => {
           >
             {t("rideFilter.numberOfStops")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setNumberOfStops("0")}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -173,9 +280,8 @@ const RideFilters = ({ close }: Props) => {
           >
             <View className="flex-row items-center gap-[23px]">
               <View
-                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${
-                  numberOfStops === value ? "border-red-500" : "border-gray-400"
-                }`}
+                className={`size-[22px] rounded-full border-2 mr-2 items-center justify-center ${numberOfStops === value ? "border-red-500" : "border-gray-400"
+                  }`}
               >
                 {numberOfStops === value && (
                   <View className="size-[11px] bg-red-500 rounded-full" />
@@ -254,7 +360,10 @@ const RideFilters = ({ close }: Props) => {
           >
             {t("rideFilter.amenities")}
           </Text>
-          <TouchableOpacity activeOpacity={0.8}>
+          <TouchableOpacity 
+            activeOpacity={0.8}
+            onPress={() => setCheckedItems({})}
+          >
             <Text
               fontSize={14}
               className="text-[14px] text-[#666666] font-[Kanit-Light]"
@@ -263,12 +372,15 @@ const RideFilters = ({ close }: Props) => {
             </Text>
           </TouchableOpacity>
         </View>
-        <CheckboxCard />
+        <CheckboxCard 
+          setCheckedItem={setCheckedItems} 
+          checkedItems={checkedItems}
+        />
 
         <View className="border-t border-dashed border-gray-300 my-4" />
 
         {/* Car model */}
-        <View className="flex-row justify-between items-center mb-2">
+        {/* <View className="flex-row justify-between items-center mb-2">
           <Text
             fontSize={18}
             className="text-[18px] text-black font-[Kanit-Medium]"
@@ -315,10 +427,17 @@ const RideFilters = ({ close }: Props) => {
               {count}
             </Text>
           </TouchableOpacity>
-        ))}
+        ))} */}
         <TouchableOpacity
           className="bg-[#FF4848] rounded-full h-[55px] justify-center items-center px-8 w-full my-4"
-          onPress={close}
+          onPress={() =>
+            close({
+              sortOption: toSortCode(sortOption), // 1-5
+              numberOfStops: toStopCode(numberOfStops),
+              verifiedProfile,
+              amenities: checkedItems
+            })
+          }
           activeOpacity={0.8}
         >
           <Text
@@ -328,8 +447,9 @@ const RideFilters = ({ close }: Props) => {
             {t("rideFilter.apply")}
           </Text>
         </TouchableOpacity>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </SafeAreaView>
   );
 };
 

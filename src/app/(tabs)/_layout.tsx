@@ -4,12 +4,46 @@ import ProfileIcon from "@/components/icons/profile-icon";
 import PublishIcon from "@/components/icons/publish-icon";
 import YourRidesIcon from "@/components/icons/your-rides-icon";
 import { PlatformPressable } from "@react-navigation/elements";
-import { Tabs } from "expo-router";
-import { StyleSheet, View } from "react-native";
+import { RelativePathString, router, Tabs } from "expo-router";
+import { StyleSheet, View, Platform } from "react-native";
 import { useTranslation } from "react-i18next";
+import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 export default function TabLayout() {
   const { t } = useTranslation("components");
+
+  /* ---------- helper that checks if user is authenticated ---------- */
+  const isAuthenticated = async () => {
+    const raw = await useAsyncStorage("userDetails").getItem();
+    const token = raw ? JSON.parse(raw).token : "";
+    return !!token;
+  };
+
+  /* ---------- helper to create tab button with auth check ---------- */
+  const createTabButton = (tabName: string, requiresAuth: boolean = true) => {
+    return (props: any) => (
+      <PlatformPressable
+        {...props}
+        android_ripple={{ color: "transparent" }}
+        onPress={async (e) => {
+          console.log('Tab pressed:', tabName, 'requiresAuth:', requiresAuth);
+          
+          if (requiresAuth) {
+            const authenticated = await isAuthenticated();
+            if (!authenticated) {
+              e.preventDefault();
+              router.replace("/login");
+              return;
+            }
+          }
+          
+          // Allow default navigation
+          props.onPress?.(e);
+        }}
+      />
+    );
+  };
+
   return (
     <Tabs
       screenOptions={{
@@ -17,12 +51,6 @@ export default function TabLayout() {
         tabBarStyle: styles.container,
         tabBarLabelStyle: styles.label,
         animation: "shift",
-        tabBarButton: (props) => (
-          <PlatformPressable
-            {...props}
-            android_ripple={{ color: "transparent" }}
-          />
-        ),
       }}
     >
       <Tabs.Screen
@@ -30,6 +58,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.home"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("book", false), // No auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -46,6 +75,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.publish"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("pickup", false), // No auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -62,6 +92,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.yourRides"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("your-rides", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -78,6 +109,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.inbox"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("inbox", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -94,6 +126,7 @@ export default function TabLayout() {
         options={{
           title: t("tabs.profile"),
           tabBarAllowFontScaling: false,
+          tabBarButton: createTabButton("user-profile", true), // Auth required
           tabBarIcon: ({ focused }) => (
             <View
               style={
@@ -114,18 +147,14 @@ const styles = StyleSheet.create({
     height: 65,
     flexDirection: "row",
     backgroundColor: "#ffffff",
-    // iOS shadow
     shadowColor: "#000000",
-    shadowOffset: { width: 0, height: -4 }, // Adjusted for better visibility
-    shadowOpacity: 0.1, // Reduced opacity for subtle effect
-    shadowRadius: 5, // Adjusted radius for smoother shadow
-
-    // Android shadow
-    elevation: 10, // Reduced elevation for better balance
-    paddingBottom: 5,
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 5,
+    elevation: 10,
+    paddingBottom: Platform.OS === 'ios' ? 5 : 5,
   },
   tabWrapper: {
-    // flex: 1,
     alignItems: "center",
     justifyContent: "center",
   },

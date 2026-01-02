@@ -12,6 +12,9 @@ import { colors } from "@/constants/colors";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import { useStore } from "@/store/useStore";
+import namer from 'color-namer';
+
 
 interface Props {
   label?: string;
@@ -30,11 +33,12 @@ export default function ColorSearch({
   const { swap } = useDirection();
   const [searchValue, setSearchValue] = useState("");
   const [selectedValue, setSelectedValue] = useState("");
-  const [open, setOpen] = useState(false);
+  const [open, setOpen] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [inputWidth, setInputWidth] = useState<number | undefined>();
   const inputRef = useRef<View>(null);
-
+  const {vehicle_colors} = useStore()
+  
   const labels = useMemo(() => {
     return colors.reduce<Record<string, string>>((acc, c) => {
       acc[c.value] = t(`profile.colors.${c.label.toLowerCase()}`);
@@ -45,30 +49,53 @@ export default function ColorSearch({
   const handleInputChange = (text: string) => {
     setSearchValue(text);
     setSelectedValue("");
-    setOpen(true);
+    // Keep dropdown open when searching
   };
 
-  const filtered = useMemo(
-    () =>
-      colors.filter(
-        (c) =>
-          t(`profile.colors.${c.label.toLowerCase()}`)
-            .toLowerCase()
-            .includes(searchValue.toLowerCase()) ||
-          c.value.toLowerCase().includes(searchValue.toLowerCase())
-      ),
-    [searchValue, t]
-  );
+  const getColorName = (hexCode:string) => {
+    if (!hexCode || typeof hexCode !== 'string') return 'Unknown';
+    
+    try {
+      const result = namer(hexCode);
+      return result.ntc[0].name; // or use result.html[0].name
+    } catch (error) {
+      console.warn('Invalid color code:', hexCode);
+      return 'Invalid Color';
+    }
+  };
+
+  const filtered = useMemo(() => {
+    if (!vehicle_colors || vehicle_colors.length === 0) {
+      return [];
+    }
+    
+    const transformedColors = vehicle_colors.map((c) => {
+      const colorName = getColorName(c.value);
+  
+      return {
+        label: colorName,
+        value: c.value,
+        name: colorName.toLowerCase(), // from color code like "#FF5733" → "Red Orange"
+      };
+    });
+  
+    return transformedColors.filter((c) =>
+      c.label.toLowerCase().includes(searchValue.toLowerCase()) ||
+      c.value.includes(searchValue.toLowerCase()) ||
+      c.name.includes(searchValue.toLowerCase())
+    );
+  }, [vehicle_colors, searchValue]);
 
   const selectItem = (value: string) => {
+    const colorName = getColorName(value);
     setSelectedValue(value);
-    setSearchValue(labels[value] || "");
-    setOpen(false);
+    setSearchValue(colorName);
+    // Don't close dropdown after selection
     onSelect?.(value);
   };
 
   const onInputBlur = () => {
-    setTimeout(() => setOpen(false), 150);
+    // Don't close dropdown on blur
   };
 
   return (
@@ -91,7 +118,7 @@ export default function ColorSearch({
           onChangeText={handleInputChange}
           placeholder={placeholder}
           autoComplete="off"
-          onFocus={() => setOpen(true)}
+          onFocus={() => {/* Already open by default */}}
           onBlur={onInputBlur}
           className={cn(
             "text-lg font-Kanit-Light placeholder:text-[#666666] bg-[#F1F1F5] border-none h-[50px] rounded-full px-16 flex-1"
@@ -99,47 +126,58 @@ export default function ColorSearch({
         />
       </View>
 
-      <ScrollView className="z-10 bg-white w-full mt-1 rounded-lg max-h-60">
-        {isLoading ? (
-          <View className="p-4">
-            <Text fontSize={16}>{t("profile.loading")}</Text>
-          </View>
-        ) : filtered.length > 0 ? (
-          filtered.map((c, idx) => (
-            <TouchableOpacity
-              key={c.value}
-              activeOpacity={0.8}
-              onPress={() => selectItem(c.value)}
-              className={cn(
-                "flex-row items-center justify-between px-4 py-4",
-                idx + 1 < filtered.length && "border-b border-[#EBEBEB]"
-              )}
-            >
-              <View className="flex-row items-center gap-2">
-                <View
-                  className="w-5 h-5 rounded-[5px]"
-                  style={{ backgroundColor: c.value }}
-                />
-                <View className="flex-1">
-                  <Text fontSize={14} className="text-sm">
-                    {t(`profile.colors.${c.label.toLowerCase()}`)}
-                  </Text>
+      {/* Removed backdrop - dropdown stays open */}
+
+      {open && (
+        <ScrollView bounces={false} className="z-10 bg-white w-full mt-1 rounded-lg max-h-60 border border-gray-200 shadow-lg">
+          {isLoading ? (
+            <View className="p-4">
+              <Text fontSize={16}>{t("profile.loading")}</Text>
+            </View>
+          ) : !vehicle_colors || vehicle_colors.length === 0 ? (
+            <View className="px-6 py-4">
+              <Text fontSize={14} className="text-sm text-gray-500">
+                No colors available. Please select a vehicle model first.
+              </Text>
+            </View>
+          ) : filtered.length > 0 ? (
+            filtered.map((c, idx) => (
+              <TouchableOpacity
+                key={c.value}
+                activeOpacity={0.8}
+                onPress={() => selectItem(c.value)}
+                className={cn(
+                  "flex-row items-center justify-between px-4 py-4",
+                  idx + 1 < filtered.length && "border-b border-[#EBEBEB]",
+                  selectedValue === c.value && "bg-[#F1F5FF]"
+                )}
+              >
+                <View className="flex-row items-center gap-2">
+                  <View
+                    className="w-5 h-5 rounded-[5px]"
+                    style={{ backgroundColor: c.value }}
+                  />
+                  <View className="flex-1">
+                    <Text fontSize={14} className="text-sm">
+                      {c.label}
+                    </Text>
+                  </View>
                 </View>
-              </View>
-              {swap(
-                <ChevronRight size={20} color="#AAAAAA" />,
-                <ChevronLeft size={20} color="#AAAAAA" />
-              )}
-            </TouchableOpacity>
-          ))
-        ) : (
-          <View className="px-6 py-4">
-            <Text fontSize={14} className="text-sm text-gray-500">
-              {t("profile.noItems")}
-            </Text>
-          </View>
-        )}
-      </ScrollView>
+                {swap(
+                  <ChevronRight size={20} color="#AAAAAA" />,
+                  <ChevronLeft size={20} color="#AAAAAA" />
+                )}
+              </TouchableOpacity>
+            ))
+          ) : (
+            <View className="px-6 py-4">
+              <Text fontSize={14} className="text-sm text-gray-500">
+                {t("profile.noItems")}
+              </Text>
+            </View>
+          )}
+        </ScrollView>
+      )}
     </View>
   );
 }

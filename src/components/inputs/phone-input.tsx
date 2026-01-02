@@ -6,6 +6,7 @@ import {
   Modal,
   FlatList,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import {
   CountryCode,
   getCountries,
@@ -49,6 +50,7 @@ interface PhoneInputProps {
   placeholder?: string;
   label?: string;
   className?: string;
+  error?: string;
 }
 
 function PhoneInput({
@@ -58,6 +60,7 @@ function PhoneInput({
   placeholder = "00 00 00 00 00",
   label = "Phone Number",
   className = "",
+  error = "",
 }: PhoneInputProps) {
   const { t } = useTranslation("components");
   const { isRTL } = useDirection();
@@ -73,11 +76,25 @@ function PhoneInput({
   );
 
   const handlePhoneChange = (text: string) => {
-    const parsed = parsePhoneNumberFromString(text, countryCode);
-    const formatted = parsed
-      ? parsed.formatNational()
-      : text.replace(/\D/g, "");
-    setPhone(formatted);
+    let digits = text.replace(/\D/g, '');
+  
+    // Strip leading zero
+    if (digits.startsWith('0')) digits = digits.slice(1);
+  
+    // Add country calling code for parsing
+    const fullNumber = '+' + getCountryCallingCode(countryCode as CountryCode) + digits;
+  
+    try {
+      const parsed = parsePhoneNumberFromString(fullNumber);
+      if (parsed?.isValid?.()) {
+        setPhone(parsed.formatNational()); // e.g., (987) 654-3210
+        // Save E.164 in state or form: parsed.format('E.164') → +19876543210
+      } else {
+        setPhone(digits);
+      }
+    } catch {
+      setPhone(digits);
+    }
   };
 
   useEffect(() => {
@@ -100,7 +117,9 @@ function PhoneInput({
       )}
 
       <View
-        className="flex-row border border-[#F5F5F5] rounded-full overflow-hidden items-center bg-white"
+        className={`flex-row border rounded-full overflow-hidden items-center bg-white ${
+          error ? 'border-red-500' : 'border-[#F5F5F5]'
+        }`}
         style={{ direction: "ltr" }}
       >
         <TouchableOpacity
@@ -128,7 +147,7 @@ function PhoneInput({
           allowFontScaling={false}
           keyboardType="phone-pad"
           placeholder={t(placeholder, { ns: "components" })}
-          value={phone}
+          value={value}
           onChangeText={handlePhoneChange}
           className="flex-1 h-[50px] text-[16px] font-[Kanit-Light] px-2"
           style={{
@@ -139,8 +158,20 @@ function PhoneInput({
         />
       </View>
 
+      {/* Error Message */}
+      {error && (
+        <Text
+          fontSize={14}
+          className="text-[14px] font-[Kanit-Light] text-red-500 mt-2 px-3"
+          style={{ direction: isRTL ? "rtl" : "ltr" }}
+        >
+          {error}
+        </Text>
+      )}
+
       <Modal visible={modalVisible} animationType="slide">
-        <View className="flex-1 p-4 bg-white" style={{ direction: "ltr" }}>
+        <SafeAreaView className="flex-1 bg-white" edges={['top', 'bottom']}>
+          <View className="flex-1 p-4" style={{ direction: "ltr" }}>
           <TextInput
             allowFontScaling={false}
             placeholder={t("Search...", { ns: "components" })}
@@ -178,7 +209,8 @@ function PhoneInput({
               </TouchableOpacity>
             )}
           />
-        </View>
+          </View>
+        </SafeAreaView>
       </Modal>
     </View>
   );
