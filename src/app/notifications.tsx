@@ -87,28 +87,30 @@ export default function NotificationsPage() {
   return (
     <View className="flex-1 bg-gray-50">
       {/* Header with back button */}
-      <View className="flex-row items-center px-4 pt-16 pb-4 bg-white border-b border-gray-100">
-        <TouchableOpacity
-          onPress={() => router.back()}
-          className="mr-4 p-2 -ml-2"
-          activeOpacity={0.7}
-        >
-          {swap(
-            <ChevronLeft size={24} color="#000" strokeWidth={2} />,
-            <ChevronLeft size={24} color="#000" strokeWidth={2} style={{ transform: [{ scaleX: -1 }] }} />
-          )}
-        </TouchableOpacity>
-        
-        <Text
-          fontSize={24}
-          className="text-[24px] font-[Kanit-SemiBold] text-gray-900 flex-1"
-        >
-          {t("notifications.title")}
-        </Text>
+      <View className="px-6 pt-16 pb-6 bg-white">
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(
+              <ChevronLeft size={16} />,
+              <ChevronLeft size={16} style={{ transform: [{ scaleX: -1 }] }} />
+            )}
+          </TouchableOpacity>
+          
+          <Text
+            fontSize={25}
+            className="text-[25px] text-black font-[Kanit-Medium] flex-1"
+          >
+            {t("notifications.title")}
+          </Text>
+        </View>
       </View>
 
       <ScrollView 
-        className="flex-1 px-4 pt-4"
+        className="flex-1 px-6 pt-4"
         refreshControl={
           <RefreshControl
             refreshing={isLoading}

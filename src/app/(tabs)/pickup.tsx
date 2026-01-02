@@ -11,7 +11,7 @@ import { useCreateRideStore } from "@/store/useRideStore";
 import { LocationData, UserStatusResp } from "@/types/ride-types";
 import { getUserStatus } from "@/service/auth";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { CheckCircle, Circle, AlertCircle } from "lucide-react-native";
 
 function Pickup() {
@@ -25,6 +25,34 @@ function Pickup() {
   const [userStatus, setUserStatus] = useState<UserStatusResp['data'] | null>(null);
   const [isCheckingStatus, setIsCheckingStatus] = useState(false);
   const [setupSteps, setSetupSteps] = useState<any[]>([]);
+  const [isCheckingLogin, setIsCheckingLogin] = useState(true);
+
+  // Check login status immediately on component mount
+  useEffect(() => {
+    const checkLoginStatus = async () => {
+      try {
+        const stored = await useAsyncStorage("userDetails").getItem();
+        const userDetails = stored ? JSON.parse(stored) : null;
+        
+        if (!userDetails || userDetails.type !== "login") {
+          // User not logged in - redirect to login immediately
+          setIsPublish(true);
+          router.push('/login');
+          return;
+        }
+        
+        // User is logged in, allow component to render
+        setIsCheckingLogin(false);
+      } catch (error) {
+        console.log('Login check failed:', error);
+        // On error, redirect to login
+        setIsPublish(true);
+        router.push('/login');
+      }
+    };
+
+    checkLoginStatus();
+  }, []);
 
   const showError = (message: string) => {
     setErrorMessage(message);
@@ -53,17 +81,9 @@ function Pickup() {
         if (needsSetup) {
           setShowSetupDialog(true);
         }
-      } else {
-        // User not logged in
-        const steps = await getSetupSteps(null);
-        setSetupSteps(steps);
-        setShowSetupDialog(true);
       }
     } catch (e) {
       console.log('Setup status check failed', e);
-      const steps = await getSetupSteps(null);
-      setSetupSteps(steps);
-      setShowSetupDialog(true);
     } finally {
       setIsCheckingStatus(false);
     }
@@ -71,11 +91,14 @@ function Pickup() {
 
   useFocusEffect(
     useCallback(() => {
-      // Reset location selection when screen is focused
-      setSelectedLocation(null);
-      // Check setup status every time user enters the screen
-      checkUserSetupStatus();
-    }, [])
+      // Only proceed if user is logged in (login check passed)
+      if (!isCheckingLogin) {
+        // Reset location selection when screen is focused
+        setSelectedLocation(null);
+        // Check setup status every time user enters the screen
+        checkUserSetupStatus();
+      }
+    }, [isCheckingLogin])
   )
 
 
@@ -100,9 +123,6 @@ function Pickup() {
     setIsPublish(true);
     
     switch (step) {
-      case 'login':
-        router.push('/login');
-        break;
       case 'bank':
         router.push('/bank-save');
         break;
@@ -127,10 +147,9 @@ function Pickup() {
       const stored = await useAsyncStorage("userDetails").getItem();
       const userDetails = stored ? JSON.parse(stored) : null;
       
+      // Only return steps for logged-in users
       if (!userDetails || userDetails.type !== "login") {
-        return [
-          { id: 'login', title: t("pickup.setupDialog.steps.login"), completed: false, required: true }
-        ];
+        return [];
       }
 
       // Use the passed userStatus or fall back to state
@@ -165,50 +184,76 @@ function Pickup() {
       return steps;
     } catch (error) {
       console.log('Error getting setup steps:', error);
-      return [
-        { id: 'login', title: t("pickup.setupDialog.steps.login"), completed: false, required: true }
-      ];
+      return [];
     }
   };
 
   const hasIncompleteSteps = setupSteps.some(step => step.required && !step.completed);
 
-  const renderSetupStep = (step: any, index: number) => (
-    <TouchableOpacity
-      key={step.id}
-      onPress={() => handleSetupStep(step.id)}
-      className="flex-row items-center p-4 bg-gray-50 rounded-lg mb-3"
-      activeOpacity={0.7}
-    >
-      <View className="mr-3">
-        {step.completed ? (
-          <CheckCircle color="#10B981" size={24} />
-        ) : (
-          <Circle color="#6B7280" size={24} />
-        )}
-      </View>
-      <View className="flex-1">
-        <Text className="text-[16px] font-[Kanit-Medium] text-gray-900">
-          {step.title}
-        </Text>
-        {step.status === 'pending' && (
-          <Text className="text-[14px] font-[Kanit-Light] text-orange-600">
-            {t("pickup.setupDialog.status.pending")}
+  const renderSetupStep = (step: any, index: number) => {
+    // Check if this step should be disabled
+    const isStepDisabled = () => {
+      // Disable completed steps
+      if (step.completed) return true;
+      
+      // For steps after the first one, check if previous steps are completed
+      if (index > 0) {
+        const previousSteps = setupSteps.slice(0, index);
+        return previousSteps.some(prevStep => prevStep.required && !prevStep.completed);
+      }
+      
+      return false;
+    };
+
+    const disabled = isStepDisabled();
+
+    return (
+      <TouchableOpacity
+        key={step.id}
+        onPress={disabled ? undefined : () => handleSetupStep(step.id)}
+        className={`flex-row items-center p-4 rounded-lg mb-3 ${
+          disabled ? 'bg-gray-200' : 'bg-gray-50'
+        }`}
+        activeOpacity={disabled ? 1 : 0.7}
+        disabled={disabled}
+      >
+        <View className="mr-3">
+          {step.completed ? (
+            <CheckCircle color="#10B981" size={24} />
+          ) : (
+            <Circle color={disabled ? "#D1D5DB" : "#6B7280"} size={24} />
+          )}
+        </View>
+        <View className="flex-1">
+          <Text className={`text-[16px] font-[Kanit-Medium] ${
+            disabled ? 'text-gray-400' : 'text-gray-900'
+          }`}>
+            {step.title}
+          </Text>
+          {step.status === 'pending' && (
+            <Text className="text-[14px] font-[Kanit-Light] text-orange-600">
+              {t("pickup.setupDialog.status.pending")}
+            </Text>
+          )}
+          {step.completed && (
+            <Text className="text-[14px] font-[Kanit-Light] text-green-600">
+              {t("pickup.setupDialog.status.completed")}
+            </Text>
+          )}
+        </View>
+        {!step.completed && !disabled && (
+          <Text className="text-[14px] font-[Kanit-Regular] text-[#FF4848]">
+            {t("pickup.setupDialog.buttons.setup")}
           </Text>
         )}
-        {step.completed && (
-          <Text className="text-[14px] font-[Kanit-Light] text-green-600">
-            {t("pickup.setupDialog.status.completed")}
+        {disabled && !step.completed && (
+          <Text className="text-[14px] font-[Kanit-Regular] text-gray-400">
+            {t("pickup.setupDialog.buttons.locked", "Locked")}
           </Text>
         )}
-      </View>
-      {!step.completed && (
-        <Text className="text-[14px] font-[Kanit-Regular] text-[#FF4848]">
-          {t("pickup.setupDialog.buttons.setup")}
-        </Text>
-      )}
-    </TouchableOpacity>
-  );
+      </TouchableOpacity>
+    );
+  };
 
   const handleLocationSelect = (value: LocationData) => {
     setSelectedLocation(value);
@@ -224,7 +269,8 @@ function Pickup() {
 
   const { ride, setRideField, createRide, loading, success, error } = useCreateRideStore();
 
-  if (!loaded) return null;
+  // Don't render anything while checking login status
+  if (!loaded || isCheckingLogin) return null;
   
   return (
     <>

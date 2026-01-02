@@ -19,11 +19,14 @@ import {
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
+import { ChevronLeft } from 'lucide-react-native';
 import { router } from 'expo-router';
 import { handleVerifyId } from '@/service/auth';
 import Dialog from '@/components/ui/dialog';
+import { useDirection } from '@/hooks/useDirection';
 
 const UploadDocumentsScreen = () => {
+  const { swap } = useDirection();
   const [nationalId, setNationalId] = useState<ImagePicker.ImagePickerAsset | null>(null);
   const [drivingLicense, setDrivingLicense] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
   const [vehicleRegistration, setVehicleRegistration] = useState<DocumentPicker.DocumentPickerAsset | null>(null);
@@ -329,12 +332,29 @@ const UploadDocumentsScreen = () => {
     <SafeAreaView className="flex-1 bg-white">
       <StatusBar barStyle="dark-content" />
 
-      {/* ---------- keyboard avoiding wrapper ---------- */}
-      <View className="px-6 mt-5 py-4 bg-white border-b border-gray-200">
-        <Text className="text-2xl font-bold text-gray-900">Upload Documents</Text>
-        <Text className="text-sm text-gray-600 mt-1">
-          All fields marked with * are required
-        </Text>
+      {/* Header with back button */}
+      <View className="px-6 pt-16 pb-6 bg-white">
+        <View className="flex-row items-center gap-4">
+          <TouchableOpacity
+            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            onPress={() => router.back()}
+            activeOpacity={0.8}
+          >
+            {swap(
+              <ChevronLeft size={16} />,
+              <ChevronLeft size={16} style={{ transform: [{ scaleX: -1 }] }} />
+            )}
+          </TouchableOpacity>
+          
+          <View className="flex-1">
+            <Text className="text-[25px] text-black font-[Kanit-Medium]">
+              Upload Documents
+            </Text>
+            <Text className="text-sm text-gray-600 mt-1">
+              All fields marked with * are required
+            </Text>
+          </View>
+        </View>
       </View>
 
       {/* ---------- keyboard avoiding wrapper ---------- */}

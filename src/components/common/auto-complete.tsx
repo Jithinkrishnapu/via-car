@@ -48,6 +48,7 @@ export function AutoComplete<T extends string>({
   const { t } = useTranslation("components");
   const [visible, setVisible] = useState(false);
   const translateY = useRef(new Animated.Value(height)).current;
+  const pendingSelectionRef = useRef<T | null>(null);
 
   const labels = useMemo(
     () =>
@@ -85,18 +86,17 @@ export function AutoComplete<T extends string>({
   };
 
   const handleSelect = (value: T) => {
-    // Dismiss keyboard first, then handle selection
-    Keyboard.dismiss();
-    
+    if (value === selectedValue) {
+      reset();
+    } else {
+      onSelectedValueChange(value);
+      onSearchValueChange(labels[value] ?? "");
+    }
+    closeSheet();
+    // Dismiss keyboard after closing sheet animation completes
     setTimeout(() => {
-      if (value === selectedValue) {
-        reset();
-      } else {
-        onSelectedValueChange(value);
-        onSearchValueChange(labels[value] ?? "");
-      }
-      closeSheet();
-    }, 100);
+      Keyboard.dismiss();
+    }, 300);
   };
 
   // Calculate max height: half of screen height
@@ -130,11 +130,16 @@ export function AutoComplete<T extends string>({
           visible={visible} 
           transparent 
           animationType="fade"
+          onRequestClose={() => {
+            Keyboard.dismiss();
+            closeSheet();
+          }}
         >
           <View style={{ 
             flex: 1, 
             justifyContent: 'flex-end',
-            backgroundColor: 'rgba(0,0,0,0.5)'
+            backgroundColor: 'rgba(0,0,0,0.5)',
+            pointerEvents: 'box-none'
           }}>
             <TouchableOpacity
               onPress={() => {
@@ -142,12 +147,13 @@ export function AutoComplete<T extends string>({
                 closeSheet();
               }}
               activeOpacity={1}
-              style={{ flex: 1 }}
+              style={{ flex: 1, pointerEvents: 'auto' }}
             />
             <Animated.View
               style={{
                 transform: [{ translateY }],
                 height: maxSheetHeight,
+                pointerEvents: 'auto'
               }}
               className="bg-white rounded-t-3xl"
             >

@@ -12,7 +12,7 @@ export default function BookingLayout() {
         router.replace("/login");
       }
     };
-    checkAuth();
+    // checkAuth();
   }, []);
 
   return (

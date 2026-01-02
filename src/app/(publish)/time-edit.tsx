@@ -6,6 +6,7 @@ import {
   KeyboardAvoidingView,
   Platform,
 } from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 import { ChevronLeft } from "lucide-react-native";
 import { router, useLocalSearchParams } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -20,13 +21,21 @@ export default function Time() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL } = useDirection();
-  const { setRideField } = useCreateRideStore();
+  const { ride, setRideField } = useCreateRideStore();
   const { time: defaultTime } = useLocalSearchParams<{ time?: string }>(); // "HH:mm" 24h
 
   /* ------------- local states ------------- */
   const [period, setPeriod] = useState<"AM" | "PM">("AM");
   const [hour, setHour] = useState("07");
   const [minute, setMinute] = useState("00");
+  const [isToday, setIsToday] = useState(false);
+
+  /* ------------- check if selected date is today ------------- */
+  useEffect(() => {
+    const today = new Date();
+    const todayString = today.toISOString().split('T')[0]; // yyyy-MM-dd format
+    setIsToday(ride.date === todayString);
+  }, [ride.date]);
 
   /* ------------- initialise from params ------------- */
   useEffect(() => {
@@ -49,6 +58,29 @@ export default function Time() {
     let h = parseInt(hour, 10);
     if (Number.isNaN(h) || h < 1) h = 1;
     if (h > 12) h = 12;
+    
+    // If today, check minimum time
+    if (isToday) {
+      const now = new Date();
+      const currentHour = now.getHours() + 1; // 1 hour buffer
+      const currentMinute = now.getMinutes();
+      
+      let h24 = h;
+      if (period === "PM" && h !== 12) h24 += 12;
+      if (period === "AM" && h === 12) h24 = 0;
+      
+      const selectedTime = h24 * 60 + parseInt(minute, 10);
+      const minTime = currentHour * 60 + currentMinute;
+      
+      if (selectedTime < minTime) {
+        const minPeriod: "AM" | "PM" = currentHour >= 12 ? "PM" : "AM";
+        const min12Hour = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        h = min12Hour;
+        setPeriod(minPeriod);
+        setMinute(currentMinute.toString().padStart(2, "0"));
+      }
+    }
+    
     setHour(h.toString().padStart(2, "0"));
   };
 
@@ -61,7 +93,52 @@ export default function Time() {
     let m = parseInt(minute, 10);
     if (Number.isNaN(m) || m < 0) m = 0;
     if (m > 59) m = 59;
+    
+    // If today, check minimum time
+    if (isToday) {
+      const now = new Date();
+      const currentHour = now.getHours() + 1; // 1 hour buffer
+      const currentMinute = now.getMinutes();
+      
+      let h24 = parseInt(hour, 10);
+      if (period === "PM" && h24 !== 12) h24 += 12;
+      if (period === "AM" && h24 === 12) h24 = 0;
+      
+      const selectedTime = h24 * 60 + m;
+      const minTime = currentHour * 60 + currentMinute;
+      
+      if (selectedTime < minTime) {
+        m = currentMinute;
+      }
+    }
+    
     setMinute(m.toString().padStart(2, "0"));
+  };
+
+  const handlePeriodChange = (newPeriod: "AM" | "PM") => {
+    setPeriod(newPeriod);
+    
+    // If today, validate the new time
+    if (isToday) {
+      const now = new Date();
+      const currentHour = now.getHours() + 1; // 1 hour buffer
+      const currentMinute = now.getMinutes();
+      
+      let h24 = parseInt(hour, 10);
+      if (newPeriod === "PM" && h24 !== 12) h24 += 12;
+      if (newPeriod === "AM" && h24 === 12) h24 = 0;
+      
+      const selectedTime = h24 * 60 + parseInt(minute, 10);
+      const minTime = currentHour * 60 + currentMinute;
+      
+      if (selectedTime < minTime) {
+        const minPeriod: "AM" | "PM" = currentHour >= 12 ? "PM" : "AM";
+        const min12Hour = currentHour === 0 ? 12 : currentHour > 12 ? currentHour - 12 : currentHour;
+        setHour(min12Hour.toString().padStart(2, "0"));
+        setMinute(currentMinute.toString().padStart(2, "0"));
+        setPeriod(minPeriod);
+      }
+    }
   };
 
   /* ------------- continue ------------- */
@@ -150,7 +227,7 @@ export default function Time() {
                   return (
                     <TouchableOpacity
                       key={p}
-                      onPress={() => setPeriod(p)}
+                      onPress={() => handlePeriodChange(p)}
                       activeOpacity={0.8}
                       className={`flex-1 items-center justify-center ${
                         isSel ? "bg-[#00665A]" : "bg-white"

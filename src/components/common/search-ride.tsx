@@ -7,7 +7,7 @@ import DatePicker from "./date-picker";
 import { router } from "expo-router";
 import {
   TouchableOpacity,
-  View,
+  View, 
   Animated,          // ← added
 } from "react-native";
 import Text from "./text";

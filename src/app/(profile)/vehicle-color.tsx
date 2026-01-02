@@ -56,12 +56,12 @@ export default function VehiclePage() {
 
   const handleAddVehicle = async () => {
     if (!selectedColor.trim()) {
-      showError(t("error"), t("profile.pleaseSelectColor"));
+      showError("Error", t("profile.pleaseSelectColor"));
       return;
     }
 
     if (!vehicle_model_id) {
-      showError(t("error"), t("profile.vehicleModelRequired"));
+      showError("Error", t("profile.vehicleModelRequired"));
       return;
     }
 
@@ -70,45 +70,34 @@ export default function VehiclePage() {
       const formdata = new FormData();
       formdata.append("model_id", vehicle_model_id.toString());
       formdata.append("color", selectedColor.trim());
-      formdata.append("year", "2021");
+      // formdata.append("year", "2021");
 
       const response = await addVehicle(formdata);
       console.log("Add vehicle response:", response);
 
       if (response?.ok) {
-        showSuccess(t("success"), t("profile.vehicleAddedSuccessfully"));
+        showSuccess("Success", t("profile.vehicleAddedSuccessfully"));
       } else {
-        // Handle non-ok response
-        let errorMessage = t("profile.failedToAddVehicle");
-        
-        // Try to get more specific error message from response
-        try {
-          const errorData = await response.json();
-          if (errorData?.message) {
-            errorMessage = errorData.message;
-          } else if (errorData?.error) {
-            errorMessage = errorData.error;
-          }
-        } catch (parseError) {
-          console.log("Could not parse error response:", parseError);
-        }
-        
-        showError(t("error"), errorMessage);
+        // Handle non-ok response - this shouldn't happen as addVehicle throws on !ok
+        showError("Error", t("profile.failedToAddVehicle"));
       }
     } catch (error: any) {
       console.error("Add vehicle error:", error);
       
-      let errorMessage = t("profile.failedToAddVehicle");
+      // Extract backend error message
+      let errorMessage = t("profile.failedToAddVehicle"); // Default fallback
       
-      if (error?.message) {
-        errorMessage = error.message;
-      } else if (error?.response?.data?.message) {
+      // Check for backend error messages in order of preference
+      if (error?.response?.data?.message) {
         errorMessage = error.response.data.message;
       } else if (error?.response?.data?.error) {
         errorMessage = error.response.data.error;
+      } else if (error?.message && !error.message.includes("Network") && !error.message.includes("HTTP")) {
+        // Only use error.message if it's not a generic network/HTTP error
+        errorMessage = error.message;
       }
       
-      showError(t("error"), errorMessage);
+      showError("Error", errorMessage);
     } finally {
       setLoading(false);
     }

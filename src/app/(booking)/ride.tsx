@@ -161,15 +161,6 @@ function Ride() {
       return;
     }
 
-    if (!rides.length) {
-      showErrorDialog(
-        "No Rides Available",
-        "Cannot create alert as no rides are available for this route.",
-        "warning"
-      );
-      return;
-    }
-
     const request = {
       email: email.trim(),
       ride_id: rides[0]?.rideId
