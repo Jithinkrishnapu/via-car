@@ -44,7 +44,7 @@ function Login() {
     // Remove all non-digit characters
     const digitsOnly = phone.replace(/\D/g, '');
     
-    if (digitsOnly.length < 8) {
+    if (digitsOnly.length < 9) {
       setPhoneError(t("login.phone_min_digits"));
       return false;
     }
