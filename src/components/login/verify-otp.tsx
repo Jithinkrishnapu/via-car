@@ -164,7 +164,7 @@ const VerifyOtp = ({
       
       if (error.message.includes('Invalid') || error.message.includes('OTP')) {
         return {
-          title: t("components.common.error"),
+          title: t("login.invalid_otp"),
           message: t("components.common.retry"),
           type: "error"
         };
@@ -383,8 +383,8 @@ const VerifyOtp = ({
           router.push(`/(tabs)/book`);
         }
       } else {
-        const errorMessage = response?.message || response?.error || "Invalid OTP. Please try again.";
-        showError(t("login.verification_failed"), errorMessage);
+        const errorMessage = response?.message || response?.error || "Please try again.";
+        showError(t("login.invalid_otp"), errorMessage);
       }
     } catch (error: any) {
       const errorInfo = getErrorMessage(error);

@@ -169,7 +169,7 @@ const en = {
     otp_sent: "OTP Sent",
     otp_sent_message: "Verification code has been sent to your phone.",
     otp_failed: "OTP Failed",
-    invalid_otp: "Invalid OTP",
+    invalid_otp: "Incorrect OTP",
     invalid_otp_message: "Please enter the complete 6-digit verification code.",
     session_error: "Session Error",
     session_error_message: "OTP session expired. Please request a new code.",
