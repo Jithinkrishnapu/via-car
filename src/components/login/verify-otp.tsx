@@ -451,7 +451,7 @@ const VerifyOtp = ({
             onKeyPress={(e) => handleKeyPress(e, i)}
             maxLength={1}
             keyboardType="number-pad"
-            className="size-[50px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
+            className="size-[45px] border border-[#D9D8D8] rounded-[10px] text-center text-[18px] text-[Kanit-Regular] mx-1"
             style={{ textAlign: 'center' }}
           />
         ))}
