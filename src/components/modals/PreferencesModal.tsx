@@ -41,22 +41,9 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
   // Normalize travel preferences to always be an array of strings
   const travelPreferences: string[] = (() => {
     if (!userDetails?.travel_preferences) return [];
-    
-    const prefs = userDetails.travel_preferences;
-    
-    // If it's already an array of strings, return it
-    if (Array.isArray(prefs) && prefs.every(p => typeof p === 'string')) {
-      return prefs.filter(p => p.trim().length > 0);
+    if (Array.isArray(userDetails.travel_preferences) && userDetails.travel_preferences.every(p => typeof p === 'string')) {
+      return userDetails.travel_preferences.filter(p => p.trim().length > 0);
     }
-    
-    // If it's an array with comma-separated string (legacy format)
-    if (Array.isArray(prefs) && prefs.length > 0 && typeof prefs[0] === 'string') {
-      return prefs[0]
-        .split(',')
-        .map(p => p.trim())
-        .filter(p => p.length > 0);
-    }
-    
     return [];
   })();
 
@@ -70,11 +57,6 @@ const PreferencesModal = ({ onClose }: { onClose?: () => void }) => {
       preferences.forEach(pref => {
         form.append("travel_preferences[]", pref);
       });
-      
-      // If no preferences, send empty array
-      if (preferences.length === 0) {
-        form.append("travel_preferences[]", "");
-      }
       
       const result = await useUpdateProfileDetails(form);
       

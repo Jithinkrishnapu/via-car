@@ -7,30 +7,20 @@ import {
   ImageBackground,
   useWindowDimensions,
   Modal,
-  TextInput,
   FlatList,
 } from "react-native";
 import { Href, useRouter } from "expo-router";
 import {
-  ArrowRight,
   ChevronLeft,
   ChevronRight,
   CirclePlus,
-  LogOut,
   Pencil,
   Star,
   Trash2,
-  User,
-  Users,
-  X,
 } from "lucide-react-native";
 import Text from "@/components/common/text";
 import CheckGreen from "../../../public/check-green.svg";
-import VerifyIcon from "../../../public/verify.svg";
 import ChatIcon from "../../../public/chat.svg";
-import CigaretteIcon from "../../../public/cigarette-light.svg";
-import MusicIcon from "../../../public/music.svg";
-import PawIcon from "../../../public/paw.svg";
 import { Separator } from "@/components/ui/separator";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Animated, {
@@ -39,7 +29,6 @@ import Animated, {
   withSpring,
 } from "react-native-reanimated";
 import { cn } from "@/lib/utils";
-import MailAnimation from "@/components/animated/mail-animation";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import AsyncStorage from "@react-native-async-storage/async-storage";
@@ -49,12 +38,24 @@ import AboutModal from "@/components/modals/AboutModal";
 import { handleLogOut, useGetProfileDetails } from "@/service/auth";
 import { deleteVehicle, getVehicleList } from "@/service/vehicle";
 import ProfileModal from "@/components/modals/ProfileModal";
-import { changeLanguage, getCurrentLanguageName, getOppositeLanguageName } from "@/lib/languageUtils";
+import {
+  changeLanguage,
+  getCurrentLanguageName,
+  getOppositeLanguageName,
+} from "@/lib/languageUtils";
 import { useStore } from "@/store/useStore";
 import ConfirmDialog from "@/components/ui/confirm-dialog";
 import AlertDialog from "@/components/ui/alert-dialog";
 
-type ModalTypes = "email" | "preferences" | "about" | "profile"
+type ModalTypes = "email" | "preferences" | "about" | "profile";
+
+function normalizeTravelPreferences(prefs: any): string[] {
+  if (!prefs) return [];
+  if (Array.isArray(prefs) && prefs.every((p) => typeof p === "string")) {
+    return prefs.filter((p) => p.trim().length > 0);
+  }
+  return [];
+}
 
 export default function ProfilePage() {
   const loaded = useLoadFonts();
@@ -64,12 +65,11 @@ export default function ProfilePage() {
   const tabKeys = ["about", "account"] as const;
   type TabKey = (typeof tabKeys)[number];
   const [activeTab, setActiveTab] = useState<TabKey>("about");
-  const { width } = useWindowDimensions();
   const indicatorX = useSharedValue(0);
   const tabWidth = (246 + 6) / tabKeys.length;
   const [modalVisible, setModalVisible] = useState(false);
-  const [modalType, setModalTtype] = useState<ModalTypes>()
-  const [vehicleList, setVehhicleList] = useState<any[]>([])
+  const [modalType, setModalTtype] = useState<ModalTypes>();
+  const [vehicleList, setVehhicleList] = useState<any[]>([]);
 
   // Dialog states
   const [deleteVehicleDialog, setDeleteVehicleDialog] = useState({
@@ -93,10 +93,13 @@ export default function ProfilePage() {
 
   const handleGetVehicles = async () => {
     try {
-      const response = await getVehicleList()
+      const response = await getVehicleList();
       if (response.data) {
-        setVehhicleList(response.data.vehicles)
-        console.log(response.data.vehicles, "response.data.vehicles================")
+        setVehhicleList(response.data.vehicles);
+        console.log(
+          response.data.vehicles,
+          "response.data.vehicles================"
+        );
       }
     } catch (error: any) {
       console.error("Get vehicles error:", error);
@@ -110,7 +113,7 @@ export default function ProfilePage() {
         errorMessage = error.response.data.error;
       } else if (error?.response?.data) {
         // If response.data is a string
-        if (typeof error.response.data === 'string') {
+        if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
         }
       } else if (error?.message) {
@@ -125,7 +128,7 @@ export default function ProfilePage() {
         type: "error",
       });
     }
-  }
+  };
 
   const handleDeleteVehicle = (vehicleId: number) => {
     setDeleteVehicleDialog({
@@ -158,7 +161,7 @@ export default function ProfilePage() {
         errorMessage = error.response.data.error;
       } else if (error?.response?.data) {
         // If response.data is a string
-        if (typeof error.response.data === 'string') {
+        if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
         }
       } else if (error?.message) {
@@ -198,7 +201,7 @@ export default function ProfilePage() {
         errorMessage = error.response.data.error;
       } else if (error?.response?.data) {
         // If response.data is a string
-        if (typeof error.response.data === 'string') {
+        if (typeof error.response.data === "string") {
           errorMessage = error.response.data;
         }
       } else if (error?.message) {
@@ -224,10 +227,10 @@ export default function ProfilePage() {
   const { setIsPublish, setPath } = useStore();
 
   useEffect(() => {
-    handleGetVehicles()
+    handleGetVehicles();
     const index = tabKeys.indexOf(activeTab);
-    const targetX = isRTL 
-      ? (tabKeys.length - 1 - index) * tabWidth  // Reverse for RTL
+    const targetX = isRTL
+      ? (tabKeys.length - 1 - index) * tabWidth // Reverse for RTL
       : index * tabWidth;
     indicatorX.value = withSpring(targetX, {
       damping: 20,
@@ -247,38 +250,41 @@ export default function ProfilePage() {
   };
 
   const confirmLogout = () => {
-    handleLogOut().then((res) => {
-      AsyncStorage.removeItem("userDetails");
-      setIsPublish(false)
-      router.replace("/login");
-    }).catch((err: any) => {
-      console.error("Logout error:", err);
+    handleLogOut()
+      .then(() => {
+        AsyncStorage.removeItem("userDetails");
+        setIsPublish(false);
+        router.replace("/login");
+      })
+      .catch((err: any) => {
+        console.error("Logout error:", err);
 
-      let errorMessage = t("Something went wrong");
+        let errorMessage = t("Something went wrong");
 
-      // Handle axios errors
-      if (err?.response?.data?.message) {
-        errorMessage = err.response.data.message;
-      } else if (err?.response?.data?.error) {
-        errorMessage = err.response.data.error;
-      } else if (err?.response?.data) {
-        // If response.data is a string
-        if (typeof err.response.data === 'string') {
-          errorMessage = err.response.data;
+        // Handle axios errors
+        if (err?.response?.data?.message) {
+          errorMessage = err.response.data.message;
+        } else if (err?.response?.data?.error) {
+          errorMessage = err.response.data.error;
+        } else if (err?.response?.data) {
+          // If response.data is a string
+          if (typeof err.response.data === "string") {
+            errorMessage = err.response.data;
+          }
+        } else if (err?.message) {
+          errorMessage = err.message;
         }
-      } else if (err?.message) {
-        errorMessage = err.message;
-      }
 
-      setAlertDialog({
-        visible: true,
-        title: t("error"),
-        message: errorMessage,
-        type: "error",
+        setAlertDialog({
+          visible: true,
+          title: t("error"),
+          message: errorMessage,
+          type: "error",
+        });
+      })
+      .finally(() => {
+        setLogoutDialog({ visible: false });
       });
-    }).finally(() => {
-      setLogoutDialog({ visible: false });
-    });
   };
 
   const [userDetails, setUserDetails] = useState<any>(null);
@@ -286,10 +292,12 @@ export default function ProfilePage() {
   const refreshProfile = useCallback(async () => {
     try {
       const res = await useGetProfileDetails();
-      console.log('userData============', res.data)
-      if (res?.data?.first_name !== "") { setUserDetails(res.data) } else {
-        router.replace("/login")
-      };
+      console.log("userData============", res.data);
+      if (res?.data?.first_name !== "") {
+        setUserDetails(res.data);
+      } else {
+        router.replace("/login");
+      }
     } catch (error: any) {
       console.error("Profile refresh error:", error);
 
@@ -303,28 +311,30 @@ export default function ProfilePage() {
       }
 
       // Redirect to login on profile fetch failure
-      router.replace("/login")
+      router.replace("/login");
     }
   }, []);
 
   /* first load */
-  useEffect(() => { refreshProfile(); }, [refreshProfile]);
+  useEffect(() => {
+    refreshProfile();
+  }, [refreshProfile]);
 
   const renderModalContent = () => {
     const onClose = () => {
       setModalTtype(undefined);
       setModalVisible(false);
-      refreshProfile();          // ← always refresh when any modal closes
+      refreshProfile(); // ← always refresh when any modal closes
     };
 
     switch (modalType) {
-      case 'email':
+      case "email":
         return <EmailModal onClose={onClose} />;
-      case 'preferences':
+      case "preferences":
         return <PreferencesModal onClose={onClose} />;
-      case 'about':
+      case "about":
         return <AboutModal onClose={onClose} />;
-      case 'profile':
+      case "profile":
         return <ProfileModal onClose={onClose} />;
       default:
         return null;
@@ -333,7 +343,7 @@ export default function ProfilePage() {
 
   if (!loaded) return null;
 
-  console.log("userdetails===============",userDetails)
+  console.log("userdetails===============", userDetails);
 
   return (
     <View className="bg-white flex-1">
@@ -352,14 +362,28 @@ export default function ProfilePage() {
             {t("Profile")}
           </Text>
           <View className="mt-6 flex-col flex-wrap justify-between">
-            <View className={cn("flex flex-row gap-[30px] items-center", isRTL && "flex-row-reverse")}>
+            <View
+              className={cn(
+                "flex flex-row gap-[30px] items-center",
+                isRTL && "flex-row-reverse"
+              )}
+            >
               <Image
-                source={userDetails?.profile_image_url ? { uri: userDetails?.profile_image_url } : require(`../../../public/profile-image.jpg.webp`)}
+                source={
+                  userDetails?.profile_image_url
+                    ? { uri: userDetails?.profile_image_url }
+                    : require(`../../../public/profile-image.jpg.webp`)
+                }
                 className="size-[80px] rounded-2xl"
                 resizeMode="cover"
               />
               <View className="flex-1">
-                <View className={cn("flex-row justify-between items-center", isRTL && "flex-row-reverse")}>
+                <View
+                  className={cn(
+                    "flex-row justify-between items-center",
+                    isRTL && "flex-row-reverse"
+                  )}
+                >
                   <Text
                     fontSize={25}
                     fontWeight="regular"
@@ -369,22 +393,33 @@ export default function ProfilePage() {
                   </Text>
                   <TouchableOpacity
                     onPress={() => {
-                      setModalTtype("profile")
-                      setModalVisible(true)
+                      setModalTtype("profile");
+                      setModalVisible(true);
                     }}
-                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]", isRTL && "flex-row-reverse")}
+                    className={cn(
+                      "flex-row items-center bg-transparent border border-gray-200 rounded-full px-[18px] py-[6px]",
+                      isRTL && "flex-row-reverse"
+                    )}
                   >
                     <Pencil size={14} color="#FF4848" strokeWidth={1} />
                     <Text
                       fontSize={12}
                       fontWeight="light"
-                      className={cn("text-[12px] text-white", isRTL ? "mr-1" : "ml-1")}
+                      className={cn(
+                        "text-[12px] text-white",
+                        isRTL ? "mr-1" : "ml-1"
+                      )}
                     >
                       {t("Edit")}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                <View className={cn("flex-row items-center mt-2 gap-[10px]", isRTL && "flex-row-reverse")}>
+                <View
+                  className={cn(
+                    "flex-row items-center mt-2 gap-[10px]",
+                    isRTL && "flex-row-reverse"
+                  )}
+                >
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -405,42 +440,59 @@ export default function ProfilePage() {
               {[
                 [t("Phone Number"), userDetails?.mobile_number],
                 [t("Mail"), userDetails?.email],
-                [t("Age"), - + Number(userDetails?.calculated_age)],
+                [t("Age"), -+Number(userDetails?.calculated_age)],
                 [t("Gender"), userDetails?.gender_name],
-              ].map(([label, value], idx) => (
-                value && <View key={idx} className={cn("flex-row py-1", isRTL && "flex-row-reverse")}>
-                  <Text
-                    fontSize={14}
-                    fontWeight="light"
-                    className="flex-1 text-[14px] text-white"
-                    style={{ textAlign: isRTL ? 'right' : 'left' }}
-                  >
-                    {label}
-                  </Text>
-                  <Text
-                    fontSize={14}
-                    fontWeight="light"
-                    className="w-[20px] text-center text-[14px] text-white"
-                  >
-                    :
-                  </Text>
-                  <Text
-                    fontSize={14}
-                    fontWeight="light"
-                    className={cn("flex-1 text-[14px] text-white", isRTL ? "mr-1" : "ml-1")}
-                    style={{ textAlign: isRTL ? 'left' : 'left' }}
-                  >
-                    {value}
-                  </Text>
-                </View>
-              ))}
+              ].map(
+                ([label, value], idx) =>
+                  value && (
+                    <View
+                      key={idx}
+                      className={cn(
+                        "flex-row py-1",
+                        isRTL && "flex-row-reverse"
+                      )}
+                    >
+                      <Text
+                        fontSize={14}
+                        fontWeight="light"
+                        className="flex-1 text-[14px] text-white"
+                        style={{ textAlign: isRTL ? "right" : "left" }}
+                      >
+                        {label}
+                      </Text>
+                      <Text
+                        fontSize={14}
+                        fontWeight="light"
+                        className="w-[20px] text-center text-[14px] text-white"
+                      >
+                        :
+                      </Text>
+                      <Text
+                        fontSize={14}
+                        fontWeight="light"
+                        className={cn(
+                          "flex-1 text-[14px] text-white",
+                          isRTL ? "mr-1" : "ml-1"
+                        )}
+                        style={{ textAlign: isRTL ? "left" : "left" }}
+                      >
+                        {value}
+                      </Text>
+                    </View>
+                  )
+              )}
             </View>
           </View>
         </View>
       </ImageBackground>
 
       {/* Tab Switcher - Also Sticky */}
-      <View className={cn("flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto", isRTL && "flex-row-reverse")}>
+      <View
+        className={cn(
+          "flex-row h-[40px] bg-white border border-[#EBEBEB] rounded-full overflow-hidden mt-[20px] max-w-[246px] mx-auto",
+          isRTL && "flex-row-reverse"
+        )}
+      >
         <Animated.View
           style={animatedIndicatorStyle}
           className="rounded-full bg-[#FF4848] h-[38px] absolute z-0"
@@ -489,7 +541,7 @@ export default function ProfilePage() {
                     <>
                       <TouchableOpacity
                         className="flex-row items-center px-4 py-2"
-                        onPress={() => { }}
+                        onPress={() => {}}
                         activeOpacity={0.8}
                       >
                         <CheckGreen width={18} height={18} />
@@ -555,7 +607,12 @@ export default function ProfilePage() {
 
               {/* Travel Preferences */}
               <View className="px-6 py-8">
-                <View className={cn("flex-row justify-between items-center mb-[20px]", isRTL && "flex-row-reverse")}>
+                <View
+                  className={cn(
+                    "flex-row justify-between items-center mb-[20px]",
+                    isRTL && "flex-row-reverse"
+                  )}
+                >
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -564,44 +621,74 @@ export default function ProfilePage() {
                     {t("Travel Preferences")}
                   </Text>
                   <TouchableOpacity
-                    onPress={() => { setModalTtype("preferences"), setModalVisible(true) }}
-                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full h-max px-5 py-1.5", isRTL && "flex-row-reverse")}
+                    onPress={() => {
+                      setModalTtype("preferences");
+                      setModalVisible(true);
+                    }}
+                    className={cn(
+                      "flex-row items-center bg-transparent border border-gray-200 rounded-full h-max px-5 py-1.5",
+                      isRTL && "flex-row-reverse"
+                    )}
                   >
                     <Pencil size={12} color="#FF4848" />
-                    <Text fontSize={14} className={cn("text-sm", isRTL ? "mr-1" : "ml-1")}>
-                      {userDetails?.travel_preferences?.[0] ? t("Edit") : t("Add Travel Preferences")}
+                    <Text
+                      fontSize={14}
+                      className={cn("text-sm", isRTL ? "mr-1" : "ml-1")}
+                    >
+                      {normalizeTravelPreferences(
+                        userDetails?.travel_preferences
+                      ).length > 0
+                        ? t("Edit")
+                        : t("Add Travel Preferences")}
                     </Text>
                   </TouchableOpacity>
                 </View>
-                {userDetails?.travel_preferences?.[0] ? (
-                  <View className="flex-wrap flex-row gap-[15px]">
-                    {userDetails?.travel_preferences?.[0]          // take the first (and only) string
-                      ?.split(',')                                 // break it into real tags
-                      .map((text: string) => (
+                {(() => {
+                  const travelPreferences = normalizeTravelPreferences(
+                    userDetails?.travel_preferences
+                  );
+
+                  return travelPreferences.length > 0 ? (
+                    <View className="flex-wrap flex-row gap-[15px]">
+                      {travelPreferences.map((text: string) => (
                         <View
                           key={text}
-                          className={cn("border border-gray-200 rounded-full flex-row items-center px-4 py-2", isRTL && "flex-row-reverse")}
+                          className={cn(
+                            "border border-gray-200 rounded-full flex-row items-center px-4 py-2",
+                            isRTL && "flex-row-reverse"
+                          )}
                         >
                           <ChatIcon width={21} height={21} />
-                          <Text className={cn("text-sm", isRTL ? "mr-2" : "ml-2")} fontWeight="light">{text.trim()}</Text>
+                          <Text
+                            className={cn("text-sm", isRTL ? "mr-2" : "ml-2")}
+                            fontWeight="light"
+                          >
+                            {text}
+                          </Text>
                         </View>
                       ))}
-                  </View>
-                ) : (
-                  <Text
-                    fontSize={14}
-                    fontWeight="light"
-                    className="bg-gray-100 text-gray-500 rounded-2xl p-4 text-sm leading-relaxed"
-                    style={{ textAlign: isRTL ? 'right' : 'left' }}
-                  >
-                    {t("Add your travel preferences here")}
-                  </Text>
-                )}
+                    </View>
+                  ) : (
+                    <Text
+                      fontSize={14}
+                      fontWeight="light"
+                      className="bg-gray-100 text-gray-500 rounded-2xl p-4 text-sm leading-relaxed"
+                      style={{ textAlign: isRTL ? "right" : "left" }}
+                    >
+                      {t("Add your travel preferences here")}
+                    </Text>
+                  );
+                })()}
               </View>
 
               {/* About You */}
               <View className="px-6 mb-[30px]">
-                <View className={cn("flex-row justify-between items-center mb-[20px]", isRTL && "flex-row-reverse")}>
+                <View
+                  className={cn(
+                    "flex-row justify-between items-center mb-[20px]",
+                    isRTL && "flex-row-reverse"
+                  )}
+                >
                   <Text
                     fontSize={16}
                     fontWeight="regular"
@@ -610,8 +697,14 @@ export default function ProfilePage() {
                     {t("About you")}
                   </Text>
                   <TouchableOpacity
-                    className={cn("flex-row items-center bg-transparent border border-gray-200 rounded-full h-8 px-3", isRTL && "flex-row-reverse")}
-                    onPress={() => { setModalTtype("about"), setModalVisible(true) }}
+                    className={cn(
+                      "flex-row items-center bg-transparent border border-gray-200 rounded-full h-8 px-3",
+                      isRTL && "flex-row-reverse"
+                    )}
+                    onPress={() => {
+                      setModalTtype("about");
+                      setModalVisible(true);
+                    }}
                   >
                     <Pencil size={12} color="#FF4848" />
                     <Text
@@ -626,11 +719,12 @@ export default function ProfilePage() {
                 <Text
                   fontSize={14}
                   fontWeight="light"
-                  className={`rounded-2xl p-4 text-sm leading-relaxed ${userDetails?.about
+                  className={`rounded-2xl p-4 text-sm leading-relaxed ${
+                    userDetails?.about
                       ? "bg-gray-100 text-black"
                       : "bg-gray-100 text-gray-500"
-                    }`}
-                  style={{ textAlign: isRTL ? 'right' : 'left' }}
+                  }`}
+                  style={{ textAlign: isRTL ? "right" : "left" }}
                 >
                   {userDetails?.about || t("Add about you here")}
                 </Text>
@@ -654,13 +748,20 @@ export default function ProfilePage() {
                         <Separator className="border-gray-200 my-5" />
                       )}
                       renderItem={({ item }) => (
-                        <View className={cn("flex-row justify-between items-center py-2", isRTL && "flex-row-reverse")}>
-                          <View className={cn("flex-1", isRTL ? "ml-4" : "mr-4")}>
+                        <View
+                          className={cn(
+                            "flex-row justify-between items-center py-2",
+                            isRTL && "flex-row-reverse"
+                          )}
+                        >
+                          <View
+                            className={cn("flex-1", isRTL ? "ml-4" : "mr-4")}
+                          >
                             <Text
                               fontSize={16}
                               fontWeight="medium"
                               className="text-[16px] mb-1"
-                              style={{ textAlign: isRTL ? 'right' : 'left' }}
+                              style={{ textAlign: isRTL ? "right" : "left" }}
                             >
                               {item?.model?.name}
                             </Text>
@@ -668,7 +769,7 @@ export default function ProfilePage() {
                               fontSize={12}
                               fontWeight="light"
                               className="text-[12px] text-gray-600"
-                              style={{ textAlign: isRTL ? 'right' : 'left' }}
+                              style={{ textAlign: isRTL ? "right" : "left" }}
                             >
                               {item?.model?.category_name}, {item?.brand?.name}
                             </Text>
@@ -676,12 +777,17 @@ export default function ProfilePage() {
                               fontSize={11}
                               fontWeight="light"
                               className="text-[11px] text-gray-500 mt-1"
-                              style={{ textAlign: isRTL ? 'right' : 'left' }}
+                              style={{ textAlign: isRTL ? "right" : "left" }}
                             >
                               {item?.year}
                             </Text>
                           </View>
-                          <View className={cn("flex-row gap-4", isRTL && "flex-row-reverse")}>
+                          <View
+                            className={cn(
+                              "flex-row gap-4",
+                              isRTL && "flex-row-reverse"
+                            )}
+                          >
                             <TouchableOpacity
                               onPress={() =>
                                 router.push({
@@ -717,17 +823,23 @@ export default function ProfilePage() {
 
                 <TouchableOpacity
                   onPress={() => {
-                    setPath("/user-profile")
-                    router.push("/(profile)/add-vehicles")
+                    setPath("/user-profile");
+                    router.push("/(profile)/add-vehicles");
                   }}
-                  className={cn("flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2", isRTL && "flex-row-reverse")}
+                  className={cn(
+                    "flex-row items-center justify-center h-14 rounded-full bg-red-500 mt-2",
+                    isRTL && "flex-row-reverse"
+                  )}
                   activeOpacity={0.8}
                 >
                   <CirclePlus size={20} color="#fff" strokeWidth={1} />
                   <Text
                     fontSize={18}
                     fontWeight="regular"
-                    className={cn("text-lg text-white", isRTL ? "mr-2" : "ml-2")}
+                    className={cn(
+                      "text-lg text-white",
+                      isRTL ? "mr-2" : "ml-2"
+                    )}
                   >
                     {t("Add vehicle")}
                   </Text>
@@ -760,7 +872,11 @@ export default function ProfilePage() {
                       {label}
                     </Text>
                     {swap(
-                      <ChevronRight size={25} color="#000000" strokeWidth={1} />,
+                      <ChevronRight
+                        size={25}
+                        color="#000000"
+                        strokeWidth={1}
+                      />,
                       <ChevronLeft size={25} color="#000000" strokeWidth={1} />
                     )}
                   </TouchableOpacity>
@@ -780,13 +896,32 @@ export default function ProfilePage() {
                       langName,
                     });
                   }}
-                  className={cn("flex-row items-center justify-between", isRTL && "flex-row-reverse")}
+                  className={cn(
+                    "flex-row items-center justify-between",
+                    isRTL && "flex-row-reverse"
+                  )}
                 >
-                  <View className={cn("flex-row items-center", isRTL && "flex-row-reverse")}>
-                    <Text fontSize={14} fontWeight="light" className="text-[14px]">
+                  <View
+                    className={cn(
+                      "flex-row items-center",
+                      isRTL && "flex-row-reverse"
+                    )}
+                  >
+                    <Text
+                      fontSize={14}
+                      fontWeight="light"
+                      className="text-[14px]"
+                    >
                       {t("profile.Language")}
                     </Text>
-                    <Text fontSize={12} fontWeight="light" className={cn("text-[12px] text-gray-500", isRTL ? "mr-2" : "ml-2")}>
+                    <Text
+                      fontSize={12}
+                      fontWeight="light"
+                      className={cn(
+                        "text-[12px] text-gray-500",
+                        isRTL ? "mr-2" : "ml-2"
+                      )}
+                    >
                       ({getCurrentLanguageName()})
                     </Text>
                   </View>
@@ -797,8 +932,10 @@ export default function ProfilePage() {
                 </TouchableOpacity>
               </View>
 
-              <TouchableOpacity onPress={handleLogout} className="px-6 py-4 " >
-                <Text fontWeight="regular" className="text-[14px] text-red-400" >{t("Logout")}</Text>
+              <TouchableOpacity onPress={handleLogout} className="px-6 py-4 ">
+                <Text fontWeight="regular" className="text-[14px] text-red-400">
+                  {t("Logout")}
+                </Text>
               </TouchableOpacity>
 
               <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
@@ -822,16 +959,21 @@ export default function ProfilePage() {
                       {label}
                     </Text>
                     {swap(
-                      <ChevronRight size={25} color="#000000" strokeWidth={1} />,
+                      <ChevronRight
+                        size={25}
+                        color="#000000"
+                        strokeWidth={1}
+                      />,
                       <ChevronLeft size={25} color="#000000" strokeWidth={1} />
                     )}
                   </TouchableOpacity>
                 ))}
               </View>
-              <View className="px-6 py-4 " >
-                <Text fontWeight="regular" className="text-[14px] text-red-400" >{t("profile.Close my account")}</Text>
+              <View className="px-6 py-4 ">
+                <Text fontWeight="regular" className="text-[14px] text-red-400">
+                  {t("profile.Close my account")}
+                </Text>
               </View>
-
             </View>
           )}
         </View>
@@ -846,26 +988,34 @@ export default function ProfilePage() {
       {/* Delete Vehicle Confirmation Dialog */}
       <ConfirmDialog
         visible={deleteVehicleDialog.visible}
-        onClose={() => setDeleteVehicleDialog({ visible: false, vehicleId: null })}
+        onClose={() =>
+          setDeleteVehicleDialog({ visible: false, vehicleId: null })
+        }
         title={t("profile.Delete Vehicle")}
         message={t("profile.Are you sure you want to delete this vehicle?")}
         confirmText={t("profile.Delete")}
         cancelText={t("profile.Cancel")}
         onConfirm={confirmDeleteVehicle}
-        onCancel={() => setDeleteVehicleDialog({ visible: false, vehicleId: null })}
+        onCancel={() =>
+          setDeleteVehicleDialog({ visible: false, vehicleId: null })
+        }
         type="destructive"
       />
 
       {/* Language Change Confirmation Dialog */}
       <ConfirmDialog
         visible={languageDialog.visible}
-        onClose={() => setLanguageDialog({ visible: false, newLang: "", langName: "" })}
+        onClose={() =>
+          setLanguageDialog({ visible: false, newLang: "", langName: "" })
+        }
         title={t("profile.Select Language")}
         message={`${t("Change Language")} ${languageDialog.langName}?`}
         confirmText={t("profile.ok")}
         cancelText={t("profile.Cancel")}
         onConfirm={confirmLanguageChange}
-        onCancel={() => setLanguageDialog({ visible: false, newLang: "", langName: "" })}
+        onCancel={() =>
+          setLanguageDialog({ visible: false, newLang: "", langName: "" })
+        }
       />
 
       {/* Logout Confirmation Dialog */}
@@ -884,7 +1034,14 @@ export default function ProfilePage() {
       {/* Alert Dialog */}
       <AlertDialog
         visible={alertDialog.visible}
-        onClose={() => setAlertDialog({ visible: false, title: "", message: "", type: "info" })}
+        onClose={() =>
+          setAlertDialog({
+            visible: false,
+            title: "",
+            message: "",
+            type: "info",
+          })
+        }
         title={alertDialog.title}
         message={alertDialog.message}
         type={alertDialog.type}

@@ -320,17 +320,23 @@ function RideDetails() {
                   {t("rideDetails.details")}
                 </Text>
                 <View className="flex-wrap flex-row gap-[15px]">
-                  {userDetails?.travel_preferences?.[0]          // take the first (and only) string
-                    ?.split(',')                                 // break it into real tags
-                    .map((text: string) => (
+                  {(() => {
+                    const prefs = userDetails?.travel_preferences;
+                    let travelPreferences: string[] = [];
+                    if (!prefs) travelPreferences = [];
+                    else if (Array.isArray(prefs) && prefs.every(p => typeof p === 'string')) {
+                      travelPreferences = prefs.filter(p => p.trim().length > 0);
+                    }
+                    return travelPreferences.map((text: string) => (
                       <View
                         key={text}
                         className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
                       >
                         <ChatIcon width={21} height={21} />
-                        <Text className="ml-2 text-sm font-[Kanit-Light]">{text.trim()}</Text>
+                        <Text className="ml-2 text-sm font-[Kanit-Light]">{text}</Text>
                       </View>
-                    ))}
+                    ));
+                  })()}
                 </View>
               </View>
             </View>
