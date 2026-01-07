@@ -328,7 +328,7 @@ function ShowPricing() {
 
         {/* Segments - All editable */}
         <View className="px-4 pt-6 md:px-6">
-          {fullRoute.slice(0, -1).map((from, idx) => {
+          { fullRoute?.length > 2 && fullRoute.slice(0, -1).map((from, idx) => {
             const to = fullRoute[idx + 1];
             const price = segmentPrices[idx] ?? 10;
             const fromLabel = idx === 0 ? t("showPricing.pickup") : t("showPricing.stopover");

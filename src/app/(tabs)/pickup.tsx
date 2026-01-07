@@ -257,7 +257,7 @@ function Pickup() {
 
   const handleLocationSelect = (value: LocationData) => {
     setSelectedLocation(value);
-    setRideField("pickup_address", value?.text);
+    setRideField("pickup_address", value?.mainText);
     setRideField("pickup_lat", value?.lat);
     setRideField("pickup_lng", value?.lng);
     console.log(value, "pickup");

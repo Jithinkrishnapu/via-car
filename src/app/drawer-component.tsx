@@ -50,7 +50,7 @@ export default function DrawerComponent() {
 
     const menu = [
         { label: 'Your rides', icon: Car, route: '/(tabs)/your-rides', hasNotification: false },
-        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: true },
+        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: false },
         { label: 'Notification', icon: Bell, route: '/notifications', hasNotification: false },
         { label: 'Profile', icon: User, route: '/(tabs)/user-profile', hasNotification: false },
         { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions', hasNotification: false },

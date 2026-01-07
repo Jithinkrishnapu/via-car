@@ -38,6 +38,7 @@ const en = {
     verificationEmailSent:
       "We've sent a verification link to your email address. Please check your inbox.",
     ok: "OK",
+    notification: "Notifications",
     vehicle: "Vehicle",
     enterVehicleName: "Search vehicle name",
     selectCategory: "Select Category",

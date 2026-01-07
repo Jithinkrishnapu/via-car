@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { CircleHelp, ArrowLeft } from "lucide-react-native";
+import { CircleHelp, ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react-native";
 import { TouchableOpacity, View, ActivityIndicator, StyleSheet, Platform, Dimensions } from "react-native";
 import Text from "./text";
 import { useTranslation } from "react-i18next";
@@ -8,6 +8,7 @@ import MapComponent from "../ui/map-view";
 import LocationPickerComponent from "./location-picker-component";
 import { useGetExactLocation } from "@/service/ride-booking";
 import { router } from "expo-router";
+import { useDirection } from "@/hooks/useDirection";
 
 const { width: screenWidth, height: screenHeight } = Dimensions.get('window');
 
@@ -114,6 +115,8 @@ export default function LocationSearchSelected({
     setError(null);
   };
 
+    const { isRTL, swap } = useDirection();
+
   return (
     <View style={styles.container}>
       {/* Back Button */}
@@ -123,7 +126,7 @@ export default function LocationSearchSelected({
           style={styles.backButton}
           activeOpacity={0.8}
         >
-          <ArrowLeft size={20} strokeWidth={2} color="black" />
+           {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
         </TouchableOpacity>
       </View>
 

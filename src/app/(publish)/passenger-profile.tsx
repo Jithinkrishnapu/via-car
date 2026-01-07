@@ -2,11 +2,11 @@ import { router } from "expo-router";
 import { ChevronLeft, Info, MapPin, SquareCheckBig } from "lucide-react-native";
 // import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { Image, ScrollView, TouchableOpacity, View } from "react-native";
-import Text from "@/components/common/text";
 import { useTranslation } from "react-i18next";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import { useRoute } from "@react-navigation/native";
 import Avatar from "@/components/ui/avatar";
+import Text from "@/components/common/text";
 
 function PassengerProfile() {
   const loaded = useLoadFonts();

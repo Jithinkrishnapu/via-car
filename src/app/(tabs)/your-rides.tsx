@@ -324,9 +324,9 @@ export default function RidesTabsScreen() {
       </View>
 
       {/* -------------- MODALS ---------------- */}
-      <Modal visible={modalVisible} transparent animationType="fade">
-        <View className="flex-1 justify-end bg-black/30">
-          <View className="bg-white px-12 pt-12 rounded-t-3xl items-center">
+      <Modal visible={modalVisible} transparent animationType="fade" presentationStyle="overFullScreen">
+        <View className="flex-1 justify-end bg-black/30" style={{ zIndex: 9999 }}>
+          <View className="bg-white px-12 pt-12 rounded-t-3xl items-center" style={{ zIndex: 10000 }}>
             <Text className="text-[25px] font-[Kanit-Regular] text-black text-center mt-4">
               {t('yourRides.chooseDashboard')}
             </Text>
@@ -362,13 +362,14 @@ export default function RidesTabsScreen() {
         </View>
       </Modal>
 
-      <Modal visible={sideModalVisible} transparent animationType="fade">
+      <Modal visible={sideModalVisible} transparent animationType="fade" presentationStyle="overFullScreen">
         <Pressable
           className="flex-1 bg-black/30"
+          style={{ zIndex: 9999 }}
           onPress={() => setSideModalVisible(false)}
         >
           <View className={cn("flex-1 justify-start", isRTL ? "items-start" : "items-end")}>
-            <View className={cn("bg-white px-4 pt-4 w-1/3 top-10 rounded", isRTL && "mr-6")}>
+            <View className={cn("bg-white px-4 pt-4 w-1/3 top-10 rounded", isRTL && "mr-6")} style={{ zIndex: 10000 }}>
               <FlatList
                 contentContainerClassName="gap-2"
                 data={SIDES}
@@ -391,13 +392,14 @@ export default function RidesTabsScreen() {
           </View>
         </Pressable>
       </Modal>
-      <Modal visible={showModalVisible} transparent animationType="fade">
+      <Modal visible={showModalVisible} transparent animationType="fade" presentationStyle="overFullScreen">
         <Pressable
           className="flex-1 bg-black/30"
+          style={{ zIndex: 9999 }}
           onPress={() => setShowModalVisible(false)}
         >
           <View className="flex-1 justify-end bg-black/30">
-            <View className="bg-white px-12 rounded-t-3xl items-center">
+            <View className="bg-white px-12 rounded-t-3xl items-center" style={{ zIndex: 10000 }}>
               <Text className="text-[25px] font-[Kanit-Regular] text-black text-center my-4">
                 {t('yourRides.verifyPassenger')}
               </Text>
@@ -430,9 +432,9 @@ export default function RidesTabsScreen() {
       </Modal>
 
       {/* Start Ride Confirmation Modal */}
-      <Modal visible={startRideModalVisible} transparent animationType="fade">
-        <View className="flex-1 justify-center items-center bg-black/50">
-          <View className="bg-white mx-6 rounded-2xl p-6 w-4/5 max-w-sm">
+      <Modal visible={startRideModalVisible} transparent animationType="fade" presentationStyle="overFullScreen">
+        <View className="flex-1 justify-center items-center bg-black/50" style={{ zIndex: 9999 }}>
+          <View className="bg-white mx-6 rounded-2xl p-6 w-4/5 max-w-sm" style={{ zIndex: 10000 }}>
             <Text className="text-[22px] font-[Kanit-Medium] text-black text-center mb-4">
               {t('yourRides.confirmStartRide')}
             </Text>

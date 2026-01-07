@@ -13,6 +13,7 @@ import {
   View,
   TextInput,
   RefreshControl,
+  SafeAreaView,
 } from "react-native";
 import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
@@ -25,6 +26,7 @@ import AlertDialog from "@/components/ui/alert-dialog";
 import Dialog from "@/components/ui/dialog";
 import { MoreVertical, Edit, Trash2 } from "lucide-react-native";
 import { useFocusEffect } from "@react-navigation/native";
+import { WebView } from 'react-native-webview';
 
 type Status = "idle" | "waiting" | "approved";
 
@@ -80,6 +82,9 @@ function Payment() {
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
+  const [show3DS, setShow3DS] = useState(false);
+  const [authUrl, setAuthUrl] = useState('');
+  const [authParams, setAuthParams] = useState<any[]>([]);
   const [errorDialog, setErrorDialog] = useState<ErrorState>({
     visible: false,
     title: '',
@@ -141,6 +146,55 @@ function Payment() {
       console.error('Error deleting card:', error);
       showError('Error', 'Failed to delete card');
     }
+  };
+
+  const handle3DSComplete = (url: string) => {
+    console.log('3DS Navigation URL:', url);
+    
+    // Only close WebView on explicit failure/cancel URLs
+    // Let the polling handle success detection via API
+    if (url.includes('fail') || url.includes('cancel') || url.includes('error')) {
+      setShow3DS(false);
+      setStatus("idle");
+      showError(
+        t("payment.authFailed") || 'Authentication Failed', 
+        t("payment.authFailedMessage") || 'Payment authentication failed or was cancelled.'
+      );
+    }
+    // Don't auto-close on other URLs - let polling handle success detection
+  };
+
+  // Generate HTML form for POST request
+  const generate3DSForm = () => {
+    const paramsHtml = authParams
+      .map((param) => {
+        const key = param.name || Object.keys(param)[0];
+        const value = param.value || param[key];
+        return `<input type="hidden" name="${key}" value="${value}" />`;
+      })
+      .join('\n');
+
+    return `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      </head>
+      <body onload="document.forms[0].submit()">
+        <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+          <p>Redirecting to authentication...</p>
+        </div>
+        <form method="POST" action="${authUrl}">
+          ${paramsHtml}
+        </form>
+      </body>
+      <script type="text/javascript">
+var wpwlOptions = {
+ paymentTarget: "_top",
+}
+</script>
+      </html>
+    `;
   };
 
   const handleEditCard = (cardIndex: number) => {
@@ -254,7 +308,6 @@ function Payment() {
 
     setCvvDialog(prev => ({ ...prev, loading: true }));
     setLoading(true);
-    setStatus("waiting");
 
     const postData: BookingPaymentData = {
       booking_id: Number(routeParams.booking_id),
@@ -308,19 +361,18 @@ function Payment() {
         return;
       }
 
-      // Start polling for payment status
-      const pollInterval = setInterval(async () => {
-        await handleFetchPaymentStatus();
-      }, 3000);
-
-      // Clear interval after 2 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (status === "waiting") {
-          setStatus("idle");
-          showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
-        }
-      }, 120000);
+      // Check if 3DS authentication is required
+      if (response?.message?.url && response?.message?.parameters) {
+        setAuthUrl(response.message.url);
+        setAuthParams(response.message.parameters);
+        setShow3DS(true);
+      } else if (response?.result?.code === '000.100.110') {
+        // Payment successful without 3DS - start polling for status
+        setStatus("waiting");
+      } else {
+        // Payment initiated, start polling for status
+        setStatus("waiting");
+      }
 
     } catch (err: any) {
       console.error('Payment failed:', err);
@@ -389,7 +441,114 @@ function Payment() {
     }
   }, [status, routeParams?.booking_id]);
 
+  // Start polling when 3DS is shown, but don't auto-close WebView
+  useEffect(() => {
+    let pollInterval: NodeJS.Timeout;
+    
+    if (show3DS) {
+      // Start polling immediately when 3DS is shown
+      setStatus("waiting");
+      
+      pollInterval = setInterval(async () => {
+        const isApproved = await handleFetchPaymentStatus();
+        if (isApproved) {
+          clearInterval(pollInterval);
+          setShow3DS(false); // Only close WebView when payment is approved
+        }
+      }, 3000); // Poll every 3 seconds
+
+      // Clear interval after 5 minutes to prevent infinite polling
+      const timeoutId = setTimeout(() => {
+        clearInterval(pollInterval);
+        if (status === "waiting" && show3DS) {
+          setStatus("idle");
+          setShow3DS(false);
+          showError(
+            t("payment.timeout") || 'Payment Timeout', 
+            t("payment.timeoutMessage") || 'Payment verification timed out. Please check your booking status or try again.',
+            'warning'
+          );
+        }
+      }, 300000); // 5 minutes
+
+      return () => {
+        clearInterval(pollInterval);
+        clearTimeout(timeoutId);
+      };
+    }
+
+    return () => {
+      if (pollInterval) clearInterval(pollInterval);
+    };
+  }, [show3DS]);
+
   if (!loaded) return null;
+
+  // Show 3DS WebView if needed
+  if (show3DS) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-200">
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
+              activeOpacity={0.8}
+              onPress={() => {
+                setShow3DS(false);
+                setStatus("idle");
+                showError(
+                  t("payment.authCancelled") || 'Authentication Cancelled', 
+                  t("payment.authCancelledMessage") || 'Payment authentication was cancelled.'
+                );
+              }}
+            >
+              <ChevronLeft color="#3C3F4E" />
+            </TouchableOpacity>
+            <Text className="text-lg font-bold text-gray-900 ml-3">{t("payment.secureAuthentication")}</Text>
+          </View>
+        </View>
+        <WebView
+          source={{ html: generate3DSForm() }}
+          onNavigationStateChange={(navState) => {
+            console.log('Navigation URL:', navState.url);
+            handle3DSComplete(navState.url);
+          }}
+          style={{ flex: 1 }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+        />
+        
+        {/* Success Bottom Sheet Overlay - Only show when approved */}
+        {status === "approved" && (
+          <View className="absolute bottom-0 left-0 right-0 bg-white rounded-t-3xl shadow-lg border-t border-gray-200">
+            <View className="px-6 py-8">
+              <View className="size-[100px] mx-auto items-center justify-center mb-4">
+                <Text className="text-5xl">✅</Text>
+              </View>
+              <Text className="text-xl font-semibold text-black text-center mb-2">
+                {t("payment.bookingConfirmed") || "Booking Confirmed"}
+              </Text>
+              <Text className="text-sm text-gray-600 text-center mb-4">
+                {t("payment.paymentSuccessMessage") || "Your payment has been processed successfully and your booking is confirmed."}
+              </Text>
+              <TouchableOpacity
+                className="bg-green-500 rounded-full px-6 py-3 mx-auto"
+                onPress={() => {
+                  setStatus("idle");
+                  router.push("/(tabs)/book");
+                }}
+                activeOpacity={0.8}
+              >
+                <Text className="text-white text-center font-semibold">
+                  {t("common.ok") || "OK"}
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
+      </SafeAreaView>
+    );
+  }
 
   const renderOption = ({ id, title, description, img }: Options) => {
     const isChecked = selectedId === id;
@@ -588,23 +747,25 @@ function Payment() {
           </TouchableOpacity>
         </View>
       </View>
-      {/* Waiting Modal */}
-      <Modal visible={status === "waiting"} transparent animationType="fade">
-        <View className="flex-1 justify-end bg-black/30">
-          <View className="bg-white px-12 py-12 rounded-t-3xl">
-            <Image
-              className="size-[150px] mx-auto object-contain"
-              source={require(`../../../public/hour-glass.gif`)}
-            />
-            <Text
-              fontSize={25}
-              className="text-[25px] font-[Kanit-Regular] text-black text-center mt-4"
-            >
-              {t("payment.waitingApproval")}
-            </Text>
+      {/* Waiting Modal - Only show when not in 3DS mode */}
+      {status === "waiting" && !show3DS && (
+        <Modal visible={true} transparent animationType="fade">
+          <View className="flex-1 justify-end bg-black/30">
+            <View className="bg-white px-12 py-12 rounded-t-3xl">
+              <Image
+                className="size-[150px] mx-auto object-contain"
+                source={require(`../../../public/hour-glass.gif`)}
+              />
+              <Text
+                fontSize={25}
+                className="text-[25px] font-[Kanit-Regular] text-black text-center mt-4"
+              >
+                {t("payment.waitingApproval")}
+              </Text>
+            </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+      )}
 
       {/* Approved Modal */}
       <Modal visible={status === "approved"} transparent animationType="fade">

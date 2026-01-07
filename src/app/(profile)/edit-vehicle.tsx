@@ -3,12 +3,11 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
 import { useRouter, useLocalSearchParams } from "expo-router";
-import { ArrowLeft, ChevronRight } from "lucide-react-native";
+import { ArrowLeft, ChevronLeft, ChevronRight } from "lucide-react-native";
 import Text from "@/components/common/text";
 import { InputComponent } from "@/components/inputs/common-input";
 import ColorSearch from "@/components/common/color-search";
@@ -17,8 +16,9 @@ import ModelSearch from "@/components/common/model-search";
 import { updateVehicle, getVehicleCategoryList } from "@/service/vehicle";
 import { useTranslation } from "react-i18next";
 import { useStore } from "@/store/useStore";
-import { handleApiError } from "@/utils/apiErrorHandler";
+import AlertDialog from "@/components/ui/alert-dialog";
 import CheckGreen from "../../../public/check-green.svg";
+import { useDirection } from "@/hooks/useDirection";
 
 export default function EditVehicle() {
   const router = useRouter();
@@ -39,12 +39,109 @@ export default function EditVehicle() {
   const [categories, setCategories] = useState<any[]>([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
   
+  // Dialog states
+  const [dialog, setDialog] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "warning" | "error" | "success",
+    onConfirm: () => {}
+  });
+  
   const { vehicle, setVehicle, vehicle_model_id, setVehicleModelId } = useStore();
 
   const [errors, setErrors] = useState<{
     color?: string;
     year?: string;
   }>({});
+
+  // Custom error handler using AlertDialog
+  const showErrorDialog = (error: any, context?: string) => {
+    console.error(`API Error${context ? ` (${context})` : ''}:`, error);
+    
+    let title = "Error";
+    let message = "An unexpected error occurred. Please try again.";
+    
+    if (error.status) {
+      switch (error.status) {
+        case 400:
+          title = "Invalid Request";
+          message = error.message || "Please check your input and try again.";
+          break;
+        case 401:
+          title = "Authentication Error";
+          message = "Please log in again to continue.";
+          break;
+        case 403:
+          title = "Access Denied";
+          message = "You do not have permission to perform this action.";
+          break;
+        case 404:
+          title = "Not Found";
+          message = "The requested resource was not found.";
+          break;
+        case 422:
+          title = "Validation Error";
+          message = error.message || "Please check your input and try again.";
+          break;
+        case 429:
+          title = "Too Many Requests";
+          message = "Please wait a moment before trying again.";
+          break;
+        case 500:
+          title = "Server Error";
+          message = "Something went wrong on our end. Please try again later.";
+          break;
+        case 502:
+        case 503:
+        case 504:
+          title = "Service Unavailable";
+          message = "The service is temporarily unavailable. Please try again later.";
+          break;
+        default:
+          title = `Error ${error.status}`;
+          message = error.message || "An unexpected error occurred.";
+      }
+    } else if (error.message) {
+      if (error.message.includes('Network error')) {
+        title = "Connection Error";
+        message = "Please check your internet connection and try again.";
+      } else if (error.message.includes('timeout')) {
+        title = "Timeout Error";
+        message = "The request took too long. Please try again.";
+      } else {
+        message = error.message;
+      }
+    }
+    
+    setDialog({
+      visible: true,
+      title,
+      message,
+      type: "error",
+      onConfirm: () => setDialog(prev => ({ ...prev, visible: false }))
+    });
+  };
+
+  const showSuccessDialog = (message: string, onConfirm?: () => void) => {
+    setDialog({
+      visible: true,
+      title: "Success",
+      message,
+      type: "success",
+      onConfirm: onConfirm || (() => setDialog(prev => ({ ...prev, visible: false })))
+    });
+  };
+
+  const showValidationDialog = (message: string) => {
+    setDialog({
+      visible: true,
+      title: "Validation Error",
+      message,
+      type: "warning",
+      onConfirm: () => setDialog(prev => ({ ...prev, visible: false }))
+    });
+  };
 
   const categoryImages: Record<string, any> = {
     sedan: require("../../../public/sedan.png"),
@@ -67,7 +164,7 @@ export default function EditVehicle() {
       }
     } catch (error: any) {
       console.error("Failed to fetch categories:", error);
-      handleApiError(error, "Fetch Vehicle Categories");
+      showErrorDialog(error, "Fetch Vehicle Categories");
     } finally {
       setLoadingCategories(false);
     }
@@ -98,12 +195,12 @@ export default function EditVehicle() {
 
   const handleUpdate = async () => {
     if (!validate()) {
-      Alert.alert(t("error") || "Error", t("profile.pleaseFixErrors") || "Please fix the errors before continuing");
+      showValidationDialog(t("profile.pleaseFixErrors") || "Please fix the errors before continuing");
       return;
     }
 
     if (!vehicleData?.id) {
-      Alert.alert(t("error") || "Error", t("profile.vehicleDataMissing") || "Vehicle data is missing");
+      showErrorDialog({ message: t("profile.vehicleDataMissing") || "Vehicle data is missing" });
       return;
     }
 
@@ -114,7 +211,7 @@ export default function EditVehicle() {
       const modelId = vehicle_model_id || vehicleData?.model?.id;
       
       if (!modelId) {
-        Alert.alert(t("error") || "Error", t("profile.modelIdRequired") || "Model ID is required");
+        showErrorDialog({ message: t("profile.modelIdRequired") || "Model ID is required" });
         return;
       }
 
@@ -131,29 +228,26 @@ export default function EditVehicle() {
       const { body } = await updateVehicle(payload);
       
       // Show success message
-      Alert.alert(
-        t("success") || "Success", 
+      showSuccessDialog(
         body?.message || t("profile.vehicleUpdatedSuccessfully") || "Vehicle updated successfully",
-        [
-          {
-            text: t("ok") || "OK",
-            onPress: () => {
-              // Clear store
-              setVehicleModelId("");
-              setVehicle("", "");
-              router.back();
-            }
-          }
-        ]
+        () => {
+          // Clear store and navigate back
+          setVehicleModelId("");
+          setVehicle("", "");
+          setDialog(prev => ({ ...prev, visible: false }));
+          router.back();
+        }
       );
       
     } catch (error: any) {
       console.error("Update vehicle error:", error);
-      handleApiError(error, "Update Vehicle");
+      showErrorDialog(error, "Update Vehicle");
     } finally {
       setIsLoading(false);
     }
   };
+
+      const { isRTL, swap } = useDirection();
 
   return (
     <ScrollView className="flex-1 bg-white">
@@ -164,7 +258,7 @@ export default function EditVehicle() {
           className="p-2 -ml-2"
           disabled={isLoading}
         >
-          <ArrowLeft size={24} color="#0A2033" />
+           {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
         </TouchableOpacity>
         <Text fontSize={24} className="text-2xl text-black font-[Kanit-Medium]">
           {t("profile.editVehicle") || "Edit Vehicle"}
@@ -331,6 +425,16 @@ export default function EditVehicle() {
           )}
         </TouchableOpacity>
       </View>
+
+      {/* Custom Alert Dialog */}
+      <AlertDialog
+        visible={dialog.visible}
+        onClose={() => setDialog(prev => ({ ...prev, visible: false }))}
+        title={dialog.title}
+        message={dialog.message}
+        type={dialog.type}
+        onConfirm={dialog.onConfirm}
+      />
     </ScrollView>
   );
 }
