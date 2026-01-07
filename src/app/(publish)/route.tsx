@@ -113,19 +113,23 @@ function Route() {
         {/* Map Component */}
         <MapComponent
         />
-      </View>
-
-      {/* -------------------- Route Selection -------------------- */}
-      <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
-        <View className="flex-row items-center gap-4 mb-6">
+        
+        {/* Back Button - Positioned over map */}
+        <View className="absolute top-12 left-6 z-20">
           <TouchableOpacity
-            className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
+            className="rounded-full size-[46px] border border-[#EBEBEB] bg-white items-center justify-center shadow-sm"
             onPress={() => router.back()}
             activeOpacity={0.8}
           >
             {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
           </TouchableOpacity>
-          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
+        </View>
+      </View>
+
+      {/* -------------------- Route Selection -------------------- */}
+      <View className="bg-white rounded-t-3xl px-[28px] pt-[43px] -mt-8 z-10">
+        <View className="mb-6">
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium]">
             {t("route.title")}
           </Text>
         </View>

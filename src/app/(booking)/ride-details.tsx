@@ -4,6 +4,8 @@ import {
   ArrowRight,
   ArrowLeft,
   Star,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react-native";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Avatar from "@/components/ui/avatar";
@@ -194,10 +196,7 @@ function RideDetails() {
               activeOpacity={0.8}
               onPress={() => router.back()}
             >
-              {swap(
-                <ArrowLeft size={20} color="white" />,
-                <ArrowRight size={20} color="white" />
-              )}
+              {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
             </TouchableOpacity>
           </View>
           <View className="flex-row items-center gap-4 mb-5">
@@ -327,7 +326,7 @@ function RideDetails() {
                         fontSize={14}
                         className="text-[14px] font-[Kanit-Regular]"
                       >
-                        4.5
+                    {rideDetail?.driver?.avg_raiting || "0"}
                       </Text>
                       <Text
                         fontSize={10}

@@ -9,7 +9,7 @@ import {
   View,
   ActivityIndicator,
 } from 'react-native';
-import { ArrowLeft } from 'lucide-react-native';
+import { ChevronLeft, ChevronRight } from 'lucide-react-native';
 import Text from '@/components/common/text';
 import { InputComponent } from '@/components/inputs/common-input';
 import Dialog from '@/components/ui/dialog';
@@ -18,6 +18,8 @@ import { useTranslation } from 'react-i18next';
 import { getUserStatus, handleBankSave, handleBankUpdate } from '@/service/auth';
 import { UserStatusResp } from '@//types/ride-types';
 import { useRoute } from '@react-navigation/native';
+import { useDirection } from '@/hooks/useDirection';
+import { cn } from '@/lib/utils';
 
 const { height } = Dimensions.get('window');
 
@@ -68,6 +70,7 @@ export default function BankSave() {
   };
   const [errors, setErrors] = useState<Errors>({});
   const [submitting, setSubmitting] = useState(false);
+  const { isRTL, swap } = useDirection();
   
   // Dialog states
   const [showSuccessDialog, setShowSuccessDialog] = useState(false);
@@ -207,6 +210,10 @@ export default function BankSave() {
     }
   }
 
+  const handleBack = () => {
+    router.replace('../');
+  };
+
   /* ---------- UI ---------- */
   return (
     <KeyboardAvoidingView
@@ -221,6 +228,17 @@ export default function BankSave() {
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
+        {/* Back Button */}
+        <View className={cn("absolute top-12 z-10", isRTL ? "right-6" : "left-6")}>
+          <TouchableOpacity
+            className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
+            activeOpacity={0.8}
+            onPress={handleBack}
+          >
+            {swap(<ChevronLeft color="#3C3F4E" />, <ChevronRight color="#3C3F4E" />)}
+          </TouchableOpacity>
+        </View>
+
         <Image
           style={{ height: height / 4 }}
           className="w-full"
@@ -229,18 +247,9 @@ export default function BankSave() {
 
         <View className="-mt-14 rounded-t-2xl bg-white px-5 pt-4">
           <View className="mx-auto w-full max-w-[420px] pt-4 pb-10">
-            <View className="flex-row items-center mb-6">
-              <TouchableOpacity
-                onPress={() => router.replace('../')}
-                className="mr-3 p-2 -ml-2"
-                activeOpacity={0.7}
-              >
-                <ArrowLeft size={24} color="#0A2033" />
-              </TouchableOpacity>
-              <Text fontSize={25} className="flex-1 font-[Kanit-Medium] text-start">
-                Add your bank details
-              </Text>
-            </View>
+            <Text fontSize={25} className="font-[Kanit-Medium] text-start mb-6">
+              Add your bank details
+            </Text>
 
             {/* ----- fields ----- */}
             <InputComponent

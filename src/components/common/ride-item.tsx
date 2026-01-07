@@ -116,7 +116,7 @@ function RideItem({ ride,passengers }: RideItemProps) {
               <View className="flex-row items-center gap-1">
                 <Star size={14} fill="#FF9C00" strokeWidth={0} />
                 <Text fontSize={13} fontWeight="regular" className="text-[#666666]">
-                  {t("booking.rideItem.rating") || "4.8"}
+                  {ride?.driver?.avg_rating}
                 </Text>
               </View>
             </View>

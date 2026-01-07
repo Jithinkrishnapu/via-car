@@ -75,7 +75,7 @@ export default function Page() {
         </View>
 
         {/* Comfort Mode Checkbox */}
-        <Text
+        {/* <Text
           fontSize={18}
           className="text-[18px] text-black font-[Kanit-Regular] mb-[15px]"
         >
@@ -113,7 +113,7 @@ export default function Page() {
               className="size-[25px]"
             />
           )}
-        </TouchableOpacity>
+        </TouchableOpacity> */}
 
         {/* Continue */}
       </View>

@@ -22,12 +22,16 @@ import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 import { useStore } from "@/store/useStore";
 import { UserStatusResp } from "@/types/ride-types";
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { ChevronLeft, ChevronRight } from "lucide-react-native";
+import { useDirection } from "@/hooks/useDirection";
+import { cn } from "@/lib/utils";
 
 const { height } = Dimensions.get("window");
 
 function Register() {
   const { t } = useTranslation();
   const { isPublish } = useStore();
+  const { isRTL, swap } = useDirection();
   const insets = useSafeAreaInsets();
   const [category, setCategory] = useState<string>('');
   const [dob, setDob] = useState('');
@@ -264,6 +268,10 @@ function Register() {
     }
   };
 
+  const handleBack = () => {
+    router.back();
+  };
+
   return (
     <View style={{ flex: 1, paddingTop: insets.top }} className="bg-white">
       <KeyboardAvoidingView
@@ -280,6 +288,17 @@ function Register() {
           nestedScrollEnabled={false}
           overScrollMode="never"
         >
+          {/* Back Button */}
+          <View className={cn("absolute top-12 z-10", isRTL ? "right-6" : "left-6")}>
+            <TouchableOpacity
+              className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
+              activeOpacity={0.8}
+              onPress={handleBack}
+            >
+              {swap(<ChevronLeft color="#3C3F4E" />, <ChevronRight color="#3C3F4E" />)}
+            </TouchableOpacity>
+          </View>
+
           {/* Hero Image - Responsive height */}
           <View 
             className="relative w-full" 
@@ -319,7 +338,7 @@ function Register() {
                 fontSize={isSmallScreen ? 20 : isTablet ? 28 : 25}
                 className={`${
                   isSmallScreen ? 'text-[20px]' : isTablet ? 'text-[28px]' : 'text-[25px]'
-                } font-[Kanit-Medium] text-center leading-tight tracking-tight ${
+                } font-[Kanit-Medium] leading-tight tracking-tight ${
                   isSmallScreen ? 'mb-4' : 'mb-6'
                 } text-gray-900`}
               >

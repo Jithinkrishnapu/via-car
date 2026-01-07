@@ -181,7 +181,7 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
             }
             
             const finalAddress = formattedAddress || `${location.latitude.toFixed(6)}, ${location.longitude.toFixed(6)}`;
-            
+            console.log(formattedAddress,"========formattedAddress============",finalAddress,"==================",place)
             onLocationSelected({
                 latitude: location.latitude,
                 longitude: location.longitude,

@@ -393,7 +393,7 @@ function ShowPricingReturn() {
                   )}
                 </TouchableOpacity>
                 <Text className="text-lg md:text-xl lg:text-2xl text-white font-[Kanit-Medium]">
-                  {t("showPricing.rideDetails")} · {t("showPricing.return")}
+                  {t("showPricing.rideDetails")}
                 </Text>
               </View>
 
@@ -447,7 +447,7 @@ function ShowPricingReturn() {
 
         {/* Segment list */}
         <View className="px-4 pt-6 md:px-6">
-          {fullRoute.slice(0, -1).map((from, idx) => {
+          { fullRoute?.length > 2 && fullRoute.slice(0, -1).map((from, idx) => {
             const to = fullRoute[idx + 1];
             const price = segmentPrices[idx] ?? 10;
 

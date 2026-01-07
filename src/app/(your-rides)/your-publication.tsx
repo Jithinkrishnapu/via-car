@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, ScrollView, TouchableOpacity } from "react-native";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { Href, router } from "expo-router";
@@ -10,19 +10,102 @@ import CancelRed from "../../../public/cancel-red.svg";
 import { SvgProps } from "react-native-svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
+import AlertDialog from "@/components/ui/alert-dialog";
 
 interface MenuItems {
   label: string;
   route: Href;
   sub?: string;
   icon?: React.FC<SvgProps>;
+  action?: () => void;
 }
 
 export default function YourPublicationScreen() {
   const loaded = useLoadFonts();
   const { t } = useTranslation("components");
   const { isRTL, swap } = useDirection();
+  
+  // Dialog state for alerts and confirmations
+  const [dialog, setDialog] = useState({
+    visible: false,
+    title: "",
+    message: "",
+    type: "info" as "info" | "warning" | "error" | "success",
+    onConfirm: () => {}
+  });
+
   if (!loaded) return null;
+
+  // Helper functions for showing dialogs
+  const showConfirmDialog = (title: string, message: string, onConfirm: () => void) => {
+    setDialog({
+      visible: true,
+      title,
+      message,
+      type: "warning",
+      onConfirm: () => {
+        onConfirm();
+        setDialog(prev => ({ ...prev, visible: false }));
+      }
+    });
+  };
+
+  const showSuccessDialog = (message: string, onConfirm?: () => void) => {
+    setDialog({
+      visible: true,
+      title: t("yourPublication.success") || "Success",
+      message,
+      type: "success",
+      onConfirm: onConfirm || (() => setDialog(prev => ({ ...prev, visible: false })))
+    });
+  };
+
+  const showErrorDialog = (message: string) => {
+    setDialog({
+      visible: true,
+      title: t("yourPublication.error") || "Error",
+      message,
+      type: "error",
+      onConfirm: () => setDialog(prev => ({ ...prev, visible: false }))
+    });
+  };
+
+  // Handle actions with confirmations
+  const handleDuplicate = () => {
+    showConfirmDialog(
+      t("yourPublication.confirmDuplicate") || "Duplicate Ride",
+      t("yourPublication.duplicateMessage") || "Are you sure you want to duplicate this ride?",
+      () => {
+        // Add duplicate logic here
+        showSuccessDialog(t("yourPublication.duplicateSuccess") || "Ride duplicated successfully!");
+      }
+    );
+  };
+
+  const handlePublishReturn = () => {
+    showConfirmDialog(
+      t("yourPublication.confirmReturn") || "Publish Return Trip",
+      t("yourPublication.returnMessage") || "Do you want to publish a return trip for this ride?",
+      () => {
+        // Add return trip logic here
+        router.push("/(publish)/return");
+      }
+    );
+  };
+
+  const handleCancel = () => {
+    showConfirmDialog(
+      t("yourPublication.confirmCancel") || "Cancel Ride",
+      t("yourPublication.cancelMessage") || "Are you sure you want to cancel this ride? This action cannot be undone.",
+      () => {
+        // Add cancel logic here
+        showSuccessDialog(
+          t("yourPublication.cancelSuccess") || "Ride cancelled successfully!",
+          () => router.back()
+        );
+      }
+    );
+  };
 
   const menuItems: MenuItems[] = [
     { label: t("yourPublication.itinerary"), route: "/(your-rides)/itinerary" },
@@ -43,16 +126,19 @@ export default function YourPublicationScreen() {
       label: t("yourPublication.duplicate"),
       icon: CopyRed,
       route: "/(your-rides)/your-publication",
+      action: handleDuplicate,
     },
     {
       label: t("yourPublication.publishReturn"),
       icon: ReturnRed,
       route: "/(your-rides)/your-publication",
+      action: handlePublishReturn,
     },
     {
       label: t("yourPublication.cancel"),
       icon: CancelRed,
       route: "/(your-rides)/your-publication",
+      action: handleCancel,
     },
   ];
 
@@ -110,7 +196,7 @@ export default function YourPublicationScreen() {
             {bottomActions.map((act, idx) => (
               <TouchableOpacity
                 key={idx}
-                onPress={() => router.push(act.route)}
+                onPress={() => act.action ? act.action() : router.push(act.route)}
                 activeOpacity={0.8}
                 className="flex-row items-center gap-2"
               >
@@ -126,6 +212,16 @@ export default function YourPublicationScreen() {
           </View>
         </View>
       </View>
+
+      {/* Custom Alert Dialog */}
+      <AlertDialog
+        visible={dialog.visible}
+        onClose={() => setDialog(prev => ({ ...prev, visible: false }))}
+        title={dialog.title}
+        message={dialog.message}
+        type={dialog.type}
+        onConfirm={dialog.onConfirm}
+      />
     </ScrollView>
   );
 }

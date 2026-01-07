@@ -26,7 +26,7 @@ function Dropoff() {
   const handleLocationSelect = (value: LocationData) => {
     setSelectedLocation(value);
     console.log(value, "dropoff");
-    setRideField("destination_address", value?.text);
+    setRideField("destination_address", value?.mainText);
     setRideField("destination_lat", value?.lat);
     setRideField("destination_lng", value?.lng);
   };

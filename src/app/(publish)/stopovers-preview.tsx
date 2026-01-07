@@ -67,7 +67,7 @@ function StopoversPreview() {
           </View>
 
           {/* Stops */}
-          {selectedPlaces.map(({ address }, idx) => (
+          { selectedPlaces.map(({ address }, idx) => (
             <View
               key={idx}
               className="flex-row items-center justify-between mb-6 z-10"

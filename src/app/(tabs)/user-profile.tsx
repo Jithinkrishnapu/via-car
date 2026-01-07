@@ -739,7 +739,7 @@ export default function ProfilePage() {
               {/* Account Menu Items */}
               <View className="px-6 space-y-6 border-t-[11px] border-[#F7F7F7]">
                 {[
-                  [t("notifications.title"), "/notifications"],
+                  [t("profile.notification"), "/notifications"],
                   [t("profile.Bank Account"), "/(profile)/bank"],
                   [t("profile.Transactions"), "/(profile)/transactions"],
                   // [t("Payment & Refunds"), "/"],
