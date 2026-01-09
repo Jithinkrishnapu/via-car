@@ -47,6 +47,7 @@ function Book() {
       contentInsetAdjustmentBehavior="never"
       automaticallyAdjustsScrollIndicatorInsets={false}
       showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
       scrollEnabled={!isLocationModalOpen}
       pointerEvents={isLocationModalOpen ? "none" : "auto"}
     >
