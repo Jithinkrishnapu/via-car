@@ -32,14 +32,20 @@ export default function LocationSelect({
 
   // ✅ Debounced API caller — only fires after user stops typing for 400ms
   const fetchLocations = useCallback(async () => {
+    // Guard: don't call API for empty or very short queries
+    if (!searchValue || searchValue.trim().length < 2) {
+      setLocations([]);
+      return;
+    }
+
     const formData = new FormData();
     formData.append("input", searchValue);
-      const response = await usePlacesAutocomplete(formData);
+    const response = await usePlacesAutocomplete(formData);
 
-      // Safely handle response
-      if (response?.data && Array.isArray(response.data)) {
-        setLocations(response.data);
-      }
+    // Safely handle response
+    if (response?.data && Array.isArray(response.data)) {
+      setLocations(response.data);
+    }
   }, [searchValue]);
 
   // ✅ Wrap fetchLocations in debounce
