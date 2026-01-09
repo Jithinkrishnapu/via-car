@@ -18,8 +18,8 @@ import {
     ScrollView,
     SafeAreaView,
     ActivityIndicator,
-    Alert,
 } from 'react-native';
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 type BankAccount = {
     id: number;
@@ -68,7 +68,7 @@ export default function BankScreen() {
         const req ={id}
         const res = await handleBankDelete(req)
         if(res.ok){
-          Alert.alert("Bank removed successfully")
+             snackbarManager.showSuccess("Bank removed successfully");
           setLoading(false)
         }
       }

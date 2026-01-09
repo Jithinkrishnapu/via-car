@@ -14,8 +14,8 @@ import {
   Modal,
   Pressable,
   Linking,
-  Alert,
 } from 'react-native';
+import { snackbarManager } from '@/utils/snackbar-manager';
 import * as DocumentPicker from 'expo-document-picker';
 import * as ImagePicker from 'expo-image-picker';
 import { Ionicons } from '@expo/vector-icons';
@@ -69,17 +69,16 @@ const UploadDocumentsScreen = () => {
       ? `${permissionType} access is required to upload documents. Please grant permission and try again.`
       : `${permissionType} access has been permanently denied. Please enable it in Settings > Privacy & Security > ${permissionType} > ViaCar.`;
     
-    Alert.alert(
-      'Permission Required',
+    const actionLabel = status === 'denied' ? 'Retry' : 'Open Settings';
+    const actionHandler = status === 'denied' ? () => requestPermissions(type) : openAppSettings;
+    snackbarManager.show({
       message,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { 
-          text: status === 'denied' ? 'Retry' : 'Open Settings', 
-          onPress: status === 'denied' ? () => requestPermissions(type) : openAppSettings 
-        }
-      ]
-    );
+      type: 'warning',
+      action: {
+        label: actionLabel,
+        onPress: actionHandler,
+      },
+    });
   };
 
   const requestPermissions = async (type: 'camera' | 'gallery'): Promise<boolean> => {

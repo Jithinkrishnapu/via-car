@@ -3,10 +3,10 @@ import {
   View,
   TouchableOpacity,
   ScrollView,
-  Alert,
   ActivityIndicator,
   Image,
 } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import { useRouter, useLocalSearchParams } from "expo-router";
 import { ArrowLeft, ChevronRight } from "lucide-react-native";
 import Text from "@/components/common/text";
@@ -98,12 +98,12 @@ export default function EditVehicle() {
 
   const handleUpdate = async () => {
     if (!validate()) {
-      Alert.alert(t("error") || "Error", t("profile.pleaseFixErrors") || "Please fix the errors before continuing");
+      snackbarManager.showError(t("profile.pleaseFixErrors") || "Please fix the errors before continuing");
       return;
     }
 
     if (!vehicleData?.id) {
-      Alert.alert(t("error") || "Error", t("profile.vehicleDataMissing") || "Vehicle data is missing");
+        snackbarManager.showError(t("profile.vehicleDataMissing") || "Vehicle data is missing");
       return;
     }
 
@@ -114,7 +114,7 @@ export default function EditVehicle() {
       const modelId = vehicle_model_id || vehicleData?.model?.id;
       
       if (!modelId) {
-        Alert.alert(t("error") || "Error", t("profile.modelIdRequired") || "Model ID is required");
+        snackbarManager.showError(t("profile.modelIdRequired") || "Model ID is required");
         return;
       }
 
@@ -131,21 +131,18 @@ export default function EditVehicle() {
       const { body } = await updateVehicle(payload);
       
       // Show success message
-      Alert.alert(
-        t("success") || "Success", 
-        body?.message || t("profile.vehicleUpdatedSuccessfully") || "Vehicle updated successfully",
-        [
-          {
-            text: t("ok") || "OK",
-            onPress: () => {
-              // Clear store
-              setVehicleModelId("");
-              setVehicle("", "");
-              router.back();
-            }
+      snackbarManager.show({
+        message: body?.message || t("profile.vehicleUpdatedSuccessfully") || "Vehicle updated successfully",
+        type: 'success',
+        action: {
+          label: t('ok') || 'OK',
+          onPress: () => {
+            setVehicleModelId("");
+            setVehicle("", "");
+            router.back();
           }
-        ]
-      );
+        }
+      });
       
     } catch (error: any) {
       console.error("Update vehicle error:", error);

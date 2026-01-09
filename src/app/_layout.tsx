@@ -5,6 +5,7 @@ import { router } from 'expo-router';
 import { initI18n } from '@/lib/i18n';
 import { I18nManager, Platform, View } from 'react-native';
 import GlobalSnackbar from '@/components/ui/snackbar';
+import { snackbarManager } from '@/utils/snackbar-manager';
 import FontProvider from '@/components/providers/FontProvider';
 
 export default function RootLayout() {
@@ -56,7 +57,7 @@ export default function RootLayout() {
       sendTokenToBackend(fcmToken);
       
       // For testing: You can copy this token and use it to send test notifications
-      alert(`FCM Token Generated!\n\nToken: ${fcmToken.substring(0, 50)}...`);
+      snackbarManager.showInfo(`FCM Token Generated!\n\nToken: ${fcmToken.substring(0, 50)}...`);
     } else {
       // Log notification status for debugging
       import('@/services/notificationService').then(({ NotificationService }) => {

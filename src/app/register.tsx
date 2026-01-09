@@ -1,6 +1,5 @@
 import Text from "@/components/common/text";
 import {
-  Alert,
   Dimensions,
   Image,
   KeyboardAvoidingView,

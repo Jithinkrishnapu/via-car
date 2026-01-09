@@ -207,7 +207,7 @@ function ShowPricingReturn() {
   //   if (ok && data?.data?.id ) {
   //       router.push({pathname:"/(publish)/publish-ride",params:{ride_id:data?.data?.id,ride_amount_id:data?.data?.rideAmounts[0].pickup_id}});
   //   } else {
-  //     Alert.alert('Failed to create ride');
+  //     // Failed to create ride - handled by snackbar in service layer
   //   }
   // }
 

@@ -1,4 +1,5 @@
-import { I18nManager, Platform, Alert } from "react-native";
+import { I18nManager, Platform } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import i18n from "./i18n";
 
 /**
@@ -26,23 +27,19 @@ export const changeLanguage = async (
         
         // On React Native, RTL changes require app reload
         if (Platform.OS === "android" || Platform.OS === "ios") {
-          Alert.alert(
-            i18n.t("profile.Language"),
-            i18n.t("App needs to restart to apply language changes"),
-            [
-              {
-                text: i18n.t("profile.ok"),
-                onPress: () => {
-                  // Reload the app
-                  if (Platform.OS === "android") {
-                    const { DevSettings } = require("react-native");
-                    DevSettings.reload();
-                  }
-                  // For iOS, user needs to manually restart
+          snackbarManager.show({
+            message: `${i18n.t('profile.Language')}: ${i18n.t('App needs to restart to apply language changes')}`,
+            type: 'info',
+            action: {
+              label: i18n.t('profile.ok'),
+              onPress: () => {
+                if (Platform.OS === 'android') {
+                  const { DevSettings } = require('react-native');
+                  DevSettings.reload();
                 }
               }
-            ]
-          );
+            }
+          });
         }
       }
     } else {

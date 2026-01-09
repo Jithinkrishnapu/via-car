@@ -14,8 +14,8 @@ import {
   ImageBackground,
   Image,
   FlatList,
-  Alert,
 } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
 import Chat from "../../../public/chat.svg";
@@ -138,7 +138,7 @@ function RideDetails() {
         err?.errors?.ride_id?.[0] ??
         'Something went wrong. Please try again.';
         console.log("message================",msg)
-      Alert.alert('Booking failed', msg);
+        snackbarManager.showError(msg);
     }
   };
 
@@ -312,7 +312,7 @@ function RideDetails() {
                     />
                   </View>
                   <View className={swap("flex-col ml-4", "flex-col mr-4")}>
-                    <View className="flex-row items-center gap-2">
+                    <View className="flex-row items-center gap-2 ml-4">
                       <Text
                         fontSize={14}
                         className="text-[14px] mb-1 px-2 font-[Kanit-Regular]"
@@ -321,7 +321,7 @@ function RideDetails() {
                       </Text>
                       <Verified width={15} height={15} />
                     </View>
-                    <View className="flex-row items-center gap-2">
+                    <View className="flex-row items-center gap-2 ml-4">
                       <Star strokeWidth={0} fill="#FF9C00" size={14} />
                       <Text
                         fontSize={14}
@@ -345,7 +345,7 @@ function RideDetails() {
                     onPress={() => {
                       // Prevent self-messaging using utility function
                       if (!canUsersChat(userDetails?.id, rideDetail?.driver?.id)) {
-                        Alert.alert("Error", "You cannot message yourself.");
+                        snackbarManager.showError("You cannot message yourself.");
                         return;
                       }
                       

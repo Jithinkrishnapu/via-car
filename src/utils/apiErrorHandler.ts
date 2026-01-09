@@ -1,4 +1,4 @@
-import { Alert } from 'react-native';
+import { snackbarManager } from './snackbar-manager';
 
 export interface ApiError extends Error {
   status?: number;
@@ -146,7 +146,7 @@ export function handleApiError(error: any, context?: string): void {
     }
   }
   
-  Alert.alert(title, message);
+  snackbarManager.showError(`${title}${message ? `: ${message}` : ''}`);
 }
 
 /**
@@ -179,7 +179,7 @@ export function showValidationErrors(error: any): void {
   const validationErrors = extractValidationErrors(error);
   
   if (validationErrors.length > 0) {
-    Alert.alert('Validation Error', validationErrors.join('\n'));
+    snackbarManager.showError(`Validation Error: ${validationErrors.join('\n')}`);
   } else {
     handleApiError(error);
   }

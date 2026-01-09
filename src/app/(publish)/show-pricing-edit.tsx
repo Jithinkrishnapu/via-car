@@ -6,9 +6,9 @@ import {
   ScrollView,
   SafeAreaView,
   Dimensions,
-  Alert,
   ActivityIndicator,
 } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -119,7 +119,7 @@ function ShowPricing() {
       }
       /* ---- error already shown by useCreateRide -------------------- */
     } catch (err: any) {
-      Alert.alert('Error', err?.message || 'Something went wrong');
+      snackbarManager.showError(err?.message || 'Something went wrong');
     } finally {
       setLoading(false);
     }

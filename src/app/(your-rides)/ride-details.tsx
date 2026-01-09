@@ -16,7 +16,6 @@ import {
   ImageBackground,
   Image,
   FlatList,
-  Alert,
 } from "react-native";
 import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
@@ -34,6 +33,7 @@ import { useCallback, useEffect, useState } from "react";
 import { RideDetail } from "@/types/ride-types";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useGetProfileDetails } from "@/service/auth";
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 function RideDetails() {
 
@@ -112,7 +112,7 @@ function RideDetails() {
         err?.message ??
         err?.errors?.ride_id?.[0] ??
         'Something went wrong. Please try again.';
-      Alert.alert('Booking failed', msg);
+      snackbarManager.showError(msg);
     }
   };
 

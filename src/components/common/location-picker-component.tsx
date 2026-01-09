@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import {
     View,
     StyleSheet,
-    Alert,
+    
     Text,
     TouchableOpacity,
     Dimensions,
@@ -10,6 +10,7 @@ import {
 import MapView, { PROVIDER_GOOGLE, Region } from 'react-native-maps';
 import * as Location from 'expo-location';
 import LocationPin from "../../../public/location-pin.svg";
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 interface SelectedLocation {
     latitude: number;
@@ -204,7 +205,7 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
         if (selectedLocation) {
             onLocationSelected(selectedLocation);
         } else {
-            Alert.alert('Hold on!', 'Please adjust the map to select a location.');
+            snackbarManager.showError('Please adjust the map to select a location.');
         }
     };
 

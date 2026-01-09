@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
-import { View, ScrollView, TouchableOpacity, Alert } from "react-native";
+import { View, ScrollView, TouchableOpacity } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import { ChevronLeft, ChevronRight, Home } from "lucide-react-native";
 import { Href, router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
@@ -59,7 +60,7 @@ export default function YourPublicationScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert("Ride Cancelled")
+      snackbarManager.showSuccess("Ride Cancelled")
     }
   }
 

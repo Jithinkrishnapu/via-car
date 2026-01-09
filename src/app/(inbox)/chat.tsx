@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef } from "react";
-import { TouchableOpacity, View, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Alert, Keyboard } from "react-native";
+import { TouchableOpacity, View, Modal, TextInput, FlatList, KeyboardAvoidingView, Platform, Keyboard } from "react-native";
 import Text from "@/components/common/text";
 import Avatar from "@/components/ui/avatar";
 import { ArrowRight, ChevronLeft, ChevronRight, Ellipsis, Send, TriangleAlert } from "lucide-react-native";
@@ -19,6 +19,7 @@ import {
   onSnapshot,
 } from "firebase/firestore";
 import { db } from "@/firebase";
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 // Remove the fake IDs since we're using real user data
 // const currentUserId = "user_123";
@@ -107,7 +108,7 @@ function Chat() {
     
     // Prevent self-messaging using utility function
     if (!canUsersChat(userDetails?.id, route?.params?.driver_id)) {
-      Alert.alert("Error", "You cannot send messages to yourself.");
+      snackbarManager.showError("You cannot send messages to yourself.");
       return;
     }
     
@@ -137,7 +138,7 @@ function Chat() {
         flatListRef.current?.scrollToEnd({ animated: true });
       }, 100);
     } catch (error: any) {
-      Alert.alert("Error", error.message || "Failed to send message");
+      snackbarManager.showError(error.message || "Failed to send message");
     }
   };
 

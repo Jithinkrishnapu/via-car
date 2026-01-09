@@ -6,6 +6,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { useCreateRideStore } from "@/store/useRideStore";
 import { useEffect } from "react";
 import * as Location from "expo-location";
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 function PickupSelected() {
   const loaded = useLoadFonts();
@@ -15,7 +16,7 @@ function PickupSelected() {
     (async () => {
       const { status } = await Location.requestForegroundPermissionsAsync();
       if (status !== "granted") {
-        alert("Permission to access location was denied");
+        snackbarManager.showError("Permission to access location was denied");
       }
     })();
   }, []);

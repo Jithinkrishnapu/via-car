@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ScrollView, View, Text, TouchableOpacity, Alert, Image, ImageBackground } from 'react-native';
+import { ScrollView, View, Text, TouchableOpacity, Image, ImageBackground } from 'react-native';
 import {
     Car,
     FileText,
@@ -15,6 +15,7 @@ import { useRouter } from 'expo-router';
 import { handleLogOut, useGetProfileDetails } from '@/service/auth';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Avatar from '@/components/ui/avatar';
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 export default function DrawerComponent() {
     const router = useRouter();
@@ -78,10 +79,10 @@ export default function DrawerComponent() {
         handleLogOut().then(() => {
           AsyncStorage.removeItem("userDetails");
           router.replace("/login");
-        }).catch((err) => {
-          console.log("error===========", err)
-          Alert.alert("Something went wrong")
-        })
+                }).catch((err) => {
+                    console.log("error===========", err)
+                    snackbarManager.showError("Something went wrong");
+                })
       };
 
     return (

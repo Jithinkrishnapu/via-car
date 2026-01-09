@@ -5,13 +5,13 @@ import {
   TouchableOpacity,
   useWindowDimensions,
   FlatList,
-  Alert,
   Modal,
   Pressable,
   RefreshControl,
   TextInput,
   Platform,
 } from 'react-native';
+import { snackbarManager } from '@/utils/snackbar-manager';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -84,7 +84,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert(t('yourRides.rideCancelled'))
+      snackbarManager.showSuccess(t('yourRides.rideCancelled'))
     }
   }
   const handleCancelBooking = async (item: any) => {
@@ -94,7 +94,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateBookingStatus(req)
     if (response) {
-      Alert.alert(t('yourRides.bookingCancelled'))
+      snackbarManager.showSuccess(t('yourRides.bookingCancelled'))
     }
   }
 
@@ -114,13 +114,13 @@ export default function RidesTabsScreen() {
     try {
       const response = await useUpdateRideStatus(req);
       if (response) {
-        Alert.alert(t('yourRides.rideStarted'));
+        snackbarManager.showSuccess(t('yourRides.rideStarted'));
         setStartRideModalVisible(false);
         setSelectedRideItem(null);
         fetchList(); // Refresh the list
       }
     } catch (error) {
-      Alert.alert('Error', 'Failed to start ride. Please try again.');
+      snackbarManager.showError('Failed to start ride. Please try again.');
     }
   }
 
@@ -131,7 +131,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useUpdateRideStatus(req)
     if (response) {
-      Alert.alert(t('yourRides.bookingCompleted'))
+      snackbarManager.showSuccess(t('yourRides.bookingCompleted'))
     }
   }
 
@@ -142,7 +142,7 @@ export default function RidesTabsScreen() {
     }
     const response = await useVerifyBooking(req)
     if (response) {
-      Alert.alert(t('yourRides.bookingVerified'))
+      snackbarManager.showSuccess(t('yourRides.bookingVerified'))
     }
   }
 
@@ -180,7 +180,7 @@ export default function RidesTabsScreen() {
       console.log("side============", side, "===================", activeTab, "==============", res?.data[0]?.rideAmounts)
       setBookingList(res?.data?.length ? res.data : []);
     } catch (e: any) {
-      Alert.alert('Error', e?.message ?? 'Failed to load data');
+      snackbarManager.showError(e?.message ?? 'Failed to load data');
       setBookingList([]);
     } finally {
       setRefreshing(false);

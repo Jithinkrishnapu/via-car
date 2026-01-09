@@ -1,9 +1,10 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { LocateFixed, Search, Check } from "lucide-react-native";
-import { ScrollView, TextInput, TouchableOpacity, View, Alert, ActivityIndicator } from "react-native";
+import { ScrollView, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
 import * as Location from 'expo-location';
 import Text from "./text";
+import { snackbarManager } from '@/utils/snackbar-manager';
 import LocationPin from "../../../public/location-pin.svg";
 import { cn } from "@/lib/utils";
 import debounce from "lodash.debounce";
@@ -84,10 +85,7 @@ export default function LocationSearch({ onSelect }: Props) {
       const { status } = await Location.requestForegroundPermissionsAsync();
       
       if (status !== 'granted') {
-        Alert.alert(
-          t('Permission Required'),
-          t('Please grant location permission to use this feature')
-        );
+        snackbarManager.showError(t('Please grant location permission to use this feature'));
         return;
       }
 
@@ -154,10 +152,7 @@ export default function LocationSearch({ onSelect }: Props) {
       }
     } catch (error) {
       console.error('Error getting current location:', error);
-      Alert.alert(
-        t('Error'),
-        t('Failed to get current location. Please try again.')
-      );
+      snackbarManager.showError(t('Failed to get current location. Please try again.'));
     } finally {
       setLoadingLocation(false);
     }

@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { View, Text, Animated, TouchableOpacity, Platform } from 'react-native';
-import { X, Wifi, WifiOff, CheckCircle, AlertTriangle, Info } from 'lucide-react-native';
+import { X } from 'lucide-react-native';
 import { snackbarManager, SnackbarConfig } from '@/utils/snackbar-manager';
 
 const GlobalSnackbar: React.FC = () => {
@@ -87,27 +87,6 @@ const GlobalSnackbar: React.FC = () => {
     }
   };
 
-  const getIcon = () => {
-    const iconSize = 20;
-    const iconColor = '#fff';
-
-    if (config?.message.toLowerCase().includes('network') || 
-        config?.message.toLowerCase().includes('connection')) {
-      return <WifiOff size={iconSize} color={iconColor} />;
-    }
-
-    switch (config?.type) {
-      case 'success':
-        return <CheckCircle size={iconSize} color={iconColor} />;
-      case 'warning':
-        return <AlertTriangle size={iconSize} color={iconColor} />;
-      case 'info':
-        return <Info size={iconSize} color={iconColor} />;
-      case 'error':
-      default:
-        return <WifiOff size={iconSize} color={iconColor} />;
-    }
-  };
 
   if (!visible || !config) return null;
 
@@ -127,8 +106,7 @@ const GlobalSnackbar: React.FC = () => {
     >
       <View className="flex-row items-center justify-between p-4">
         <View className="flex-row items-center flex-1">
-          {getIcon()}
-          <Text className="text-white font-[Kanit-Regular] text-[14px] flex-1 ml-3">
+          <Text className="text-white font-[Kanit-Regular] text-[14px] flex-1">
             {config.message}
           </Text>
         </View>

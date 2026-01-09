@@ -1,7 +1,7 @@
 import { API_URL } from "@/constants/constants";
 import { RideDetails, RideEditDetails, RoutesRequest, SearchRideRequest } from "@/types/ride-types";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
-import { Alert } from "react-native";
+import { snackbarManager } from '@/utils/snackbar-manager';
 
 export const useCreateRide = async (postData: RideDetails) => {
   const userDetailsString = await useAsyncStorage('userDetails').getItem();
@@ -65,10 +65,7 @@ export const useEditRide = async (postData: RideEditDetails) => {
 
   /* 3️⃣  Surface the error to the caller & UI ----------------------- */
   if (!res.ok) {
-    Alert.alert(
-      `Ride creation failed (${res.status})`,
-      data.message || data.error || data.msg || 'Unknown server error'
-    );
+    snackbarManager.showError(`Ride creation failed (${res.status}): ${data.message || data.error || data.msg || 'Unknown server error'}`);
   }
 
   return { ok: res.ok, status: res.status, data };
