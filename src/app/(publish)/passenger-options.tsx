@@ -1,13 +1,11 @@
 import { useState } from "react";
 import { View, TouchableOpacity } from "react-native";
-import { ChevronRight, Circle } from "lucide-react-native";
+import { ChevronRight } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
 import MinusLarge from "../../../public/minus-large.svg";
 import PlusLarge from "../../../public/plus-large.svg";
-import People from "../../../public/people.svg";
-import CheckGreen from "../../../public/check-green.svg";
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useCreateRideStore } from "@/store/useRideStore";
@@ -21,7 +19,6 @@ export default function Page() {
   const { isRTL, swap } = useDirection();
   console.log("seatoptions=============",ride.available_seats)
   const [passengers, setPassengers] = useState(ride.available_seats);
-  const [comfortMode, setComfortMode] = useState(ride?.max_2_in_back);
 
 
   const adjustPassengers = (delta: number) => {
@@ -30,11 +27,10 @@ export default function Page() {
 
 
   const handleEditPassenger =async(passenger:number)=>{
-    const req ={passengers:passenger,max_2_in_back:comfortMode} as RideEditDetails
+    const req ={passengers:passenger} as RideEditDetails
     const res = await useEditRide(req)
     if(res.ok){
       setRideField("available_seats",passenger)
-      setRideField("max_2_in_back",comfortMode)
       router.replace("..")
     }
   }
@@ -74,46 +70,6 @@ export default function Page() {
           </TouchableOpacity>
         </View>
 
-        {/* Comfort Mode Checkbox */}
-        <Text
-          fontSize={18}
-          className="text-[18px] text-black font-[Kanit-Regular] mb-[15px]"
-        >
-          {t("passengerCount.options")}
-        </Text>
-        <TouchableOpacity
-          onPress={() => {
-            setComfortMode((prev) => !prev)}}
-          activeOpacity={0.8}
-          className="flex-row items-center gap-4 w-full border border-[#EBEBEB] rounded-2xl px-4 py-4 mb-8"
-        >
-          <People width={20} height={20} />
-          <View className="flex-1">
-            <Text
-              fontSize={14}
-              className="text-sm lg:text-base font-[Kanit-Regular]"
-            >
-              {t("passengerCount.maxTwoInBack")}
-            </Text>
-            <Text
-              fontSize={12}
-              className="text-xs lg:text-[0.938rem] text-[#666666] font-[Kanit-Light]"
-            >
-              {t("passengerCount.comfortHint")}
-            </Text>
-          </View>
-          {comfortMode ? (
-            <CheckGreen width={25} height={25} />
-          ) : (
-            <Circle
-              color="#BBBBBB"
-              width={25}
-              height={25}
-              strokeWidth={1}
-              className="size-[25px]"
-            />
-          )}
-        </TouchableOpacity>
 
         {/* Continue */}
       </View>
