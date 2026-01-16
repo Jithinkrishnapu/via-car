@@ -36,7 +36,8 @@ function ShowPricing() {
   if (!loaded) return null;
 
   return (
-    <ScrollView className="flex-1 bg-white">
+    <View className="flex-1 bg-white">
+      <ScrollView className="flex-1" contentContainerStyle={{ paddingBottom: 100 }}>
       {/* Hero Section */}
       <View className="h-[260px]">
         <ImageBackground
@@ -47,7 +48,7 @@ function ShowPricing() {
           <View className="absolute inset-0 max-w-[1410px] w-full mx-auto px-6 pt-[60px]">
             <View className="flex-row items-center gap-6 mb-8">
               <TouchableOpacity
-                onPress={() => router.replace("..")}
+                onPress={() => router.back()}
                 activeOpacity={0.8}
                 className="rounded-full size-[45px] bg-white/20 items-center justify-center"
               >
@@ -250,7 +251,23 @@ function ShowPricing() {
           </View>
         </View>
       </View>
-    </ScrollView>
+      </ScrollView>
+
+      <View className="absolute bottom-8 left-0 right-0 px-6">
+        <TouchableOpacity
+          onPress={() => router.back()}
+          activeOpacity={0.8}
+          className="bg-[#FF4848] rounded-full h-[55px] items-center justify-center"
+        >
+          <Text
+            fontSize={20}
+            className="text-xl text-white font-[Kanit-Regular]"
+          >
+            {t("common.continue")}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
 }
 

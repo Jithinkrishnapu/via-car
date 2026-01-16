@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { View, TouchableOpacity, TextInput } from "react-native";
-import { ChevronLeft, Circle } from "lucide-react-native";
+import { ChevronRight, ChevronLeft, Circle } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import Text from "@/components/common/text";
@@ -31,15 +31,12 @@ export default function Page() {
         <View className="flex-row items-center gap-4 mb-6 px-6">
           <TouchableOpacity
             className="rounded-full size-[46px] border border-[#EBEBEB] items-center justify-center"
-            onPress={() => router.replace("..")}
+            onPress={() => router.back()}
             activeOpacity={0.8}
           >
-            <ChevronLeft size={16} />
+            {swap(<ChevronLeft size={16} />, <ChevronRight size={16} />)}
           </TouchableOpacity>
-          <Text
-            fontSize={25}
-            className="text-[25px] text-black font-[Kanit-Medium] leading-tight flex-1"
-          >
+          <Text fontSize={23} className="text-[23px] font-[Kanit-Medium] flex-1">
             {t("passengerCount.title")}
           </Text>
         </View>
