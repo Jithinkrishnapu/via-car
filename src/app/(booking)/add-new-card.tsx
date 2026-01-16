@@ -549,6 +549,7 @@ var wpwlOptions = {
                 <WebView
                     source={{ html: generate3DSForm() }}
                     onNavigationStateChange={(navState) => {
+                        console.log("Navstate,",navState)
                         console.log('Navigation URL:', navState.url);
                         handle3DSComplete(navState.url);
                     }}

@@ -78,23 +78,33 @@ export default function RidesTabsScreen() {
   const [refreshing, setRefreshing] = useState(false);
 
   const handleCancelRide = async (item: any) => {
-    const req = {
-      ride_id: item?.id,
-      status: 5
-    }
-    const response = await useUpdateRideStatus(req)
-    if (response) {
-      snackbarManager.showSuccess(t('yourRides.rideCancelled'))
+    try {
+      const req = {
+        ride_id: item?.id,
+        status: 5
+      }
+      const response = await useUpdateRideStatus(req)
+      if (response) {
+        snackbarManager.showSuccess(t('yourRides.rideCancelled'))
+        fetchList()
+      }
+    } catch (error: any) {
+      snackbarManager.showError(error?.message || 'Failed to cancel ride')
     }
   }
   const handleCancelBooking = async (item: any) => {
-    const req = {
-      booking_id: item?.id,
-      status: 5
-    }
-    const response = await useUpdateBookingStatus(req)
-    if (response) {
-      snackbarManager.showSuccess(t('yourRides.bookingCancelled'))
+    try {
+      const req = {
+        booking_id: item?.id,
+        status: 5
+      }
+      const response = await useUpdateBookingStatus(req)
+      if (response) {
+        snackbarManager.showSuccess(t('yourRides.bookingCancelled'))
+        fetchList()
+      }
+    } catch (error: any) {
+      snackbarManager.showError(error?.message || 'Failed to cancel booking')
     }
   }
 
@@ -125,24 +135,36 @@ export default function RidesTabsScreen() {
   }
 
   const handleEndBooking = async (item: any) => {
-    const req = {
-      ride_id: item?.id,
-      status: 4
-    }
-    const response = await useUpdateRideStatus(req)
-    if (response) {
-      snackbarManager.showSuccess(t('yourRides.bookingCompleted'))
+    try {
+      const req = {
+        ride_id: item?.id,
+        status: 4
+      }
+      const response = await useUpdateRideStatus(req)
+      if (response) {
+        snackbarManager.showSuccess(t('yourRides.bookingCompleted'))
+        fetchList()
+      }
+    } catch (error: any) {
+      snackbarManager.showError(error?.message || 'Failed to complete ride')
     }
   }
 
   const handleVerifyBooking = async (ride_id: number, pin: string) => {
-    const req = {
-      "ride_id": ride_id,
-      "pin": pin
-    }
-    const response = await useVerifyBooking(req)
-    if (response) {
-      snackbarManager.showSuccess(t('yourRides.bookingVerified'))
+    try {
+      const req = {
+        "ride_id": ride_id,
+        "pin": pin
+      }
+      const response = await useVerifyBooking(req)
+      if (response) {
+        snackbarManager.showSuccess(t('yourRides.bookingVerified'))
+        setShowModalVisible(false)
+        setPin('')
+        fetchList()
+      }
+    } catch (error: any) {
+      snackbarManager.showError(error?.message || 'Failed to verify booking')
     }
   }
 
