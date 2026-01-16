@@ -57,7 +57,7 @@ const defaultRide: RideData = {
   available_seats: 3,
   price_per_seat: 25.5,
   notes: 'Non-smoking ride',
-  vehicle_id: 1,
+  vehicle_id: 0,
   max_2_in_back: false,
   segmentPrices: undefined, // optional
   stops: [],

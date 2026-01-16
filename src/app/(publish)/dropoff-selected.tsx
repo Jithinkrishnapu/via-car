@@ -88,9 +88,8 @@ function DropoffSelected() {
             setRideField("destination_lng", location.longitude)
             setRideField("destination_address", location.address || "")
             // router.push("/(publish)/route");
-            handleGetVehicles().then(() => {
-              setModalVisible(true)
-            })
+            setModalVisible(true)
+            handleGetVehicles()
           }}
         />
       </View>
