@@ -273,7 +273,7 @@ var wpwlOptions = {
     try {
       const response = await getPaymentStatus(Number(routeParams.booking_id));
       console.log(response, "====================response", response.data?.paymentStatus);
-      if (response.data?.paymentStatus === 2 || response.data?.paymentStatus === 1) { // Accept 1 (Success) as well
+      if (response.data?.paymentStatus === 2) {
         setStatus("approved");
         return true;
       }

@@ -9,12 +9,14 @@ import {
   Dimensions,
   Keyboard,
   Platform,
+  KeyboardAvoidingView,
 } from "react-native";
 
 import { Check, Search } from "lucide-react-native";
 import Text from "../common/text";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { height } = Dimensions.get("window");
 
@@ -32,6 +34,7 @@ type Props<T extends string> = {
   isLoading?: boolean;
   emptyMessage?: string;
   placeholder?: string;
+  title?: string;
   onModalStateChange?: (isOpen: boolean) => void;
 };
 
@@ -42,13 +45,16 @@ export function AutoComplete<T extends string>({
   onSearchValueChange,
   items,
   placeholder = "Search...",
+  title,
   handleItemSelect,
   onModalStateChange
 }: Props<T>) {
   const { t } = useTranslation("components");
+  const insets = useSafeAreaInsets();
   const [visible, setVisible] = useState(false);
   const translateY = useRef(new Animated.Value(height)).current;
   const pendingSelectionRef = useRef<T | null>(null);
+  const inputRef = useRef<TextInput>(null);
 
   const labels = useMemo(
     () =>
@@ -66,7 +72,12 @@ export function AutoComplete<T extends string>({
       toValue: 0,
       duration: 300,
       useNativeDriver: true,
-    }).start();
+    }).start(() => {
+        // Ensure focus after animation
+        setTimeout(() => {
+          inputRef.current?.focus();
+        }, 100);
+    });
   };
 
   const closeSheet = () => {
@@ -99,8 +110,8 @@ export function AutoComplete<T extends string>({
     }, 300);
   };
 
-  // Calculate max height: half of screen height
-  const maxSheetHeight = height / 2;
+  // Calculate max height: full screen height
+  const maxSheetHeight = height;
 
   return (
     <View>
@@ -152,20 +163,41 @@ export function AutoComplete<T extends string>({
             <Animated.View
               style={{
                 transform: [{ translateY }],
-                height: maxSheetHeight,
-                pointerEvents: 'auto'
+                height: '100%',
+                pointerEvents: 'auto',
+                paddingTop: insets.top,
               }}
-              className="bg-white rounded-t-3xl"
+              className="bg-white"
             >
-                <View className="p-6 flex-1">
+              <KeyboardAvoidingView
+                behavior={Platform.OS === "ios" ? "padding" : undefined}
+                style={{ flex: 1 }}
+              >
+                <View className="flex-row items-center justify-between px-6 pt-4 pb-2">
+                   <Text className="text-xl font-[Kanit-Medium] text-black">
+                      {title || placeholder}
+                   </Text>
+                   <TouchableOpacity 
+                     onPress={() => {
+                       Keyboard.dismiss();
+                       closeSheet();
+                     }}
+                   >
+                      <Text className="text-lg font-[Kanit-Regular] text-[#FF4848]">
+                        Close
+                      </Text>
+                   </TouchableOpacity>
+                </View>
+                <View className="p-6 pt-2 flex-1">
                   <View className="relative mb-4">
                     <TextInput
+                      ref={inputRef}
                       allowFontScaling={false}
                       className="border border-gray-300 rounded-lg px-4 py-3 font-[Kanit-Regular] text-base lg:!text-[17px] lg:font-normal !ring-0 lg:border-0 pr-6 lg:px-0 lg:max-w-[140px] max-lg:h-[50px] lg:rounded-none w-full max-lg:mx-auto shadow-none placeholder:text-[#757478] max-lg:bg-[#F1F1F5] max-lg:border-0"
                       placeholder={placeholder}
                       value={searchValue}
                       onChangeText={onSearchValueChange}
-                      autoFocus
+                      // autoFocus // Removed autoFocus to depend on ref focus after animation
                     />
                   </View>
 
@@ -211,7 +243,8 @@ export function AutoComplete<T extends string>({
                     )}
                   />
                 </View>
-              </Animated.View>
+              </KeyboardAvoidingView>
+            </Animated.View>
             </View>
           </Modal>
         )}

@@ -9,6 +9,7 @@ interface Props {
   label?: string;
   name: string; // key in the store
   placeholder?: string;
+  title?: string;
   onModalStateChange?: (isOpen: boolean) => void;
 }
 
@@ -16,6 +17,7 @@ export default function LocationSelect({
   label = "",
   name,
   placeholder = "Search location...",
+  title,
   onModalStateChange,
 }: Props) {
   const { t } = useTranslation("components");
@@ -125,6 +127,7 @@ export default function LocationSelect({
       }))}
       emptyMessage={t("locationSelect.emptyMessage")}
       placeholder={placeholder || t("locationSelect.placeholder")}
+      title={title}
     />
   );
 }

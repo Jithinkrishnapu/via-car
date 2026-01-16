@@ -121,11 +121,13 @@ function SearchRide({ onModalStateChange }: SearchRideProps) {
       <LocationSelect
         name="from"
         placeholder={t("searchRide.pickupPlaceholder")}
+        title="Pickup"
         onModalStateChange={handleModalStateChange}
       />
       <LocationSelect
         name="to"
         placeholder={t("searchRide.dropPlaceholder")}
+        title="Dropoff"
         onModalStateChange={handleModalStateChange}
       />
       <DatePicker onSelect={(date) => setSelectedDate(date)} />
