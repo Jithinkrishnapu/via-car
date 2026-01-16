@@ -273,13 +273,14 @@ function Pickup() {
   if (!loaded || isCheckingLogin) return null;
   
   return (
-    <>
+    <View className="flex-1 bg-white">
       <ScrollView 
         bounces={false} 
-        className="w-full px-6 pt-10 pb-12 bg-white"
+        className="w-full px-6 pt-10"
         contentInsetAdjustmentBehavior="automatic"
         automaticallyAdjustsScrollIndicatorInsets={false}
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
         <Text
           fontSize={25}
@@ -296,8 +297,11 @@ function Pickup() {
         </Text>
         
         <LocationSearch onSelect={handleLocationSelect} />
+      </ScrollView>
+
+      <View className="p-6 pb-10 bg-white border-t border-[#f0f0f0]">
         <TouchableOpacity
-          className={`rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center transition-colors ${
+          className={`rounded-full w-full h-[55px] cursor-pointer items-center justify-center transition-colors ${
             isFormValid() ? 'bg-[#FF4848]' : 'bg-gray-400'
           }`}
           onPress={handleBookNow}
@@ -317,7 +321,7 @@ function Pickup() {
         {!selectedLocation && (
           <Text
             fontSize={14}
-            className="text-[14px] text-[#666666] font-[Kanit-Light] text-center -mt-6 mb-4"
+            className="text-[14px] text-[#666666] font-[Kanit-Light] text-center mt-4"
           >
             {t("pickup.messages.locationRequired")}
           </Text>
@@ -327,12 +331,12 @@ function Pickup() {
           <Text
              onPress={()=>setShowSetupDialog(true)}
             fontSize={14}
-            className="text-[14px] text-[#FF4848] font-[Kanit-Light] text-center -mt-6 mb-4"
+            className="text-[14px] text-[#FF4848] font-[Kanit-Light] text-center mt-4"
           >
             {t("pickup.messages.setupRequired")}
           </Text>
         )}
-      </ScrollView>
+      </View>
 
       {/* Error Dialog */}
       <Dialog
@@ -377,7 +381,7 @@ function Pickup() {
           </TouchableOpacity>
         </View>
       </Dialog>
-    </>
+    </View>
   );
 }
 

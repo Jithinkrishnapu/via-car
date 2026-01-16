@@ -45,11 +45,12 @@ function Dropoff() {
 
   if (!loaded) return null;
   return (
-    <>
+    <View className="flex-1 bg-white">
       <ScrollView 
         bounces={false} 
-        className="px-6 pt-16 pb-12 bg-white"
+        className="px-6 pt-16"
         keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ paddingBottom: 100 }}
       >
         <View className="flex-row items-center gap-4 mb-6">
           <TouchableOpacity
@@ -76,8 +77,11 @@ function Dropoff() {
         
         <LocationSearch onSelect={handleLocationSelect} />
         
+      </ScrollView>
+
+      <View className="p-6 bg-white border-t border-[#f0f0f0]">
         <TouchableOpacity
-          className={`rounded-full w-full h-[55px] my-[33px] cursor-pointer items-center justify-center transition-colors ${
+          className={`rounded-full w-full h-[55px] cursor-pointer items-center justify-center transition-colors ${
             isFormValid() ? 'bg-[#FF4848]' : 'bg-gray-400'
           }`}
           onPress={handleContinue}
@@ -97,12 +101,12 @@ function Dropoff() {
         {!isFormValid() && (
           <Text
             fontSize={14}
-            className="text-[14px] text-[#666666] font-[Kanit-Light] text-center -mt-6 mb-4"
+            className="text-[14px] text-[#666666] font-[Kanit-Light] text-center mt-4"
           >
             Please select a dropoff location to continue
           </Text>
         )}
-      </ScrollView>
+      </View>
 
       {/* Error Dialog */}
       <Dialog
@@ -117,7 +121,7 @@ function Dropoff() {
           {errorMessage}
         </Text>
       </Dialog>
-    </>
+    </View>
   );
 }
 

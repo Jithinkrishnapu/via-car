@@ -1,7 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { LocateFixed, Search, Check } from "lucide-react-native";
-import { ScrollView, TextInput, TouchableOpacity, View, ActivityIndicator } from "react-native";
+import { ScrollView, TextInput, TouchableOpacity, View, ActivityIndicator, Keyboard } from "react-native";
 import * as Location from 'expo-location';
 import Text from "./text";
 import { snackbarManager } from '@/utils/snackbar-manager';
@@ -57,9 +57,14 @@ export default function LocationSearch({ onSelect }: Props) {
       setShowDropdown(false);
       return;
     }
+
+    if (selectedLocation && searchValue === selectedLocation.mainText) {
+      return;
+    }
+
     debouncedFetchLocations();
     return () => debouncedFetchLocations.cancel();
-  }, [searchValue, debouncedFetchLocations]);
+  }, [searchValue, debouncedFetchLocations, selectedLocation]);
 
   const handleInputChange = (text: string) => {
     setSearchValue(text);
@@ -71,6 +76,7 @@ export default function LocationSearch({ onSelect }: Props) {
   };
 
   const selectItem = (loc: any) => {
+    Keyboard.dismiss();
     setSelectedLocation(loc);
     setSearchValue(loc.mainText);
     setShowDropdown(false);
@@ -79,6 +85,7 @@ export default function LocationSearch({ onSelect }: Props) {
 
   const getCurrentLocation = async () => {
     try {
+      Keyboard.dismiss();
       setLoadingLocation(true);
       
       // Request permission
@@ -194,17 +201,18 @@ export default function LocationSearch({ onSelect }: Props) {
 
       {/* ✅ Selected Location Indicator */}
       {selectedLocation && !showDropdown && (
-        <View className="mt-2 px-4 py-3 bg-[#ff484835] rounded-lg flex-row items-center gap-3">
-          <View className="bg-[#FF4848] rounded-full p-1">
-            <Check className="size-[16px]" strokeWidth={3} color="white" />
-          </View>
-          <View className="flex-1">
-            <Text fontSize={13} className="text-[#FF4848] font-semibold">
-              Selected: {selectedLocation.mainText}
+        <View className="mt-1 bg-white rounded-xl border border-[#FF4848] flex-row items-center gap-6 py-5 px-4 shadow-sm">
+          <LocationPin width={19} height={22} />
+          <View className="flex-1 flex-col">
+            <Text fontSize={14} className="text-sm text-[#000] font-semibold">
+              {selectedLocation.mainText}
             </Text>
-            <Text fontSize={11} className="text-[#FF4848] font-[Kanit-Light]">
+            <Text fontSize={12} className="text-xs font-[Kanit-Light] text-[#558B5B]">
               {selectedLocation.text}
             </Text>
+          </View>
+          <View className="bg-[#FF4848] rounded-full p-1">
+            <Check className="size-[10px]" strokeWidth={3} color="white" />
           </View>
         </View>
       )}
