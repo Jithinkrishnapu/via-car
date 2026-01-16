@@ -6,9 +6,9 @@ import { ImageBackground, ScrollView, View, TouchableOpacity } from "react-nativ
 import { useTranslation } from "react-i18next";
 import HambergIocn from '../../../public/drawer.svg'
 import BellIocn from '../../../public/bell.svg'
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import Drawer from "../drawer";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
 
 function Book() {
@@ -18,6 +18,14 @@ function Book() {
   const [isLocationModalOpen, setIsLocationModalOpen] = useState(false);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   
+  useFocusEffect(
+    useCallback(() => {
+      return () => {
+        setOpen(false);
+      };
+    }, [])
+  );
+
   // Check authentication status
   useEffect(() => {
     const checkAuth = async () => {

@@ -17,19 +17,27 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import Avatar from '@/components/ui/avatar';
 import { snackbarManager } from '@/utils/snackbar-manager';
 
-export default function DrawerComponent() {
+type Props = {
+    onClose?: () => void;
+};
+
+export default function DrawerComponent({ onClose }: Props) {
     const router = useRouter();
     const [userDetails, setUserDetails] = useState<any>(null);
     const [isLoggedIn, setIsLoggedIn] = useState<boolean>(false);
 
     useEffect(() => {
-        loadUserDetails();
-        checkAuthStatus();
+        const initializeDrawer = async () => {
+            await checkAuthStatus();
+            await loadUserDetails();
+        };
+        initializeDrawer();
     }, []);
 
     const loadUserDetails = async () => {
         try {
             const response = await useGetProfileDetails();
+            console.log("Drawer profile load:", response?.data);
             if (response?.data) {
                 setUserDetails(response.data);
             }
@@ -41,8 +49,20 @@ export default function DrawerComponent() {
     const checkAuthStatus = async () => {
         try {
             const raw = await AsyncStorage.getItem("userDetails");
-            const token = raw ? JSON.parse(raw).token : "";
-            setIsLoggedIn(!!token);
+            if (raw) {
+                const data = JSON.parse(raw);
+                setIsLoggedIn(!!data.token);
+                
+                // Set initial details from storage if available
+                // If it's the result from profile API stored previously
+                if (data.first_name) {
+                    setUserDetails(data);
+                } else if (data.user) {
+                    setUserDetails(data.user);
+                } else if (data.data) {
+                    setUserDetails(data.data);
+                }
+            }
         } catch (error) {
             console.log("Auth status check error:", error);
             setIsLoggedIn(false);
@@ -51,7 +71,7 @@ export default function DrawerComponent() {
 
     const menu = [
         { label: 'Your rides', icon: Car, route: '/(tabs)/your-rides', hasNotification: false },
-        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: true },
+        { label: 'Booking request', icon: FileText, route: '/(booking)/booking-request', hasNotification: false },
         { label: 'Notification', icon: Bell, route: '/notifications', hasNotification: false },
         { label: 'Profile', icon: User, route: '/(tabs)/user-profile', hasNotification: false },
         { label: 'Transaction', icon: ArrowLeftRight, route: '/(profile)/transactions', hasNotification: false },
@@ -65,6 +85,7 @@ export default function DrawerComponent() {
             const token = raw ? JSON.parse(raw).token : "";
             
             if (token) {
+                if (onClose) onClose();
                 router.push(route as any);
             } else {
                 router.replace("/login");
@@ -104,14 +125,14 @@ export default function DrawerComponent() {
                             <User size={24} color="white" />
                         )} */}
                          <Avatar
-                      source={userDetails?.profile_image !== null ? { uri: userDetails?.profile_image } : require(`../../public/profile-image.jpg.webp`)}
+                      source={userDetails?.profile_image ? { uri: userDetails.profile_image } : require(`../../public/profile-image.jpg.webp`)}
                       size={40}
-                      initials="CN"
+                      initials={userDetails?.first_name ? userDetails.first_name.charAt(0) : "U"}
                     />
                     </View>
                     <View className="flex-1">
                         <Text className="text-white text-lg font-semibold">
-                            {userDetails?.first_name ? `${userDetails.first_name} ${userDetails.last_name || ''}`.trim() : 'Guest User'}
+                            {userDetails?.first_name ? `${userDetails.first_name} ${userDetails.last_name || ''}`.trim() : (isLoggedIn ? 'Loading...' : 'Guest User')}
                         </Text>
                     </View>
                 </View>

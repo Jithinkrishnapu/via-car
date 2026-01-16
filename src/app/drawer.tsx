@@ -64,7 +64,7 @@ export default function Drawer({ visible =false, onClose }: Props) {
         </Pressable>
 
         {/* your content */}
-        <DrawerComponent />
+        <DrawerComponent onClose={onClose} />
       </Animated.View>
     </>
   );
