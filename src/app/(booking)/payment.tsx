@@ -13,7 +13,9 @@ import {
   View,
   TextInput,
   RefreshControl,
+  SafeAreaView,
 } from "react-native";
+import { WebView } from 'react-native-webview';
 import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
 import { useTranslation } from "react-i18next";
@@ -100,6 +102,10 @@ function Payment() {
     visible: false,
     cardIndex: -1
   });
+
+  const [show3DS, setShow3DS] = useState(false);
+  const [authUrl, setAuthUrl] = useState('');
+  const [authParams, setAuthParams] = useState<any[]>([]);
 
   const showError = (title: string, message: string, type: "error" | "warning" | "info" | "success" = "error") => {
     setErrorDialog({
@@ -198,6 +204,65 @@ function Payment() {
     }
   };
 
+  const generate3DSForm = () => {
+    const paramsHtml = authParams
+      .map((param) => {
+        const key = param.name || Object.keys(param)[0];
+        const value = param.value || param[key];
+        return `<input type="hidden" name="${key}" value="${value}" />`;
+      })
+      .join('\n');
+
+    return `
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            </head>
+            <body onload="document.forms[0].submit()">
+                <div style="text-align: center; padding: 50px; font-family: Arial, sans-serif;">
+                    <p>Redirecting to authentication...</p>
+                </div>
+                <form method="POST" action="${authUrl}">
+                    ${paramsHtml}
+                </form>
+            </body>
+            <script type="text/javascript">
+var wpwlOptions = {
+ paymentTarget: "_top",
+}
+</script>
+            </html>
+        `;
+  };
+
+  const handle3DSComplete = (url: string) => {
+    console.log('3DS Navigation URL:', url);
+
+    // Check if the URL indicates completion
+    if (url.includes('success') || url.includes('approved') || url.includes('complete')) {
+      setShow3DS(false);
+      setStatus("waiting"); // Start polling for payment status
+    } else if (url.includes('fail') || url.includes('cancel') || url.includes('error')) {
+      setShow3DS(false);
+      showError(
+        t("payment.authFailed") || 'Authentication Failed',
+        t("payment.authFailedMessage") || 'Payment authentication failed or was cancelled.'
+      );
+    }
+    // If URL doesn't match success/fail patterns, keep the WebView open
+    // but also start polling after a delay in case the redirect is delayed
+    else if (url !== authUrl && !url.includes('about:blank')) {
+      // Start polling after 2 seconds if we're on a different URL that's not the initial auth URL
+      setTimeout(() => {
+        if (show3DS) {
+          setShow3DS(false);
+          setStatus("waiting");
+        }
+      }, 2000);
+    }
+  };
+
   const onRefresh = useCallback(() => {
     fetchSavedCards(true);
   }, []);
@@ -208,7 +273,7 @@ function Payment() {
     try {
       const response = await getPaymentStatus(Number(routeParams.booking_id));
       console.log(response, "====================response", response.data?.paymentStatus);
-      if (response.data?.paymentStatus === 2) {
+      if (response.data?.paymentStatus === 2 || response.data?.paymentStatus === 1) { // Accept 1 (Success) as well
         setStatus("approved");
         return true;
       }
@@ -271,8 +336,7 @@ function Payment() {
       billing_post_code: selectedCard.cardData.billingPostCode,
       billing_country: selectedCard.cardData.billingCountry,
       given_name: selectedCard.cardData.cardHolderName.split(' ')[0] || '',
-      sur_name: selectedCard.cardData.cardHolderName.split(' ').slice(1).join(' ') || '',
-      alias: selectedCard.cardData.alias,
+      sur_name: selectedCard.cardData.cardHolderName.split(' ').slice(1).join(' ') || selectedCard.cardData.cardHolderName.split(' ')[0] || '',
     };
 
     console.log("Saved card payment payload:", postData);
@@ -297,6 +361,14 @@ function Payment() {
         const errorMessages = response.errors.map((error: any) => error.message || error).join('\n');
         showError('Validation Error', errorMessages);
         setStatus("idle");
+        return;
+      }
+
+      // Check if 3DS authentication is required
+      if (response?.message?.url && response?.message?.parameters) {
+        setAuthUrl(response.message.url);
+        setAuthParams(response.message.parameters);
+        setShow3DS(true);
         return;
       }
 
@@ -339,9 +411,16 @@ function Payment() {
       }
       
       // Generic error handling
-      const errorMessage = err?.response?.data?.message || 
-                         err?.message || 
-                         'Failed to authorize payment. Please try again.';
+      const errorMessage = err?.response?.data?.message ||
+        err?.message ||
+        'Failed to authorize payment. Please try again.';
+
+      // Handle JSON parsing errors specifically
+      if (err.message && err.message.includes('JSON')) {
+        showError('Server Error', 'Invalid response from server. Please try again later.');
+        return;
+      }
+
       showError('Payment Error', errorMessage);
     } finally {
       setLoading(false);
@@ -390,6 +469,52 @@ function Payment() {
   }, [status, routeParams?.booking_id]);
 
   if (!loaded) return null;
+
+  // Show 3DS WebView if needed
+  if (show3DS) {
+    return (
+      <SafeAreaView className="flex-1 bg-white">
+        <View className="flex-row items-center justify-between px-5 py-4 border-b border-gray-200">
+          <View className="flex-row items-center">
+            <TouchableOpacity
+              className="bg-white rounded-full size-[45px] flex-row items-center justify-center border border-[#EBEBEB]"
+              activeOpacity={0.8}
+              onPress={() => {
+                setShow3DS(false);
+                showError(
+                  t("payment.authCancelled") || 'Authentication Cancelled',
+                  t("payment.authCancelledMessage") || 'Payment authentication was cancelled.'
+                );
+              }}
+            >
+              <ChevronLeft color="#3C3F4E" />
+            </TouchableOpacity>
+            <Text className="text-lg font-bold text-gray-900 ml-3">{t("payment.secureAuthentication") || "Secure Authentication"}</Text>
+          </View>
+          <TouchableOpacity
+            className="bg-blue-500 rounded-lg px-4 py-2"
+            activeOpacity={0.8}
+            onPress={() => {
+              setShow3DS(false);
+              setStatus("waiting");
+            }}
+          >
+            <Text className="text-white text-sm font-semibold">{t("payment.done") || "Done"}</Text>
+          </TouchableOpacity>
+        </View>
+        <WebView
+          source={{ html: generate3DSForm() }}
+          onNavigationStateChange={(navState) => {
+            console.log('Navigation URL:', navState.url);
+            handle3DSComplete(navState.url);
+          }}
+          style={{ flex: 1 }}
+          javaScriptEnabled={true}
+          domStorageEnabled={true}
+        />
+      </SafeAreaView>
+    );
+  }
 
   const renderOption = ({ id, title, description, img }: Options) => {
     const isChecked = selectedId === id;

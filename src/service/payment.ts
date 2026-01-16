@@ -19,7 +19,7 @@ export const useAuthorizePayment = async (postData: BookingPaymentData) => {
                 Authorization: `Bearer ${token}`, // ✅ Pass token explicitly
               }
           });
-          
+          // console.log("#########################",await response.text())
           const data = await response.json();
           
           // If response is not ok, throw an error with the response data
