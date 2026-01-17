@@ -1,5 +1,6 @@
 import ApprovedAnimation from '@/components/animated/approved-animation';
-import { getPaymentStatus, useAuthorizePayment } from '@/service/payment';
+import { useAuthorizePayment as authorizePayment } from '@/service/payment';
+import { usePaymentStatus } from "@/hooks/use-payment-status";
 import { getCards, saveCards, SavedCardMeta } from '@/store/card-store';
 import { BookingPaymentData } from '@/types/ride-types';
 import { useRoute } from '@react-navigation/native';
@@ -74,8 +75,11 @@ interface ErrorState {
 
 const AddNewCard: React.FC = () => {
     const { t } = useTranslation("components");
+    const route = useRoute();
+    const routeParams = route.params as RouteParams;
+    const { status, setStatus, startPolling } = usePaymentStatus(routeParams?.booking_id);
+
     const [selectedCard, setSelectedCard] = useState<CardType>('visa');
-    const [status, setStatus] = useState<Status>("idle");
     const [keyboardHeight, setKeyboardHeight] = useState(0);
     const [isKeyboardVisible, setIsKeyboardVisible] = useState(false);
     const [formData, setFormData] = useState<CardData>({
@@ -106,8 +110,6 @@ const AddNewCard: React.FC = () => {
         title: '',
         message: ''
     });
-    const route = useRoute();
-    const routeParams = route.params as RouteParams;
     const scrollViewRef = React.useRef<ScrollView>(null);
 
     const showError = (title: string, message: string, type: "error" | "warning" | "info" = "error") => {
@@ -169,31 +171,7 @@ const AddNewCard: React.FC = () => {
         });
     };
 
-    const handleFetchPaymentStatus = async () => {
-        if (!routeParams?.booking_id) return false;
-        
-        try {
-            const response = await getPaymentStatus(Number(routeParams.booking_id));
-            console.log(response, "====================response", response.data?.paymentStatus);
-            if (response.data?.paymentStatus === 2) {
-                setStatus("approved");
-                showSuccess(
-                    t("payment.bookingConfirmed") || "Booking Confirmed",
-                    t("payment.paymentSuccessMessage") || "Your payment has been processed successfully and your booking is confirmed."
-                );
-                return true;
-            }
-            return false;
-        } catch (error) {
-            console.error("Error fetching payment status:", error);
-            return false;
-        }
-    };
-
     useEffect(() => {
-        /* first call immediately */
-        handleFetchPaymentStatus();
-
         /* Keyboard event listeners */
         const keyboardDidShowListener = Keyboard.addListener(
             'keyboardDidShow',
@@ -218,42 +196,22 @@ const AddNewCard: React.FC = () => {
         };
     }, []);
 
-    // Separate useEffect for payment status polling
+    // Handle payment status changes
     useEffect(() => {
-        let pollInterval: NodeJS.Timeout;
-        
-        if (status === "waiting") {
-            // Start polling when payment is in waiting state
-            pollInterval = setInterval(async () => {
-                const isApproved = await handleFetchPaymentStatus();
-                if (isApproved) {
-                    clearInterval(pollInterval);
-                }
-            }, 3000); // Poll every 3 seconds for better responsiveness
-
-            // Clear interval after 3 minutes to prevent infinite polling
-            const timeoutId = setTimeout(() => {
-                clearInterval(pollInterval);
-                if (status === "waiting") {
-                    setStatus("idle");
-                    showError(
-                        t("payment.timeout") || 'Payment Timeout', 
-                        t("payment.timeoutMessage") || 'Payment verification timed out. Please check your booking status or try again.',
-                        'warning'
-                    );
-                }
-            }, 180000); // 3 minutes
-
-            return () => {
-                clearInterval(pollInterval);
-                clearTimeout(timeoutId);
-            };
+        if (status === 'approved') {
+            showSuccess(
+                t("payment.bookingConfirmed") || "Booking Confirmed",
+                t("payment.paymentSuccessMessage") || "Your payment has been processed successfully and your booking is confirmed."
+            );
+        } else if (status === 'failed') {
+             showError(
+                t("payment.timeout") || 'Payment Timeout', 
+                t("payment.timeoutMessage") || 'Payment verification timed out. Please check your booking status or try again.',
+                'warning'
+            );
+            setStatus('idle');
         }
-
-        return () => {
-            if (pollInterval) clearInterval(pollInterval);
-        };
-    }, [status]);
+    }, [status, setStatus, t]); // Added t to deps (safe) 
 
     // Fallback: Auto-close 3DS and start polling after 30 seconds
     useEffect(() => {
@@ -263,14 +221,14 @@ const AddNewCard: React.FC = () => {
             fallbackTimeout = setTimeout(() => {
                 console.log('3DS fallback timeout - closing and starting polling');
                 setShow3DS(false);
-                setStatus("waiting");
+                startPolling(); // Use startPolling instead of manual set
             }, 30000); // 30 seconds fallback
         }
 
         return () => {
             if (fallbackTimeout) clearTimeout(fallbackTimeout);
         };
-    }, [show3DS]);
+    }, [show3DS, startPolling]);
 
     console.log(routeParams?.booking_id, "booking id")
 
@@ -340,7 +298,7 @@ const AddNewCard: React.FC = () => {
         };
 
         try {
-            const response = await useAuthorizePayment(postData);
+            const response = await authorizePayment(postData);
             console.log('Payment authorization response:', response);
             console.log('Payment authorization req:', postData);
 
@@ -440,13 +398,23 @@ const AddNewCard: React.FC = () => {
         }
     };
 
+    // Use a ref to track if 3DS is active to avoid stale closure in timeouts
+    const is3DSActive = React.useRef(false);
+    
+    useEffect(() => {
+        is3DSActive.current = show3DS;
+    }, [show3DS]);
+    
     const handle3DSComplete = (url: string) => {
         console.log('3DS Navigation URL:', url);
+        
+        // If we are already approved, ignore further navigation
+        if ((status as string) === 'approved') return;
         
         // Check if the URL indicates completion
         if (url.includes('success') || url.includes('approved') || url.includes('complete')) {
             setShow3DS(false);
-            setStatus("waiting"); // Start polling for payment status
+            startPolling();
         } else if (url.includes('fail') || url.includes('cancel') || url.includes('error')) {
             setShow3DS(false);
             showError(
@@ -458,12 +426,14 @@ const AddNewCard: React.FC = () => {
         // but also start polling after a delay in case the redirect is delayed
         else if (url !== authUrl && !url.includes('about:blank')) {
             // Start polling after 2 seconds if we're on a different URL that's not the initial auth URL
-            setTimeout(() => {
-                if (show3DS) {
+            const timer = setTimeout(() => {
+                // Check ref instead of stale state
+                if (is3DSActive.current && (status as string) !== 'approved') {
                     setShow3DS(false);
-                    setStatus("waiting");
+                    startPolling();
                 }
             }, 2000);
+            return () => clearTimeout(timer);
         }
     };
 

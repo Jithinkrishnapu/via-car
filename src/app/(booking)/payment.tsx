@@ -1,10 +1,9 @@
-import { ChevronLeft } from "lucide-react-native";
+import { ChevronLeft, MoreVertical, Edit, Trash2 } from "lucide-react-native";
 import { router } from "expo-router";
 import { useLoadFonts } from "@/hooks/use-load-fonts";
 import ApprovedAnimation from "@/components/animated/approved-animation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useRef } from "react";
 import {
-  FlatList,
   Image,
   ImageSourcePropType,
   Modal,
@@ -20,15 +19,12 @@ import Text from "@/components/common/text";
 import CheckLightGreen from "../../../public/check-light-green.svg";
 import { useTranslation } from "react-i18next";
 import { getCards, SavedCardMeta, saveCards } from "@/store/card-store";
-import { useRoute } from "@react-navigation/native";
-import { useAuthorizePayment, getPaymentStatus } from "@/service/payment";
+import { useRoute, useFocusEffect } from "@react-navigation/native";
+import { useAuthorizePayment as authorizePayment } from "@/service/payment";
 import { BookingPaymentData } from "@/types/ride-types";
 import AlertDialog from "@/components/ui/alert-dialog";
 import Dialog from "@/components/ui/dialog";
-import { MoreVertical, Edit, Trash2 } from "lucide-react-native";
-import { useFocusEffect } from "@react-navigation/native";
-
-type Status = "idle" | "waiting" | "approved";
+import { usePaymentStatus } from "@/hooks/use-payment-status";
 
 const CheckIcon = () => (
   <CheckLightGreen
@@ -78,7 +74,9 @@ function Payment() {
 
   const [selectedId, setSelectedId] = useState<string>("0");
   const [cardsData, setCardsData] = useState<Options[]>([]);
-  const [status, setStatus] = useState<Status>("idle");
+  
+  const { status, setStatus, startPolling } = usePaymentStatus(routeParams?.booking_id);
+  
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [initialLoading, setInitialLoading] = useState(true);
@@ -107,14 +105,14 @@ function Payment() {
   const [authUrl, setAuthUrl] = useState('');
   const [authParams, setAuthParams] = useState<any[]>([]);
 
-  const showError = (title: string, message: string, type: "error" | "warning" | "info" | "success" = "error") => {
+  const showError = useCallback((title: string, message: string, type: "error" | "warning" | "info" | "success" = "error") => {
     setErrorDialog({
       visible: true,
       title,
       message,
       type
     });
-  };
+  }, []);
 
   const closeErrorDialog = () => {
     setErrorDialog({
@@ -133,7 +131,7 @@ function Payment() {
 
   const handleDeleteCard = async (cardIndex: number) => {
     try {
-      const updatedCards = cardsData.filter((_, index) => index !== cardIndex);
+      // const updatedCards = cardsData.filter((_, index) => index !== cardIndex);
       const updatedCardsMeta = (await getCards()).filter((_, index) => index !== cardIndex);
       
       await saveCards(updatedCardsMeta);
@@ -160,7 +158,7 @@ function Payment() {
     });
   };
 
-  const fetchSavedCards = async (showRefreshIndicator = false, isInitialLoad = false) => {
+  const fetchSavedCards = useCallback(async (showRefreshIndicator = false, isInitialLoad = false) => {
     if (showRefreshIndicator) {
       setRefreshing(true);
     }
@@ -182,12 +180,14 @@ function Payment() {
           };
         });
         setCardsData(iterateData);
-        if (iterateData.length > 0 && (!selectedId || selectedId === "")) {
+        
+        // Ensure selectedId is valid
+        const isValid = iterateData.some(c => c.id === selectedId);
+        if (iterateData.length > 0 && (!selectedId || selectedId === "" || !isValid)) {
           setSelectedId("0");
+        } else if (iterateData.length === 0) {
+          setSelectedId("");
         }
-      } else {
-        setCardsData([]);
-        setSelectedId("");
       }
     } catch (error) {
       console.error('Error fetching cards:', error);
@@ -202,7 +202,7 @@ function Payment() {
         setInitialLoading(false);
       }
     }
-  };
+  }, [selectedId, showError]);
 
   const generate3DSForm = () => {
     const paramsHtml = authParams
@@ -236,13 +236,23 @@ var wpwlOptions = {
         `;
   };
 
+  // Use a ref to track if 3DS is active to avoid stale closure in timeouts
+  const is3DSActive = useRef(false);
+  
+  useEffect(() => {
+      is3DSActive.current = show3DS;
+  }, [show3DS]);
+
   const handle3DSComplete = (url: string) => {
     console.log('3DS Navigation URL:', url);
+
+    // If we are already approved, ignore further navigation
+    if ((status as string) === 'approved') return;
 
     // Check if the URL indicates completion
     if (url.includes('success') || url.includes('approved') || url.includes('complete')) {
       setShow3DS(false);
-      setStatus("waiting"); // Start polling for payment status
+      startPolling(); // Start polling for payment status
     } else if (url.includes('fail') || url.includes('cancel') || url.includes('error')) {
       setShow3DS(false);
       showError(
@@ -255,9 +265,9 @@ var wpwlOptions = {
     else if (url !== authUrl && !url.includes('about:blank')) {
       // Start polling after 2 seconds if we're on a different URL that's not the initial auth URL
       setTimeout(() => {
-        if (show3DS) {
+        if (is3DSActive.current && (status as string) !== 'approved') {
           setShow3DS(false);
-          setStatus("waiting");
+          startPolling();
         }
       }, 2000);
     }
@@ -265,25 +275,9 @@ var wpwlOptions = {
 
   const onRefresh = useCallback(() => {
     fetchSavedCards(true);
-  }, []);
+  }, [fetchSavedCards]);
 
-  const handleFetchPaymentStatus = async () => {
-    if (!routeParams?.booking_id) return false;
-    
-    try {
-      const response = await getPaymentStatus(Number(routeParams.booking_id));
-      console.log(response, "====================response", response.data?.paymentStatus);
-      if (response.data?.paymentStatus === 2) {
-        setStatus("approved");
-        return true;
-      }
-      return false;
-    } catch (error) {
-      console.error("Error fetching payment status:", error);
-      // Don't show error for polling failures, just log them
-      return false;
-    }
-  };
+  // Removed handleFetchPaymentStatus as it is now handled by usePaymentStatus hook
 
   const handlePayWithSavedCard = async () => {
     if (!routeParams?.booking_id || cardsData.length === 0) {
@@ -319,7 +313,7 @@ var wpwlOptions = {
 
     setCvvDialog(prev => ({ ...prev, loading: true }));
     setLoading(true);
-    setStatus("waiting");
+    // Don't set status to waiting yet, only after auth success
 
     const postData: BookingPaymentData = {
       booking_id: Number(routeParams.booking_id),
@@ -345,14 +339,14 @@ var wpwlOptions = {
     setCvvDialog({ visible: false, cvv: '', loading: false });
 
     try {
-      const response = await useAuthorizePayment(postData);
+      const response = await authorizePayment(postData);
       console.log('Payment authorization response:', response);
 
       // Check for API error responses
       if (response?.error || response?.status === 'error') {
         const errorMessage = response?.message || response?.error || 'Payment authorization failed';
         showError('Payment Error', errorMessage);
-        setStatus("idle");
+        setLoading(false); // Stop loading mainly
         return;
       }
 
@@ -360,7 +354,7 @@ var wpwlOptions = {
       if (response?.errors && Array.isArray(response.errors)) {
         const errorMessages = response.errors.map((error: any) => error.message || error).join('\n');
         showError('Validation Error', errorMessages);
-        setStatus("idle");
+        setLoading(false);
         return;
       }
 
@@ -369,6 +363,9 @@ var wpwlOptions = {
         setAuthUrl(response.message.url);
         setAuthParams(response.message.parameters);
         setShow3DS(true);
+        // Loading stays true until we exit 3DS or complete flow? 
+        // Actually usually we stop loading spinner when showing 3DS
+        setLoading(false); 
         return;
       }
 
@@ -376,27 +373,19 @@ var wpwlOptions = {
       if (response?.result?.code && response.result.code !== '000.100.110') {
         const errorMessage = response?.result?.description || 'Payment processing failed';
         showError('Payment Failed', errorMessage);
-        setStatus("idle");
+        setLoading(false);
         return;
       }
 
+      // If we are here, it might mean success (000.100.110) or pending
       // Start polling for payment status
-      const pollInterval = setInterval(async () => {
-        await handleFetchPaymentStatus();
-      }, 3000);
-
-      // Clear interval after 2 minutes
-      setTimeout(() => {
-        clearInterval(pollInterval);
-        if (status === "waiting") {
-          setStatus("idle");
-          showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
-        }
-      }, 120000);
+      startPolling();
+      // Ensure loading is false, as we show the "Waiting" modal based on status
+      setLoading(false); 
 
     } catch (err: any) {
       console.error('Payment failed:', err);
-      setStatus("idle");
+      setLoading(false);
       
       // Handle network errors
       if (err.name === 'TypeError' && err.message.includes('Network request failed')) {
@@ -422,14 +411,12 @@ var wpwlOptions = {
       }
 
       showError('Payment Error', errorMessage);
-    } finally {
-      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchSavedCards(false, true);
-  }, []);
+  }, [fetchSavedCards]);
 
   // Refetch cards when screen comes into focus (e.g., returning from add/edit card)
   useFocusEffect(
@@ -438,35 +425,16 @@ var wpwlOptions = {
       if (!initialLoading) {
         fetchSavedCards();
       }
-    }, [initialLoading])
+    }, [initialLoading, fetchSavedCards])
   );
 
+  // Handle timeout/failure from hook
   useEffect(() => {
-    if (status === "waiting") {
-      // Start polling when payment is initiated
-      const pollInterval = setInterval(async () => {
-        const isApproved = await handleFetchPaymentStatus();
-        if (isApproved) {
-          clearInterval(pollInterval);
-        }
-      }, 3000);
-
-      // Clear interval after 2 minutes to prevent infinite polling
-      const timeoutId = setTimeout(() => {
-        clearInterval(pollInterval);
-        if (status === "waiting") {
-          setStatus("idle");
-          showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
-        }
-      }, 120000);
-      
-      // Cleanup interval when component unmounts or status changes
-      return () => {
-        clearInterval(pollInterval);
-        clearTimeout(timeoutId);
-      };
+    if (status === 'failed') {
+        showError('Payment Timeout', 'Payment verification timed out. Please check your booking status.', 'warning');
+        setStatus('idle');
     }
-  }, [status, routeParams?.booking_id]);
+  }, [status, setStatus, showError]);
 
   if (!loaded) return null;
 
@@ -605,33 +573,23 @@ var wpwlOptions = {
             />
           </View>
 
-          {/* {cardsData.map(renderOption)} */}
-
-          <FlatList
-            contentContainerClassName="gap-4"
-            data={cardsData}
-            renderItem={({item}) => renderOption(item)}
-            refreshControl={
-              <RefreshControl
-                refreshing={refreshing}
-                onRefresh={onRefresh}
-                colors={['#FF4848']} // Android
-                tintColor="#FF4848" // iOS
-              />
-            }
-            ListEmptyComponent={() => (
-              <View className="py-8 items-center">
-                <Text className="text-[16px] font-[Kanit-Light] text-gray-500 text-center">
-                  {initialLoading ? 'Loading cards...' : refreshing ? 'Refreshing cards...' : 'No saved cards found'}
-                </Text>
-                {!refreshing && !initialLoading && (
-                  <Text className="text-[14px] font-[Kanit-Light] text-gray-400 text-center mt-2">
-                    Pull down to refresh or add a new card
+          {/* Cards List - using map instead of FlatList inside ScrollView */}
+          <View className="flex flex-col gap-4">
+            {cardsData.length > 0 ? (
+              cardsData.map((item) => renderOption(item))
+            ) : (
+                <View className="py-8 items-center">
+                  <Text className="text-[16px] font-[Kanit-Light] text-gray-500 text-center">
+                    {initialLoading ? 'Loading cards...' : refreshing ? 'Refreshing cards...' : 'No saved cards found'}
                   </Text>
-                )}
-              </View>
+                  {!refreshing && !initialLoading && (
+                    <Text className="text-[14px] font-[Kanit-Light] text-gray-400 text-center mt-2">
+                      Pull down to refresh or add a new card
+                    </Text>
+                  )}
+                </View>
             )}
-          />
+          </View>
 
           <TouchableOpacity
             onPress={() => router.push({
