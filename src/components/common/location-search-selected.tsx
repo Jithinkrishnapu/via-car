@@ -15,6 +15,7 @@ interface LocationData {
   latitude: number;
   longitude: number;
   address?: string;
+  mainText?: string;
 }
 
 interface Props {
@@ -109,7 +110,8 @@ export default function LocationSearchSelected({
     setLocation({
       latitude: loc.latitude,
       longitude: loc.longitude,
-      address: name
+      address: name,
+      mainText: name
     });
     setError(null);
   };

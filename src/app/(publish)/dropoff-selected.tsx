@@ -86,7 +86,7 @@ function DropoffSelected() {
           onContinue={(location) => {
             setRideField("destination_lat", location.latitude)
             setRideField("destination_lng", location.longitude)
-            setRideField("destination_address", location.address || "")
+            setRideField("destination_address", location.mainText || location.address || "")
             // router.push("/(publish)/route");
             setModalVisible(true)
             handleGetVehicles()

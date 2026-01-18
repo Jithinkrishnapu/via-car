@@ -36,7 +36,7 @@ function PickupSelected() {
           onContinue={(location) => {
             setRideField("pickup_lat", location.latitude);
             setRideField("pickup_lng", location.longitude);
-            setRideField("pickup_address", location.address || "");
+            setRideField("pickup_address", location.mainText || location.address || "");
             router.push("/(publish)/dropoff");
           }}
         />

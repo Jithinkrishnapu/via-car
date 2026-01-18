@@ -15,7 +15,8 @@ import { snackbarManager } from '@/utils/snackbar-manager';
 interface SelectedLocation {
     latitude: number;
     longitude: number;
-    address?:string
+    address?: string;
+    mainText?: string;
 }
 
 interface LocationPickerProps {
@@ -167,11 +168,15 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
             lastGeocodeTimeRef.current = now;
             const [place] = await Location.reverseGeocodeAsync(location);
             let formattedAddress = '';
+            let mainText = '';
 
             if (place) {
-                const { city, region, district, street, streetNumber, postalCode } = place;
+                const { city, region, district, street, streetNumber, postalCode, name } = place;
+                mainText = name || street || city || district || region || 'Selected Location';
+
                 formattedAddress = [
-                    street && streetNumber ? `${streetNumber} ${street}` : '',
+                    name && name !== street ? name : '',
+                    street && streetNumber ? `${streetNumber} ${street}` : street,
                     district || '',
                     city || '',
                     region || '',
@@ -186,7 +191,8 @@ const LocationPickerComponent: React.FC<LocationPickerProps> = ({
             onLocationSelected({
                 latitude: location.latitude,
                 longitude: location.longitude,
-                address: finalAddress
+                address: finalAddress,
+                mainText: mainText || finalAddress
             });
             setAddress(finalAddress);
         } catch (err) {
