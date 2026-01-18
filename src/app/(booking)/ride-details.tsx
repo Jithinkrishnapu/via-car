@@ -20,7 +20,9 @@ import Text from "@/components/common/text";
 import Verified from "../../../public/verified.svg";
 import Chat from "../../../public/chat.svg";
 import Direction from "../../../public/direction4.svg";
-import ChatIcon from "../../../public/chat.svg";
+import MusicIcon from "../../../public/music.svg"; // Added
+import SmokingIcon from "../../../public/cigarette-light.svg"; // Added
+import PetsIcon from "../../../public/paw.svg"; // Added
 import { useTranslation } from "react-i18next";
 import { useDirection } from "@/hooks/useDirection";
 import { useAsyncStorage } from "@react-native-async-storage/async-storage";
@@ -58,6 +60,9 @@ function RideDetails() {
   const { isRTL, swap } = useDirection();
   const { isPublish } = useStore()
   const route = useRoute();
+  const routeParams = route?.params as { rideId?: string; ride_amount_id?: string; passengers?: string } | undefined;
+  const passengerCount = routeParams?.passengers ? Number(routeParams.passengers) : 1;
+  
   const [rideDetail, setRideDetail] = useState<RideDetail>()
   const [routes, setRoutes] = useState()
   const { setPolyline,polyline:EncodedLine } = useCreateRideStore();
@@ -380,15 +385,22 @@ function RideDetails() {
                   else if (Array.isArray(prefs) && prefs.every(p => typeof p === 'string')) {
                     travelPreferences = prefs.filter(p => p.trim().length > 0);
                   }
-                  return travelPreferences.map((text: string) => (
+                  return travelPreferences.map((text: string) => {
+                    let Icon = Chat;
+                    const lowerText = text.toLowerCase();
+                    if (lowerText.includes("music")) Icon = MusicIcon;
+                    else if (lowerText.includes("smoke") || lowerText.includes("smoking")) Icon = SmokingIcon;
+                    else if (lowerText.includes("pet")) Icon = PetsIcon;
+                    
+                    return (
                     <View
                       key={text}
                       className="border border-gray-200 rounded-full flex-row items-center px-4 py-2"
                     >
-                      <ChatIcon width={21} height={21} />
+                      <Icon width={21} height={21} />
                       <Text className="ml-2 text-sm font-[Kanit-Light]">{text}</Text>
                     </View>
-                  ));
+                  )});
                 })()}
               </View>
               </View>
@@ -463,7 +475,9 @@ function RideDetails() {
               </Text>
               <View className="flex-row items-center justify-between">
                 <Text fontSize={15} className="text-[15px] font-[Kanit-Light]">
-                  {t("rideDetails.onePassenger")}
+                  {passengerCount === 1 
+                    ? t("rideDetails.onePassenger") 
+                    : `${passengerCount} ${t("rideDetails.passengers")}`}
                 </Text>
                 <Text
                   fontSize={15}
