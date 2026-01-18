@@ -13,7 +13,7 @@ export default function Page() {
   if (!loaded) return null;
   const route = useRoute()
   return (
-    <ScrollView bounces={false} className="bg-white">
+    <ScrollView bounces={false} keyboardShouldPersistTaps="handled" className="bg-white">
       <View className="w-full px-6 pt-14 pb-12">
         <View className="flex-row items-center gap-4 mb-6 w-full">
           <TouchableOpacity
