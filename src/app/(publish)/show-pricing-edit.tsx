@@ -23,6 +23,7 @@ import { useCreateRideStore } from "@/store/useRideStore";
 import { useCreateRide, useEditRide } from "@/service/ride-booking";
 import { RideDetails, RideEditDetails } from "@/types/ride-types";
 import { useGetProfileDetails } from "@/service/auth";
+import { getRouteDistance } from "@/services/mapService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -54,16 +55,58 @@ function ShowPricing() {
       r.push({ address: ride.destination_address, lat: ride.destination_lat, lng: ride.destination_lng });
     }
     return r;
-  }, [ride, selectedPlaces]);
+  }, [
+    ride.pickup_address,
+    ride.pickup_lat,
+    ride.pickup_lng,
+    ride.destination_address,
+    ride.destination_lat,
+    ride.destination_lng,
+    selectedPlaces
+  ]);
 
   const numSegments = Math.max(0, fullRoute.length - 1);
   const [segmentPrices, setSegmentPrices] = useState<number[]>(Array(numSegments).fill(10));
 
+  // Update total price when segment prices change
   useEffect(() => {
-    if (numSegments <= 0) { setSegmentPrices([]); return; }
-    if (ride.segmentPrices && ride.segmentPrices.length === numSegments) setSegmentPrices([...ride.segmentPrices]);
-    else setSegmentPrices(Array(numSegments).fill(10));
-  }, [numSegments, ride.segmentPrices]);
+    const sum = segmentPrices.reduce((acc, curr) => acc + curr, 0);
+    if (sum > 0 && sum !== ride.price_per_seat) {
+      setRideField("price_per_seat", sum);
+    }
+  }, [segmentPrices]);
+
+  useEffect(() => {
+    const calculatePrices = async () => {
+      if (numSegments <= 0) {
+        setSegmentPrices([]);
+        return;
+      }
+
+      if (ride.segmentPrices && ride.segmentPrices.length === numSegments) { 
+          setSegmentPrices([...ride.segmentPrices]);
+      } else {
+          // Calculate distances for segments
+          const newPrices = [];
+          
+          for(let i=0; i < numSegments; i++) {
+              const p1 = fullRoute[i];
+              const p2 = fullRoute[i+1];
+              
+              const dist = await getRouteDistance(
+                { lat: p1.lat, lng: p1.lng },
+                { lat: p2.lat, lng: p2.lng }
+              );
+              
+              const price = Math.round(dist * 2); // 2 SR per km
+              newPrices.push(clampPrice(price));
+          }
+          setSegmentPrices(newPrices);
+      }
+    };
+    
+    calculatePrices();
+  }, [numSegments, fullRoute]);
 
   const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
   const updateSegmentPrice = (idx: number, delta: number) =>
@@ -73,8 +116,37 @@ function ShowPricing() {
       return copy;
     });
 
-  const updatePricePerSeat = (delta: number) =>
-    setRideField("price_per_seat", clampPrice((ride.price_per_seat || 10) + delta));
+  const updatePricePerSeat = (delta: number) => {
+    if (numSegments > 0 && segmentPrices.length === numSegments) {
+      const currentSum = segmentPrices.reduce((a, b) => a + b, 0);
+      const targetSum = clampPrice(currentSum + delta);
+      
+      // Prevent going below minimum possible price (10 per segment)
+      if (targetSum < numSegments * 10) return;
+
+      let remaining = targetSum;
+      const newPrices = segmentPrices.map((p, index) => {
+        // For the last segment, we'll assign the remainder to ensure exact sum
+        if (index === segmentPrices.length - 1) return 0;
+        
+        // Calculate proportional share
+        let share = Math.round((p / currentSum) * targetSum);
+        
+        // Ensure minimum 10
+        share = Math.max(10, share);
+        
+        remaining -= share;
+        return share;
+      });
+      
+      // Assign remainder to last segment
+      newPrices[segmentPrices.length - 1] = Math.max(10, remaining);
+      
+      setSegmentPrices(newPrices);
+    } else {
+      setRideField("price_per_seat", clampPrice((ride.price_per_seat || 10) + delta));
+    }
+  };
 
   /* ---------- CONTINUE ---------- */
   const handleContinue = async () => {
@@ -183,8 +255,8 @@ function ShowPricing() {
                 <View className="flex-row items-center gap-2 md:gap-3 ml-auto">
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(-10)}
-                    disabled={currentSeatPrice <= 10}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${currentSeatPrice <= 10 ? "opacity-40" : "bg-white/20"}`}
+                    disabled={currentSeatPrice <= Math.max(10, numSegments * 10)}
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${currentSeatPrice <= Math.max(10, numSegments * 10) ? "opacity-40" : "bg-white/20"}`}
                   >
                     <MinusRed width={16} height={16} />
                   </TouchableOpacity>

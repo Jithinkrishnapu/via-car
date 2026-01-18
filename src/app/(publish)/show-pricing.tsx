@@ -25,6 +25,7 @@ import { useGetProfileDetails } from "@/service/auth";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { snackbarManager } from "@/utils/snackbar-manager";
 import AlertDialog from "@/components/ui/alert-dialog";
+import { getRouteDistance } from "@/services/mapService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
 
@@ -84,22 +85,61 @@ function ShowPricing() {
       r.push({ address: ride.destination_address, lat: ride.destination_lat, lng: ride.destination_lng });
     }
     return r;
-  }, [ride, selectedPlaces]);
+  }, [
+    ride.pickup_address,
+    ride.pickup_lat,
+    ride.pickup_lng,
+    ride.destination_address,
+    ride.destination_lat,
+    ride.destination_lng,
+    selectedPlaces
+  ]);
 
   const numSegments = Math.max(0, fullRoute.length - 1);
   // Only store prices for intermediate segments (not the full trip)
   const [segmentPrices, setSegmentPrices] = useState<number[]>(Array(numSegments).fill(10));
 
+  // Update total price when segment prices change
+  useEffect(() => {
+    const sum = segmentPrices.reduce((acc, curr) => acc + curr, 0);
+    if (sum > 0 && sum !== ride.price_per_seat) {
+      setRideField("price_per_seat", sum);
+    }
+  }, [segmentPrices]);
+
   // Initialize segment prices
   useEffect(() => {
-    if (numSegments <= 0) { setSegmentPrices([]); return; }
-    if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
-      setSegmentPrices([...ride.segmentPrices]);
-    } else {
-      // Initialize all segments with default price
-      setSegmentPrices(Array(numSegments).fill(10));
-    }
-  }, [numSegments, ride.segmentPrices]);
+    const calculatePrices = async () => {
+      if (numSegments <= 0) { 
+        setSegmentPrices([]); 
+        return; 
+      }
+      
+      if (ride.segmentPrices && ride.segmentPrices.length === numSegments) {
+        setSegmentPrices([...ride.segmentPrices]);
+      } else {
+        // Calculate distances for segments
+        const newPrices = [];
+        
+        for(let i=0; i < numSegments; i++) {
+            const p1 = fullRoute[i];
+            const p2 = fullRoute[i+1];
+            
+            // Use Google Maps API for real distance
+            const dist = await getRouteDistance(
+              { lat: p1.lat, lng: p1.lng },
+              { lat: p2.lat, lng: p2.lng }
+            );
+            
+            const price = Math.round(dist * 2); // 2 SR per km
+            newPrices.push(clampPrice(price));
+        }
+        setSegmentPrices(newPrices);
+      }
+    };
+
+    calculatePrices();
+  }, [numSegments, fullRoute]); // Removed ride.segmentPrices from dependency to avoid infinite loop if it changes
 
   const clampPrice = (v: number) => Math.max(10, Math.min(14000, v));
 
@@ -110,8 +150,41 @@ function ShowPricing() {
       return copy;
     });
 
-  const updatePricePerSeat = (delta: number) =>
-    setRideField("price_per_seat", clampPrice((ride.price_per_seat || 10) + delta));
+  const updatePricePerSeat = (delta: number) => {
+    if (numSegments > 0 && segmentPrices.length === numSegments) {
+      const currentSum = segmentPrices.reduce((a, b) => a + b, 0);
+      const targetSum = clampPrice(currentSum + delta);
+      
+      // Prevent going below minimum possible price (10 per segment)
+      if (targetSum < numSegments * 10) return;
+
+      let remaining = targetSum;
+      const newPrices = segmentPrices.map((p, index) => {
+        // For the last segment, we'll assign the remainder to ensure exact sum
+        if (index === segmentPrices.length - 1) return 0;
+        
+        // Calculate proportional share
+        let share = Math.round((p / currentSum) * targetSum);
+        
+        // Ensure minimum 10
+        share = Math.max(10, share);
+        
+        remaining -= share;
+        return share;
+      });
+      
+      // Assign remainder to last segment
+      newPrices[segmentPrices.length - 1] = Math.max(10, remaining);
+      
+      // If the math forced the sum to be different (due to clamping), 
+      // we might deviate slightly from targetSum, which is acceptable 
+      // as long as we maintain valid segment prices.
+      
+      setSegmentPrices(newPrices);
+    } else {
+      setRideField("price_per_seat", clampPrice((ride.price_per_seat || 10) + delta));
+    }
+  };
 
   // Full trip price is the fixed price_per_seat from pricing screen
   const totalTripPrice = ride.price_per_seat ?? 10;
@@ -301,12 +374,12 @@ function ShowPricing() {
                   <Text className="text-sm md:text-base text-white font-[Kanit-Regular]">{fullRoute[fullRoute.length - 1].address}</Text>
                 </View>
 
-                {/* Total trip price (editable) */}
+                {/* Total trip price (readonly when segments exist) */}
                 <View className="flex-row items-center gap-2 md:gap-3 ml-auto">
                   <TouchableOpacity
                     onPress={() => updatePricePerSeat(-10)}
-                    disabled={totalTripPrice <= 10}
-                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${totalTripPrice <= 10 ? "opacity-40" : "bg-white/20"}`}
+                    disabled={totalTripPrice <= Math.max(10, numSegments * 10)}
+                    className={`w-10 h-10 md:w-12 md:h-12 rounded-full items-center justify-center ${totalTripPrice <= Math.max(10, numSegments * 10) ? "opacity-40" : "bg-white/20"}`}
                   >
                     <MinusRed width={16} height={16} />
                   </TouchableOpacity>
