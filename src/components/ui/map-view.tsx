@@ -24,14 +24,16 @@ type Props = {
   markers?: { lat: number; lng: number, name: string }[];
   /* fired when user taps a marker (only when markers are shown) */
   onMarkerPress?: (coord: Coordinate, index: number,name:string) => void;
+  selectedLocation?: { latitude: number; longitude: number } | null;
 };
 
 /* ------------------------------------------------------------------ */
 /* Component                                                          */
 /* ------------------------------------------------------------------ */
-const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
+const MapScreen: React.FC<Props> = ({ markers, onMarkerPress, selectedLocation }) => {
   const mapRef = useRef<MapView>(null);
   const { polyline: EncodedPolyline } = useCreateRideStore();
+  const markerRefs = useRef<(any | null)[]>([]);
 
   /* -------------- state -------------- */
   const [polyCoords, setPolyCoords] = useState<Coordinate[]>([]);
@@ -91,6 +93,39 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 
     return () => clearTimeout(timer);
   }, [markers?.length, polyCoords.length]); // Only depend on length, not the arrays themselves
+
+    /* -------------- animate to selected location -------------- */
+    useEffect(() => {
+      if (selectedLocation && mapRef.current) {
+        mapRef.current.animateToRegion({
+          latitude: selectedLocation.latitude,
+          longitude: selectedLocation.longitude,
+          latitudeDelta: 0.005,
+          longitudeDelta: 0.005,
+        }, 500);
+
+        // Show callout for selected marker
+        if (markers) {
+            const index = markers.findIndex(m => 
+                Math.abs(m.lat - selectedLocation.latitude) < 0.0001 &&
+                Math.abs(m.lng - selectedLocation.longitude) < 0.0001
+            );
+            if (index !== -1) {
+                // Hide any currently open callouts first (optional but safer)
+                markerRefs.current.forEach((ref, idx) => {
+                  if (idx !== index && ref && ref.hideCallout) ref.hideCallout();
+                });
+
+                // Show the new one with a slight delay
+                setTimeout(() => {
+                  if (markerRefs.current[index]) {
+                    markerRefs.current[index].showCallout();
+                  }
+                }, 600);
+            }
+        }
+      }
+    }, [selectedLocation, markers]);
 
   /* -------------- helpers -------------- */
   const showPolyline = !markers?.length && polyCoords.length > 0;
@@ -185,22 +220,50 @@ const MapScreen: React.FC<Props> = ({ markers, onMarkerPress }) => {
 
         {/* 2.  Markers (only when supplied) */}
         {showMarkers &&
-          markers.map((m, idx) => (
-            <Marker
-              key={`${m.lat}-${m.lng}-${idx}`}
-              coordinate={{ latitude: m.lat, longitude: m.lng }}
-              onPress={() => {
-                setName(m.name);
-                onMarkerPress?.({ latitude: m.lat, longitude: m.lng }, idx, m.name);
-              }}
-            >
-              <Callout tooltip={false}>
-                <View style={styles.markerCallout}>
-                  <Text style={styles.markerCalloutText}>{m.name || `Point ${idx + 1}`}</Text>
-                </View>
-              </Callout>
-            </Marker>
-          ))}
+          markers.map((m, idx) => {
+            const isSelected =
+              selectedLocation &&
+              Math.abs(m.lat - selectedLocation.latitude) < 0.0001 &&
+              Math.abs(m.lng - selectedLocation.longitude) < 0.0001;
+
+            return (
+              <Marker
+                key={`${m.lat}-${m.lng}-${idx}-${isSelected ? 'selected' : 'normal'}`}
+                ref={(el) => (markerRefs.current[idx] = el)}
+                coordinate={{ latitude: m.lat, longitude: m.lng }}
+                pinColor={isSelected ? "green" : "red"}
+                zIndex={isSelected ? 10 : 1}
+                onPress={() => {
+                  setName(m.name);
+                  onMarkerPress?.(
+                    { latitude: m.lat, longitude: m.lng },
+                    idx,
+                    m.name
+                  );
+                }}
+              >
+                <Callout tooltip={false}>
+                  <View style={styles.markerCallout}>
+                    {isSelected && (
+                      <Text
+                        style={{
+                          color: "#166534",
+                          fontWeight: "bold",
+                          marginBottom: 4,
+                          textAlign: "center",
+                        }}
+                      >
+                        Selected Location
+                      </Text>
+                    )}
+                    <Text style={styles.markerCalloutText}>
+                      {m.name || `Point ${idx + 1}`}
+                    </Text>
+                  </View>
+                </Callout>
+              </Marker>
+            );
+          })}
       </MapView>
     </View>
   );

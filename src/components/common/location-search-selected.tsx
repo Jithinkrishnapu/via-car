@@ -163,6 +163,7 @@ export default function LocationSearchSelected({
             <MapComponent 
               onMarkerPress={handleMarkerPress} 
               markers={markers} 
+              selectedLocation={location}
             />
           ) : (
             <LocationPickerComponent 
