@@ -145,13 +145,36 @@ function Login() {
               className="mt-0.5 border-[#EBEBEB] rounded-[1px] cursor-pointer"
               checked={isChecked}
             />
-            <Text
-              fontSize={14}
-              className="text-[14px] text-[#666666] font-[Kanit-Light] cursor-pointer leading-tight tracking-tight flex-1"
-              style={{ textAlign: isRTL ? 'right' : 'left' }}
-            >
-              {t("login.no_special_offers")}
-            </Text>
+             <View className={cn("flex-1 flex-row flex-wrap items-center", isRTL && "flex-row-reverse")}>
+                <Text
+                    fontSize={14}
+                    className="text-[14px] text-[#666666] font-[Kanit-Light] leading-tight tracking-tight"
+                >
+                    {t("login.agree_prefix")}
+                </Text>
+                <TouchableOpacity onPress={() => router.push("/terms-and-conditions")}>
+                    <Text
+                        fontSize={14}
+                        className="text-[14px] text-[#666666] font-[Kanit-Light] leading-tight tracking-tight underline"
+                    >
+                        {t("profile.Terms & Conditions")}
+                    </Text>
+                </TouchableOpacity>
+                 <Text
+                    fontSize={14}
+                    className="text-[14px] text-[#666666] font-[Kanit-Light] leading-tight tracking-tight px-1"
+                >
+                    {t("login.and")}
+                </Text>
+                <TouchableOpacity onPress={() => router.push("/privacy-policy")}>
+                    <Text
+                        fontSize={14}
+                        className="text-[14px] text-[#666666] font-[Kanit-Light] leading-tight tracking-tight underline"
+                    >
+                        {t("profile.Privacy Policy")}
+                    </Text>
+                </TouchableOpacity>
+            </View>
           </View>
           <Text
             fontSize={12}

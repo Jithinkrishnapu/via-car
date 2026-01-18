@@ -156,6 +156,8 @@ const en = {
     verify_phone_number: "Verify your phone number",
     no_special_offers:
       "You agree to Privacy Policy and Terms of Use",
+    agree_prefix: "You agree to our ",
+    and: " and ",
     agreement_text:
       "By entering your phone number, you agree to receive promotional SMS, WhatsApp messages and calls from Via Car.",
     do_it_later: "I'll do it later",
