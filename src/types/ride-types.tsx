@@ -226,6 +226,7 @@ export interface RideDetail {
   vehicle: {
     id: number;
     color: string; // hex color, e.g., "#FFFFFF"
+    plate_number?: string;
     year: number;
     vehicleModel: {
       is_active: number; // 1 = active, 0 = inactive

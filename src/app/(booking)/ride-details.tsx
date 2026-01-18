@@ -282,20 +282,28 @@ function RideDetails() {
             </View>}
             <View className="px-8 py-6 rounded-none border-none bg-white">
               <View className="flex-row items-center justify-between">
-                <View className="flex flex-col">
-                  <Text
-                    fontSize={17}
-                    className="text-[17px] text-black font-[Kanit-Regular] mb-1"
-                  >
-                    {t("rideDetails.carType")}
-                  </Text>
-                  <Text
-                    fontSize={10}
-                    className="text-[10px] text-[#666666] font-[Kanit-Light]"
-                  >
-                    {rideDetail?.vehicle?.vehicleModel?.category_name}
-                  </Text>
+                <View className="flex flex-col gap-2">
+                  <View>
+                    <Text
+                      fontSize={17}
+                      className="text-[17px] text-black font-[Kanit-Regular] mb-1"
+                    >
+                      {t("rideDetails.carType")}
+                    </Text>
+                    <Text
+                      fontSize={10}
+                      className="text-[10px] text-[#666666] font-[Kanit-Light]"
+                    >
+                      {rideDetail?.vehicle?.vehicleModel?.category_name}
+                    </Text>
+                  </View>
+
+                  <View className="flex-row items-center gap-4">
+                     {rideDetail?.vehicle?.plate_number && <Text fontSize={14} className="text-[14px] text-black font-[Kanit-Regular]">{rideDetail?.vehicle?.plate_number}</Text>}
+                     {rideDetail?.vehicle?.color && <View style={{backgroundColor: rideDetail?.vehicle?.color}} className="w-6 h-6 rounded border border-gray-200" />}
+                  </View>
                 </View>
+
                 <View className="w-[68px] h-[25px]">
                   <Image
                     className="w-full h-full"
