@@ -883,8 +883,8 @@ export default function ProfilePage() {
                 ))}
               </View>
 
-              {/* Language Switcher */}
-              <View className="px-6 py-4 border-b border-dashed border-gray-200">
+              {/* Language Switcher (Hidden) */}
+              {/* <View className="px-6 py-4 border-b border-dashed border-gray-200">
                 <TouchableOpacity
                   onPress={async () => {
                     const newLang = i18n.language === "en" ? "ar" : "en";
@@ -930,7 +930,7 @@ export default function ProfilePage() {
                     <ChevronLeft size={25} color="#000000" strokeWidth={1} />
                   )}
                 </TouchableOpacity>
-              </View>
+              </View> */}
 
               <TouchableOpacity onPress={handleLogout} className="px-6 py-4 ">
                 <Text fontWeight="regular" className="text-[14px] text-red-400">

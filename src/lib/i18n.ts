@@ -68,7 +68,7 @@ const initI18n = async () => {
   if (isInitialized) return;
   
   const savedLang = await getSavedLanguage();
-  const initialLang = savedLang || "en";
+  const initialLang = "en"; // Force English
   
   // Set RTL before i18n initialization
   updateRTL(initialLang);
