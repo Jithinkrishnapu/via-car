@@ -230,6 +230,8 @@ const en = {
       loadingNotifications: "Loading notifications...",
       noMoreNotifications: "No more notifications",
       loadingMore: "Loading more notifications...",
+      yes: "Yes",
+      no: "No",
     },
     yourRides: {
       title: "Your Rides",
@@ -601,6 +603,8 @@ const en = {
       riyadh: "Riyadh, Saudi Arabia",
       heritageVillage: "Heritage Village, Dammam, Saudi Arabia",
       insufficientRouteData: "Insufficient route data. Please go back and complete your ride details.",
+      confirmPublishTitle: "Confirm Publish",
+      confirmPublishMessage: "Are you sure to publish?",
     },
     returnRide: {
       title: "Coming back as well?\nPublish your return ride now!",

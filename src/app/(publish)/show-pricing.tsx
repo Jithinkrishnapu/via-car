@@ -25,6 +25,7 @@ import { useGetProfileDetails } from "@/service/auth";
 import { ChevronLeft, ChevronRight } from "lucide-react-native";
 import { snackbarManager } from "@/utils/snackbar-manager";
 import AlertDialog from "@/components/ui/alert-dialog";
+import Dialog from "@/components/ui/dialog";
 import { getRouteDistance } from "@/services/mapService";
 
 const { width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -38,6 +39,7 @@ function ShowPricing() {
 
   const [userDetails, setUserDetails] = useState<any>();
   const [loading, setLoading] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
   const [errorDialog, setErrorDialog] = useState<{
     visible: boolean;
     title: string;
@@ -189,8 +191,13 @@ function ShowPricing() {
   // Full trip price is the fixed price_per_seat from pricing screen
   const totalTripPrice = ride.price_per_seat ?? 10;
 
+  const handleContinue = () => {
+    setShowConfirm(true);
+  };
+
   /* ---------- CONTINUE ---------- */
-  const handleContinue = async () => {
+  const processPublish = async () => {
+    setShowConfirm(false);
     setLoading(true);
     try {
       /* ---- build stops --------------------------------------------- */
@@ -302,7 +309,7 @@ function ShowPricing() {
         // Network errors - show in snackbar
         snackbarManager.showNetworkError(
           t("error.networkError") || "Network error. Please check your connection and try again.",
-          handleContinue
+          processPublish
         );
       } else {
         // Other errors - show in dialog with retry
@@ -467,8 +474,26 @@ function ShowPricing() {
         message={errorDialog.message}
         type={errorDialog.type}
         confirmText={errorDialog.showRetry ? t("common.retry") || "Retry" : t("common.ok") || "OK"}
-        onConfirm={errorDialog.showRetry ? handleContinue : closeErrorDialog}
+        onConfirm={errorDialog.showRetry ? processPublish : closeErrorDialog}
       />
+
+      {/* Confirmation Dialog */}
+      <Dialog
+        visible={showConfirm}
+        onClose={() => setShowConfirm(false)}
+        title={t("showPricing.confirmPublishTitle") || "Confirm Publish"}
+        showButtons={true}
+        confirmText={t("common.yes") || "Yes"}
+        cancelText={t("common.no") || "No"}
+        onConfirm={processPublish}
+        onCancel={() => setShowConfirm(false)}
+      >
+        <View className="items-center py-4 px-2">
+           <Text className="text-base text-center font-[Kanit-Regular] text-gray-700">
+             {t("showPricing.confirmPublishMessage") || "Are you sure to publish?"}
+           </Text>
+        </View>
+      </Dialog>
     </SafeAreaView>
   );
 }

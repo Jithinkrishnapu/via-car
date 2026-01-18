@@ -230,6 +230,8 @@ const ar = {
       loadingNotifications: "جاري تحميل الإشعارات...",
       noMoreNotifications: "لا توجد إشعارات أخرى",
       loadingMore: "جاري تحميل المزيد من الإشعارات...",
+      yes: "نعم",
+      no: "لا",
     },
     yourRides: {
       title: "رحلاتك",
@@ -601,6 +603,8 @@ const ar = {
       riyadh: "الرياض، المملكة العربية السعودية",
       heritageVillage: "قرية التراث، الدمام، السعودية",
       insufficientRouteData: "بيانات المسار غير كافية. يرجى العودة وإكمال تفاصيل رحلتك.",
+      confirmPublishTitle: "تأكيد النشر",
+      confirmPublishMessage: "هل أنت متأكد من النشر؟",
     },
     returnRide: {
       title: "هل ستعود أيضًا؟انشر رحلة العودة الآن!",
